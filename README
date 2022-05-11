@@ -1,0 +1,78 @@
+The `execute' Sub-directory
+
+In the supplied version of DL_POLY, this sub-directory is intended to
+be the `working' directory from which jobs are submitted for execution
+and the data files manipulated. For these purposes the sub-directory
+contains a few macros for copying and storing data files from and to
+the data sub-directory and for submitting programs for execution.
+These are described below.
+
+Executing the Program
+
+To run DL_POLY, it is necessary first to ensure that the program is
+compiled (from the source sub-directory) and that the files CONTROL,
+CONFIG and FIELD are present in the execute subdirectory (Some of the
+macros described below will help with this).  All output data files
+will be returned to the execute sub-directory.
+
+It is of course perfectly possible to use DL_POLY in other ways and
+not be restricted to this way of working.
+
+The copy macro
+
+Whan a job has finished and it needs to be restarted, typing
+
+copy
+
+in the execute sub-directory will result in some of the output files
+being renamed ready for a subsequent run of the program. Useful if you
+can't remember which files to manipulate.
+
+The select macro
+
+If you type, in the execute sub-directory, the command
+
+select n a
+
+where n is a number and a is either LF or VV (for leapfrog or velocity
+Verlet), the macro will copy the datafiles /TESTn/a/CONFIG
+/TESTn/a/CONTROL and /TESTn/a/FIELD from the data sub-directory into the
+execute sub-directory as the files CONFIG, CONTROL and FIELD
+respectively. This is useful for trying out the test cases stored in
+the data sub-directory.
+
+The store Macro
+
+If you type, in the execute sub-directory, the command
+
+store n a
+
+where n is an alphameric string and a is LF or VV, the macro will
+store the REVCON, OUTPUT, STATIS and REVIVE files in the data
+sub-directory as the corresponding files /TESTn/a/* etc.
+
+The supa Macro
+
+The supa macro submits several test jobs at the same time. If you
+type 
+
+supa n1 n2
+
+where n1 and n2 are integers, it will submit batch jobs for
+test cases TESTn1 to TESTn2 for both the LF and VV versions. This
+cannot be used for the hyperdynamics and biased potential
+dynamics tests. Required data are copied from the data/TESTn
+directories and the results stored in directories execute/TESTn
+etc. Note you may need to amend the run script "gopoly" for your
+own particular batch machine.
+
+The cleanup Macro
+
+After a job has finished, you can clean up the execute sub-directory
+by typing
+
+cleanup
+
+in the sub-directory. This will erase all unessential files prior to
+the next run of the program. Do not use this macro before you have
+stored all your useful data!

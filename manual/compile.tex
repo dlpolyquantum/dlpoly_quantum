@@ -1,0 +1,388 @@
+\section{Compiling and Running \D{}}
+
+\subsection{Compiling the Source Code}
+\label{compile}
+
+When you have obtained \D{} from Daresbury Laboratory and unpacked it,
+your next task will be to compile it.  To aid compilation a set of
+makefiles  has been provided in the
+sub-directory {\em build} (see example in Appendix \ref{A1} of this
+document). The versions go by the names of: 
+\begin{itemize}
+\item MakePAR - to build a parallel MPI version on a linux platform;
+\item MakeSEQ - to build a sequential (one processor) linux version;
+\end{itemize}
+Select the one you need and copy it into the {\em source}
+directory. (In what follows we assume the makefile in the {\em source}
+directory is called ``Makefile''.) The Makefile will build an executable
+with a wide range of functionality - sufficient for the test cases and
+for most users' requirements.  Note the MakeSEQ version can be used on
+Windows machines if you are running the CygWin shell and using the
+gfortran compiler. Multi processor versions can be compiled using the
+MakePAR makefile if OpenMPI is available in CygWin.
+
+Users will need to modify the Makefile if they are to add additional
+functionality to the code, or if it requires adaptation for a non
+specified computer. Modifications may also be needed for the Smoothed
+Particle Mesh Ewald method if a system specific 3D FFT routine is
+desired (see below: ``Modifying the makefile'').
+
+Note the following system requirements for a successful build of \D{}.
+\begin{enumerate}
+\item A FORTRAN 90 compiler, such as gfortran or G95;
+\item The Java SDK from Oracle (to compile the GUI, if required).
+\item A linux operating system (or Windows with CygWin, if a PC 
+version is required).
+\end{enumerate}
+
+Run the Makefile you copied from the {\em build} sub-directory in the
+{\em source} sub-directory. It will create the executable in the {\em
+execute} sub-directory. The compilation of the program is initiated by
+typing the command: \\~\\
+
+{\em make} $target$\\~\\
+
+\noindent where $target$ is the specification of the required machine
+or compiler (e.g. ``gfortran''). For many computer systems this is all
+that is required to compile a working version of \D{}. (To determine
+which targets are already defined in the makefile, typing the command
+{\em make} without a nominated target will produce a list of targets
+known to the makefile.)
+
+The full specification of the {\em make} command is as follows
+\\~\\
+
+{\em make} $<$TARGET= $\ldots >$ 
+$<$ EX=$\ldots >$ $<$ BINROOT=$\ldots >$ \\~\\
+
+\noindent where some (or all) of the keywords may be omitted.  The
+keywords and their uses are described below.  Note that keywords may
+also be set in the linux environment (e.g. with the ``setenv'' command
+in a C-shell). For PCs running Windows, \label{PC compile} the makefile
+assumes the user has installed the Cygwin linux API available from
+\[\href{http://sources.redhat.com/cygwin}{http://sources.redhat.com/cygwin}\]
+The recommended FORTRAN 90 compiler is gfortran (which is available
+under CygWin),but G95 can also be used, see: 
+\[\href{http://ftp.g95.org/}{http://ftp.g95.org/}\].
+In principle any Fortran 90 compiler will do, but these are ones that
+have been used successfully by the development team.
+
+\subsubsection{Keywords for the Makefile}
+
+\begin{enumerate}
+\item {\bf TARGET}\\~\\
+The TARGET keyword indicates which kind of computerm (or compiler) 
+the code is to be compiled for. This {\bf must} be specifed.
+Valid targets can be listed by the makefile if the command {\em make}
+is typed, without arguments. The list frequently changes as more
+targets are added and redundant ones removed. Users are encouraged to
+extend the Makefile for themselves, using existing targets as examples.
+\item {\bf EX}\\~\\
+The EX keyword specifies the executable name. The default name for the
+executable is ``DLPOLY.X''.
+\item {\bf BINROOT}\\~\\
+The BINROOT keyword specifies the directory in which the executable is
+to be stored.  The default setting is ``../execute''.
+\end{enumerate}
+
+\noindent Clearing up the directory after a compilation can be performed
+by typing \\~\\
+
+{\em make} clean\\~\\
+
+\noindent which removes all *.o and *.mod files from the source directory.
+(It is sometimes useful to do this before a recompile, particularly if you 
+suspect the code is not correctly incorporating changes you have made to
+the source code.)
+
+\subsubsection{Modifying the Makefile}
+
+\begin{enumerate}
+\item {\bf Changing the TARGET}\\~\\
+If you do not intend to run \D{} on one of the specified machines, you
+must add appropriate lines to the makefile to suit your
+circumstances. The safest way to do this is to modify an existing
+TARGET option for your purposes. The makefile supplied with \D{}
+contains examples for different serial and parallel (MPI) 
+environments, so you should find one close to your
+requirements.  You must of course be familiar with the appropriate
+invocation of the FORTRAN 90 compiler for your local machine and also any
+alternatives to MPI your local machine may be running.  If you wish to
+compile for MPI systems remember to ensure the appropriate library
+directories are accessible to you. If you require a serial version of
+the code, you must remove references to the MPI libraries from the
+Makefile and add the file serial.f to your compilation - this will
+insert replacement (dummy) routines for the MPI calls.
+
+
+\item {\bf Enabling the Smoothed Particle Mesh Ewald}\\~\\
+The standard compilation of \D{} will incorporate a basic 3D Fast
+Fourier Transform (FFT) routine to enable the SPME functionality.
+
+\item {\bf Problems with optimization?}\\~\\
+Some subroutines may not compile correctly when using optimization on
+some compilers. This is not necessarily the fault of the \D{} code, some
+compilers are just flakey. This can be circumvented by compiling the offending
+subroutines separately with optimisation flags turned off.
+\item {\bf Adding new functionality} \\~\\ To include a new subroutine in the
+code simply add {\em subroutine}.o to the list of object names in the
+makefile. The simplest way is to add names to the ``OBJ\_SRC'' list. However,
+for more substantial modifications it is advisable to construct a proper F90
+module containing several related subroutines and add this to the ``OBJ\_MOD''
+list.
+\end{enumerate}
+
+\subsubsection{A Note on Interpolation}
+\label{interpol}
+
+In \D{} the short-range (Van der Waals\index{potential!van der Waals})
+contributions to energy and force are evaluated by interpolation of
+tables constructed at the beginning of execution. \D{} employs a 3-point
+interpolation scheme.
+
+A guide to the {\em minimum} number of grid points ({\tt mxgrid})
+required for interpolation in $r$ to
+give good energy conservation in a simulation is:
+\[{\tt mxgrid} \ge 100 ({\tt rcut/rmin})\]
+where {\tt rmin} is the {\em smallest} position minimum of the
+non-bonded\index{potential!nonbonded} potentials in the system.  The parameter {\tt mxgrid} is
+defined in the {\sc dl\_params.inc} file, and must be set before
+compilation.
+
+A utility program {\sc tabchk} is provided in the DL\_POLY {\em
+utility} sub-directory to help users choose a sufficiently accurate 
+interpolation scheme (including array sizes) for their needs.
+
+\subsection{Running \D{}}
+
+To run the \D{} executable (DLPOLY.X), for most applications,
+you will initially require three,
+possibly four, input data files, which you must create in the {\em
+execute} sub-directory, (or whichever sub-directory you keep the
+executable program.) The first of these is the CONTROL file (section
+\ref{controlfile}), which indicates to \D{} what kind of simulation you
+want to run, how much data you want to gather and for how long you
+want the job to run. The second file you need is the CONFIG file
+(section \ref{configfile}). This contains the atom positions and,
+depending on how the file was created (e.g. whether this is a
+configuration created from `scratch' or the end point of another run),
+the velocities also. The third file required is the FIELD file
+(section \ref{fieldfile}), which specifies the nature of the
+intermolecular interactions, the molecular topology and the atomic
+properties, such as charge and mass.  Sometimes you will also require
+a TABLE file (section \ref{tablefile}), which contains the
+potential and force arrays for functional forms not available within
+\D{} (usually because they are too complex e.g. spline
+potentials). Sometimes you will also require a TABEAM file 
+(section \ref{tabeam-file}), if your simulation includes embedded 
+atom potentials for metallic systems.
+
+Examples of input files are found in the {\em data} sub-directory,
+which can be copied into the {\em execute} subdirectory using the {\sl
+select} macro found in the {\em execute} sub-directory.
+
+A successful run of \D{} will generate several data files, which
+appear in the {\em execute} sub-directory. The most obvious one is the
+file OUTPUT (section \ref{outputfile}), which provides an effective
+summary of the job run: the input information; starting configuration;
+instantaneous and rolling-averaged thermodynamic data; final
+configurations; radial distribution functions (RDFs); and job timing
+data. The OUTPUT file is human readable.  Also present will be the
+restart files REVIVE (section \ref{revivefile}) and REVCON (section
+\ref{revconfile}).  REVIVE contains the accumulated data for a number
+of thermodynamic quantities and RDFs, and is intended to be used as
+the input file for a following run. It is {\em not} human readable.
+The REVCON file contains the {\em restart configuration} i.e. the
+final positions, velocities and forces of the atoms when the run ended
+and is human readable.  The STATIS file (section \ref{statisfile})
+contains a catalogue of instantaneous values of thermodynamic and
+other variables, in a form suitable for temporal or statistical
+analysis. In standard use \DD{} may also create the files RDFDAT (section
+{\ref{rdffile}) or ZDNDAT (section {\ref{zdnfile}), containing the
+RDF and Z-density data respectively. They are both human readable
+files. Finally, the HISTORY file (section \ref{historyfile})
+provides a time ordered sequence of configurations to facilitate
+further analysis of the atomic motions.  Depending on which
+version of the {\sc traject} subroutine you compiled in the code,
+this file may be either formatted (human readable) or unformatted.
+You may move these output files back into the {\em data}
+sub-directory using the {\sl store} macro found in the {\em
+execute} sub-directory.
+
+Note that the special extensions of \D{} including: structural 
+optimisation (Section \ref{minimisation}); hyperdynamics
+(Chapter \ref{hyperdynamics}); solvation (Chapter \ref{solvation});
+metadynamics (Chapter \ref{metadynamics}); and path integral
+molecular dynamics (Chapter \ref{pimd}); all have associated
+families of input and output files. These are described in the
+indicated locations of this manual.
+
+\subsection{Restarting \D{}}
+
+The best approach to running \D{} is to define from the outset
+precisely the simulation you wish to perform and create the input
+files specific to this requirement. The program will then perform the
+requested simulation, but may terminate prematurely through error,
+inadequate time allocation or computer failure. Errors in input data
+are your responsibility, but \D{} will usually give diagnostic messages
+to help you sort out the trouble. Running out of job time is common
+and provided you have correctly specified the job time variables
+(using the {\bf close time} and {\bf job time} directives - see
+section \ref{controlfile}) in the CONTROL file, \D{} will stop in a
+controlled manner, allowing you to restart the job as if it had not
+been interrupted.
+
+To restart a simulation after normal termination you will again
+require the CONTROL file, the FIELD (and TABLE) file, and a CONFIG
+file, which is the exact copy of the REVCON file created by the
+previous job.  You will also require a new file: REVOLD (section
+\ref{revoldfile}), which is an exact copy of the previous REVIVE file.
+If you attempt to restart \D{} without this additional file available,
+the job will fail.  Note that \D{} will append new data to the existing
+STATIS and HISTORY files if the run is restarted, other output files
+will be {\bf overwritten}.
+
+In the event of machine failure, you should be able to restart the job
+in the same way from the surviving REVCON and REVIVE files, which are
+dumped at intervals to meet just such an emergency. In this case check
+carefully that the input files are intact and use the HISTORY and
+STATIS files with caution - there may be duplicated or missing
+records. The reprieve processing capabilities of \D{} are not foolproof
+- the job may crash while these files are being written for example,
+but they can help a great deal. You are advised to keep
+backup copies of these files, noting the times they were written, to
+help you avoid going right back to the start of a simulation.
+
+You can also extend a simulation beyond its initial allocation of
+timesteps, provided you still have the REVCON and REVIVE files. These
+should be copied to the CONFIG and REVOLD files respectively and the
+directive {\bf timesteps} adjusted in the CONTROL file to the new
+total number of steps required for the simulation. For example if you
+wish to extend a 10000 step simulation by a further 5000 steps use the
+directive {\bf timesteps 15000} in the CONTROL file and include the
+{\bf restart} directive. 
+
+Note that you can use the {\bf restart scale} directive if you want to reset
+the temperature at the restart, but note also that this also resets all
+internal accumulators (timestep included) to zero. Alternatively you can use
+the {\bf restart noscale} directive if you want to leave the atomic velocities
+unchanged at restart, but wish to start a fresh simulation. This will also
+reset internal accumulators and timestep number to zero. Both the {\bf restart
+  scale} and {\bf restart noscale} options will therefore ignore the REVOLD
+file.
+
+\subsection{Optimising the Starting Structure}
+\label{minimisation}
+\index{minimisation}
+The preparation of the initial structure of a system for a molecular
+dynamics simulation can be difficult. It is quite likely that the
+structure created does not correspond to one typical of the
+equilibrium state for the required state point, for the given force
+field employed. This can make the simulation unstable in the initial
+stages and can even prevent it from proceeding.
+
+For this reason \D{} has available a selection of structure relaxation
+methods. Broadly speaking, these are energy minimisation algorithms,
+but their role in \D{} is not to provide users with true structural
+optimisation procedures capable of finding the ground state structure
+They are simply intended to help users improve the quality of the
+starting structure prior to a dynamical simulation.
+
+The available algorithms are:
+\begin{enumerate}
+\item ``Zero'' temperature molecular dynamics 
+      \index{minimisation!zero temperature}. This is equivalent 
+      to a dynamical simulation at
+      low temperature. At each time step the molecules move in the
+      direction of the computed forces (and torques), but are not
+      allowed to acquire a velocity larger than that corresponding to
+      a temperature of 1 Kelvin. The subroutine that performs this
+      procedure is {\sc zero\_kelvin}, which is found in the file {\sc
+      optimiser\_module.f}.
+
+\item Conjugate Gradients (CG) minimisation 
+      \index{minimisation!conjugate gradients}. This is nominally a 
+      simple minimisation of the system
+      configuration energy using the conjugate gradients method
+      \cite{shewchuk-94a}. The algorithm coded into \D{} allows is an adaptation
+      that allows for rotation and translation of rigid bodies. Rigid
+      (contraint) bonds however are treated as stiff harmonic springs - a
+      strategy which we find does allow the bonds to converge within the
+      accuracy required by SHAKE. The subroutine that performs this procedure
+      is {\sc strucopt}, which is found in the file {\sc optimiser\_module.f}.
+\item ``Programmed'' energy minimisation, involving both molecular 
+      dynamics and conjugate gradients
+      \index{minimisation!programmed}.  This method combines conjugate
+      gradient minimisation with molecular dynamics. Minimisation is
+      followed by user-defined intervals of (usually low temperature)
+      dynamics, in a cycle of minimisation - dynamics - minimisation
+      etc, which is intended to help the structure relax from
+      overstrained conditions. When using the programmed minimisation
+      \D{} writes (and rewrites) the file CFGMIN \ref{cfgminfile}, which
+      represents the lowest energy structure found during the
+      programmed minimisation. CFGMIN is written in CONFIG file format
+      (see section \ref{configfile}) and can be used in place of the
+      original CONFIG file.
+\end{enumerate}
+
+It should be noted that none of these algorithms permit the simulation
+cell to change shape. It is only the atomic structure that is relaxed.
+After which it is assumed that normal molecular dynamics will commence
+from the final structure.
+
+~
+
+{\bf Additional Comments on the Minimisation Procedures} 
+
+\begin{enumerate} 
+\item The zero temperature dynamics is really dynamics conducted at 1
+Kelvin. However the dynamics has been modified so that the velocities
+of the atoms are always directed along the force vectors. Thus the
+dynamics follows the steepest descent to the (local) minimum. From any
+given configuration, it will always descend to the same minimum.
+\item The conjugate gradient procedure has been adapted to take
+account of the possibilites of constraint bonds and rigid bodies being
+present in the system. If neither of these is present, the
+conventional unadapted procedure is followed.
+\begin{enumerate}
+\item In the case of rigid bodies, atomic forces are
+resolved into molecular forces and torques. The torques are
+subsequently transformed into an equivalent set of atomic forces which
+are perpendicular both to the instantaneous axis of rotation (defined
+by the torque vector) and to the cylindrical radial displacement
+vector of the atom from the axis. These modified forces are then used
+in place of the original atomic forces in the conjugate gradient
+scheme. The atomic displacement induced in the conjugate gradient
+algorithm is corrected to maintain the magnitude of the radial
+position vector, as required for circular motion.
+\item With regard to constraint bonds, these are replaced by stiff
+harmonic bonds to permit minimisation. This is not normally
+recommended as a means to incorporate constraints in minimisation
+procedures as it leads to ill conditioning. However, {\it if the
+constraints in the original structure are satisfied}, we find that
+provided only small atomic displacements are allowed during relaxation
+it is possible to converge to a minimum energy structure. Furthermore,
+provided the harmonic springs are stiff enough, it is possible
+afterwards to satisfy the constraints exactly by further optimising
+the structure using the stiff springs alone, without having a
+significant affect on the overall system energy.
+\item Systems with independent constraint bonds and rigid bodies 
+and systems with rigid bodies linked by constraints may also be
+minimised by these methods.
+\end{enumerate}
+\item Of the three minimisation methods available in \D{}, only the
+programmed minimiser is capable of finding more than one minimum
+without the user intervening.
+\item Finally, we emphasise once again that the purpose of the
+minimisers in \D{} is to help improve the quality of the starting
+structure and we believe they are adequate for that purpose. We do not
+recommend them as general molecular structure optimisers. They may
+however prove useful for relaxing crystal structures to 0 Kelvin for
+the purpose of identifying a true crystal structure.
+\end{enumerate}
+
+
+
+
+
+

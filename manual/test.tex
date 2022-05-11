@@ -1,0 +1,30 @@
+\documentclass[a4,11pt]{report}
+\usepackage{makeidx}
+\addtolength{\oddsidemargin}{-0.5in}
+\addtolength{\textwidth}{1.0in}
+\pagestyle{myheadings}
+\markboth{\copyright STFC}{\copyright STFC}
+\setcounter{secnumdepth}{5}
+\newcommand{\D}{DL\_POLY Classic~}
+\newcommand{\para}[1]{\paragraph{#1}}
+\newcommand{\vek}[1]{\mbox{$\underline{#1}$}}
+\newcommand{\mat}[1]{\mbox{$\underline{\underline{\bf #1}}$}}
+\input{psfig}
+\makeindex
+\begin{document}
+\chapter{\D{} and Hyperdynamics}
+\label{hyperdynamics}
+\setcounter{equation}{0}
+\newpage
+\section*{Scope of Chapter}
+This chapter describes the facilties within \D{} for performing
+accelerated dynamics (or hyperdynamics) using the {\em Bias Potential
+Dynamics} and {\em Temperature Accelerated Dynamics} methods.
+\newpage
+\input hyper.tex
+\newpage
+\bibliography{dl_poly}
+\bibliographystyle{dl_poly}
+\newpage
+\printindex
+\end{document}

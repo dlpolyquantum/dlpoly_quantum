@@ -1,0 +1,390 @@
+\section{DL\_POLY Examples}
+
+\subsection{Test Cases}
+
+The following example data sets (both input and output) are stored in
+the subdirectory {\em data}. Two versions are provided for the
+Leapfrog (LF) and Velocity Verlet (VV) algorithms respectively,
+so that you may check that your version of DL\_POLY is
+working correctly.  All the jobs are short and should require no more
+than a few minutes execution time, even on a single processor
+computer. The test cases can be chosen by typing
+
+{\sl select } n a
+
+\noindent from the {\em execute} directory, where n is the number of the test
+case and a is either LF, VV, CB or RB.  The {\sl select} macro will
+copy the appropriate CONTROL, CONFIG, FIELD and if necessary the TABLE
+or TABEAM files to the {\em execute} directory ready for execution.
+The output files OUTPUT, REVCON and STATIS may be compared with the
+files supplied in the {\em data} directory.
+
+The example output files provided in the {\em data} directory were
+obtained on 8 processors of an Intel Xeon (Woodcrest) cluster with the
+following characteristics:
+\begin{itemize}
+\item Intel Xeon Dual-core processor, 3GHz (32 compute nodes, 2x2 cores each;
+master node; 2 NFS file servers);
+\item 8 GB memory per node;
+\item SUSE LINUX 10.1 with kernel 2.6.16.21-0.25-smp;
+\item Intel Compilers (version 10.1), Intel Cluster Tool kit including Intel
+MPI 3.0, MKL 9.1, and VTune;
+\item InfiniPath interconnect (software stack 2.1).
+\end{itemize}
+
+It should be noted that the potentials and the simulation conditions
+used in the following test cases are chosen to demonstrate
+functionality only.  {\bf They are not necessarily appropriate for serious
+simulation of the test systems.}  Note also that the \D{} Graphical User
+Interface \cite{smith-gui} provides a convenient means for running and
+viewing these test cases.
+
+\subsubsection{Test Case 1: KNaSi$_2$O$_5$}
+Potassium Sodium disilicate glass (NaKSi$_2$O$_5$) using two and three body
+potentials.  Some of the two body potentials are read from the TABLE
+file. Electrostatics are handled by a multiple timestep Ewald sum
+method. Cubic periodic boundaries are in use. NVE ensemble.
+
+\subsubsection{Test Case 2: Metal simulation with Sutton Chen potentials}
+FCC Aluminium using Sutton-Chen potentials. Temperature is controlled
+by the method of Gaussian constraints. NVT Evans ensemble.
+
+\subsubsection{Test Case 3: An antibiotic in water} 
+Valinomycin in 1223 spc water molecules. The temperature is controlled by a
+Nos\'e-Hoover thermostat while electrostatics are handled by a screened
+reaction field Coulombic potential. The water is defined as a rigid body while
+bond constraints are applied to all chemical bonds in the
+valinomycin. Truncated octahedral boundary conditions are used. NVT Hoover
+ensemble.
+
+\subsubsection{Test Case 4: Shell model of water}
+256 molecules of water with a polarizable oxygen atom using adiabatic
+dynamics. Temperature is controlled by the Berendsen thermostat while
+electrostatics are handled by the reaction field method with a ``charge
+group'' cutoff scheme. ``Slab'' period boundary conditions are used. The water
+molecule (apart from the shell) is treated as a rigid body. NVT Berendsen
+`ensemble'.
+
+\subsubsection{Test Case 5: Shell model of MgCl$_2$ at constant pressure}
+Adiabatic shell model simulation of MgCl$_2$. Temperature and pressure are
+controlled by a Berendsen thermostat and barostat. An Ewald sum is used with
+cubic periodic boundary conditions. NPT Berendsen `ensemble'.
+
+\subsubsection{Test Case 6: PMF calculation}
+Potential of mean force calculation of a potassium ion in SPC
+water. Electrostatics are handled by the Ewald sum. The water is
+treated as a constrained triangle. PMF `ensemble'
+
+\subsubsection{Test Case 7: Linked rigid bodies}
+8 biphenyl molecules in cubic boundary conditions.  Each phenyl ring is
+treated as a rigid body, with a constraint bond to the other ring of the
+molecule. In the centre of each ring are three massless charge sites which
+imparts a quadrupole moment to the ring. NVE ensemble.
+
+\subsubsection{Test Case 8: An osmosis experiment with a semi permeable membrane}
+The membrane is a collection of tethered sites interconnected by harmonic
+springs.  There are no electrostatic forces in the system. The simulation is
+run with the Hoover anisotropic constant presure algorithm. (NST Hoover
+ensemble.)
+
+\subsubsection{Test Case 9: A surfactant at the air-water interface}
+The system is comprised of 32 surfactant molecules (trimethylaminododecane
+bromide or TAB-C12) arranged either side of a slab of 342 water molecules
+approximately 30 $\AA$ thick. The surfactant chains are treated with rigid
+bonds and the water molecules are treated as rigid bodies. The TAB headgroup
+has fractional charges summing to +1 (the bromide ion has charge -1). The
+Ewald sum handles the electrostatic calculations. The short range forces are
+taken from the Dreiding force field.  NVE ensemble.
+
+\subsubsection{Test Case 10: DNA strand in water}
+This system consists of a strand of DNA 1260 atoms in length in a solution of
+706 (SPC) water molecules. The DNA is aligned in the Z-direction and {\em
+hexagonal prism} periodic boundary conditions applied. The electrostatic
+interactions are calculated using the Smoothed Particle Mesh Ewald
+method. Note that the system has a strong overall negative charge which is
+strongly anisotropic in distribution.  The short range forces are taken from
+the Dreiding force field, and constraints are used for all covalent bonds. For
+simplicity H-bonds are treated as harmonic bonds with an equilibrium
+bondlength of 1.724~$\AA$. NVE ensemble.
+
+\subsubsection{Test Case 11: Hautman-Klein test case 1}
+The system consists of 100 short chain surfactant molecules in a layer
+simulated under NVE conditions . The total system size is 2300 atoms and the
+XY periodicity is a square. The Dreiding force field describes the molecular
+interactions. All bonds are harmonic and all atoms are explicit. The link-cell
+algorithm is in operation. NVE ensemble.
+
+\subsubsection{Test Case 12: Hautman-Klein test case 2}
+This is a simple test system consisting of 1024 charged particles in a
+layer in the NVT ensemble. Lennard Jones forces are used to keep the
+atoms apart. The simulation cell is square in the XY plane. NVE ensemble.
+
+\subsubsection{Test Case 13: Carbon Nanotube with Tersoff potential}
+This system consists of 800 carbon atoms in a nanotube 41.7 A in length. The
+MD cell is orthorhombic and square in the XY plane. The integration algorithm
+is NPT Berendsen. This is a test for the Tersoff potential. NPT Berendsen
+`ensemble'.
+
+\subsubsection{Test Case 14: Carbon Diamond with Tersoff potential}
+This is another test of the Tersoff potential, this time for the carbon
+diamond structure consisting of 512 atoms. A cubic MD cell is used with a NST
+Hoover integration algorithm. NST Hoover ensemble.
+
+\subsubsection{Test Case 15: Silicon Carbide with Tersoff potential}
+This is an alloy system consisting of 2744 atoms of silicon carbide in a
+diamond structure. The potential function used is the Tersoff potential. The
+integration algorithm is NPT Hoover and the initial MD cell is cubic. NPT
+Hoover ensemble.
+
+\subsubsection{Test Case 16: Magnesium Oxide with relaxed shell model}
+Relaxed shell model of magnesium oxide with 324 sites. The lattice is cubic
+and the integration algorithm is NST Berendsen. NST Berendsen `ensemble'.
+
+\subsubsection{Test Case 17: Sodium ion in SPC water}
+A simple simulation of a sodium ion in 140 SPC water molecules (421
+sites in all). The water molecules are treated as rigid bodies.The
+algorithm is the NVE ensemble and the Ewald sum handles the
+electrostatic forces.  The MD box is cubic. NVE ensemble.
+
+\subsubsection{Test Case 18: Sodium chloride molecule in SPC water}
+This system resembles test case 17, except that a sodium chloride ion
+pair is dissolved in 139 SPC water molecules (419 sites in all). The
+MD cell is cubic and the water molecules are treated by constraint
+dynamics in the NVT Evans scheme. Ewald's method handles the
+electrostatics. NVT Evans ensemble.
+
+\subsubsection{Test Case 19: Sodium chloride molecule in SPC water}
+This is a repeat of test case 18, except that half of the water
+molecules are treated using constraint dynamics and the rest by rigid
+body dynamics. The integration algorithm is NPT Hoover. NPT Hoover
+ensemble. 
+
+\subsubsection{Test Case 20:  Linked benzene ring molecules}
+This test consists of pairs of benzene rings linked via a rigid
+(constraint) bond. Each molecule has 22 atoms and there are 81
+molecules, making a total of 1782 sites. The benzene rings are treated
+in a variety of ways in the same system. In one third of cases the
+benzene rings and hydrogens form rigid groups. In another third the
+carbon rings are rigid but the C-H bonds are treated via
+constraints. In the final third, the C-H bonds are fully flexible and
+the rings are rigid. The MD cell is orthorhombic (nearly cubic) and
+the integration is NPT hoover. NPT Hoover ensemble.
+
+\subsubsection{Test Case 21: Aluminium metal with EAM potential}
+This case presents an example of the use of the EAM potential for
+metals, in this case aluminium. The system is 256 atoms and runs under
+a berendsen NPT enemble.
+
+\subsubsection{Test Case 22: Copper metal with EAM potential}
+Another example of a metal with an EAM potential. 256 copper atoms
+under a Berendsen NPT ensemble.
+
+\subsubsection{Test Case 23: Copper-Gold (3/1) alloy with Gupta
+potential} 
+This is an example of the analytical Gupta potential
+applied to a copper-gold alloy with a 3/1 Cu/Au ratio. The system
+consists of 256 atoms in total running under the NVE ensemble.
+
+\subsubsection{Test Case 24: Iron metal with Finnis Sinclair
+potential}
+In this example the analytical Finnis-Sinclair potential is applied to
+iron. The system consists of 250 iron atoms and runs under a Berendsen
+NPT ensemble.
+
+\subsubsection{Test Case 25: Nickel-Aluminium (1/1) alloy with EAM
+potential}
+Another example of an alloy using the EAM potential. This is a
+Nickel-Aluminium alloy in the 1/1 ratio. The NVE ensemble is used and
+the system has 432 atoms.
+
+\subsubsection{Test Case 26: Nickel metal with EAM potential}
+Another EAM simulation of a metal. 256 Nickel atoms under the
+Berendsen NPT ensemble.
+
+\subsubsection{Test Case 27: Calcite}
+NVE simulation of 420 molecules (2100 atoms) of calcium carbonate in
+the calcite crystal structure. The carbonate anion is handled as a
+flexible unit with Morse potential bonds and harmonic bond angles. NVE
+ensemble.
+
+\subsubsection{Test Case 28: Optimisation of Ice VII structure}
+432 SPC water molecules are arranged in a thermally excited Ice VII
+structure and the congugate gradient method is used to optimise the
+structure to recover the perfect crystal form. Both rigid body (RB)
+and constraint bond (CB) models are used to define the water molecule
+structure. The optimisation proceeds to zero force convergence.
+
+\subsubsection{Test Case 29: Programmed minimisation of Ice VII
+structure}
+This test is a repeat of Test Case 28, except that the structural
+optimisation proceeds via a programmed minimisation involving
+alternating periods of molecular dynamics and conjugate gradient
+minimisation. Once again both rigid body (RB) and constraint bond (CB)
+models are used to define the water molecule structure and conjugate
+gradient optimisation proceeds to zero force convergence.
+
+\subsubsection{Test Case 30: Zero Kelvin structure optimisation of
+DNA} 
+The DNA structure of Test Case 10 (1260 atoms) is here placed in
+a vacuum and a zero Kelvin optimisation is applied to reduce the
+overall system energy. The smoothed particle mesh method is used to
+handle the electrostatics.
+
+\subsubsection{Test Case 31: Linear molecule fluid}
+NPT Hoover simulation of a fluid consisting of 675 linear molecules
+(parameters approximate a polyacetylene chain). A 6 site rigid body
+is used to represent the molecules. 4050 atoms. NPT ensemble.
+
+\subsubsection{Test Case 32: TAD Simulation of Diffusion in Solid Argon}
+The TAD method is applied to Lennard Jones argon. A crystal of 255 argon 
+atoms (FCC lattice plus one vacancy) is simulated in the NVE ensemble.
+
+\subsubsection{Test Case 33: BPD Simulation of Diffusion in Solid Sodium Chloride}
+Bias potential dynamics is applied to a crystal of sodium chloride with the
+rocksalt structure. NVE ensemble. 998 ions are present and two vacancies in a
+neutral structure. BPD is used to investigate the diffusional hops and
+determine the activation energies.
+
+\subsubsection{Test Case 34: Energy Decomposition in Liquid DMSO}
+The energy decomposition (or solvation energy) facility is used to provide a
+breakdown of the molecular configuration energy terms occuring in liquid
+dimethyl sulfoxide (DMSO). The basic ensemble is obtained from Berendsen's NVT
+algorithm. The DMSO molecule has flexible angles but rigid (constraint) bonds.
+512 molecules are present in the system. Reaction field electrostatics are used.
+
+\subsubsection{Test Case 35: Free Energy Difference of DMSO/DMSO* in DMSO Solvent}
+This simulation represents a single point in a thermodynamic integration
+procedure to determine the free energy difference between an excited DMSO
+molecule (labelled DMSO*) and the groundstate DMSO molecule. The simulation
+corresponds to a mixed Hamiltonian system of 512 DMSO molecules (502
+representing the solvent, 10 representing the ground state) and 10 DMSO*
+excited molecules. The mixing uses the error function method with
+$\lambda=0.25$. The basic ensemble is provided by the Hoover NVT algorithm.
+The electrostatic interactions are handled by the reaction field method.
+
+\subsubsection{Test Case 36. Calculation of Solvent Induced Spectral Shift}
+In this simulation 512 DMSO molecules are simulated in the Hoover NVT ensemble
+and at intervals 10 DMSO molecules are substituted by DMSO* molecules in the
+same configuration in order to determine the instantaneous solvation energy of
+the DMSO*. The simulation immediately reverts back to the groundstate DMSO to
+continue. The electrostatic interactions are handled by the reaction field method.
+
+\subsubsection{Test Case 37. Calculation of Solvent Relaxation following
+  Spectral Excitation}
+This is a Hoover NVT simulation of 512 DMSO molecules in which, after a fixed
+interval, 10 DMSO molecules are replaced by DMSO* and the subsequent
+simulation records the energetic response of the solvent to the excitation.
+After another interval, the reverse switch is enacted and the DMSO* molecules
+are replaced by DMSO, to determine the relaxation after quenching.
+The electrostatic interactions are handled by the reaction field method.
+
+\subsubsection{Test Case 38. Freezing of TIP4P Water}
+This is a metadynamics simulation of the freezing of water at 180K and 1
+atmosphere pressure using a 4-centre TIP4P rigid model of the water molecule.
+The system consists of 512 water molecules and the ensemble is Hoover NPT. Two
+order parameters are used to define the structures: global potential energy
+and the Steinhardt $Q_{6}$ parameter. Control of the Gaussian convergence is
+by well-tempered dynamics.
+
+\subsubsection{Test Case 39: Calcite Nanoparticle Metadynamics}
+In this case 75 molecules of calcium carbonate in the calcite structure form a
+nanoparticle which is suspended in 863 water molecules represented by a
+flexible 3-centre TIP3P model. The temperature is 310K and pressure 1
+atmosphere maintained in a Hoover NPT ensemble. The metadynamics is controlled
+by 6 order parameters: the global potential energy and 5 Steinhardt $Q_{4}$
+parameters. Gaussian convergence is controlled by well-tempered dynamics.
+
+\subsubsection{Test Case 40: Path Integral Simulation of Neon at 20K}
+
+This system consists of 256 Neon atoms with a (periodic) system volume
+of 7084.5 $\AA^{3}$ (corresponding to a reduced density of $\rho^{*}
+\sim 0.785$) at a temperature of 20 K. Each atom is represented by a
+ring of 10 beads.  The simulation uses the gentle thermostat to handle
+thermalisation and maintain the system temperature at 20 K. A
+relatively short time step of 0.0025 ps is used, which reflects the
+difficulty of performing a stable and accurate simulation in systems
+of this kind.
+
+\subsubsection{Test Case 41: Path Integral Simulation of Water at 300K}
+
+This system is composed of 102 water molecules in a periodic system at
+a volume of 3711.28 $\AA^{3}$ ($\rho=0.82$ g/ml) at a temperature of
+300 K. Individual atoms are represented by a ring of 35 beads. The
+water molecules are constructed from three charged atoms with harmonic
+O-H bonds and a harmonic cosine valence angle potential for the H-O-H
+angle (equilibrium value 104.5$^{o}$). The van der Waals forces are
+12-6 potentials. A short time step of 0.0001 ps is used. A chain of
+three Nos\'{e}-Hoover thermostats is used in this case.
+
+\subsection{Benchmark Cases}
+
+
+These represent rather larger test cases for \D{} that are also suitable
+for benchmarking the code on large scale computers. They have been
+selected to show fairly the the capabilities and limitations of the
+code.
+
+\subsubsection{Benchmark 1}
+
+Simulation of metallic aluminium at 300K using a Sutton-Chen density
+dependent potential. The system is comprised of 19652 identical atoms.
+The simulation runs on 16 to 512 processors only. 
+
+\subsubsection{Benchmark 2}
+
+Simulation of a 15-peptide in 1247 water molecules. This was designed
+as an AMBER comparison. The system consists of 3993 atoms in all and
+runs on 8-512 processors. It uses neutral group electrostatics and
+rigid bond constraints and is one of the smallest benchmarks in the
+set.
+
+\subsubsection{Benchmark 3}
+
+Simulation of the enzyme transferrin in 8102 water molecules. The
+simulation makes use of neutral group electrostatics and rigid bond
+constraints.  The system is 27539 atoms and runs on 8-512 processors.
+
+\subsubsection{Benchmark 4}
+
+Simulation of a sodium chloride melt with Ewald sum electrostatics and
+a multiple timestep algorithm to enhance performance. The system is
+comprised of 27000 atoms and runs on 8-512 processors.
+
+\subsubsection{Benchmark 5}
+
+Simulation of a sodium-potassium disilicate glass. Uses Ewald sum
+electrostatics, a multiple timestep algorithm and a three-body valence
+angle potentials to support the silicate structure. It also using
+tabluated two-body potentials stored in the file TABLE. The system is
+comprised of 8640 atoms and runs on 16-512 processors.
+
+\subsubsection{Benchmark 6}
+
+Simulation of a potassium-valinomycin complex in 1223 water molecules
+using an adapted AMBER forcefield and truncated octahedral periodic
+boundary conditions. The system size is 3838 atoms and runs on 16-512
+processors.
+
+\subsubsection{Benchmark 7}
+
+Simulation of gramicidin A molecule in 4012 water molecules using
+neutral group electrostatics. The system is comprised of 12390 atoms
+and runs on 8-512 processors. This example was provided by Lewis
+Whitehead at the University of Southampton.
+
+\subsubsection{Benchmark 8}
+
+Simulation of an isolated magnesium oxide microcrystal comprised of
+5416 atoms originally in the shape of a truncated octahedron. Uses
+full coulombic potential. Runs on 16-512 processors.
+
+\subsubsection{Benchmark 9}
+
+Simulation of a model membrane with 196 41-unit membrane chains, 8
+valinomycin molecules and 3144 water molecules using an adapted AMBER
+potential, multiple timestep algorithm and Ewald sum electrostatics. 
+The system is comprised of 18866 atoms and runs on 8-512 processors.
+
+\clearpage
+
+

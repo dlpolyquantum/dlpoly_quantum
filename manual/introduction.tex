@@ -1,0 +1,431 @@
+
+\section{The DL\_POLY Classic Package}
+
+\D{} \cite{smith-96a} is a molecular simulation package designed to
+facilitate molecular dynamics simulations of macromolecules, polymers,
+ionic systems, solutions and other molecular systems on a distributed
+memory parallel computer. The package was originally written to
+support the UK project CCP5\index{CCP5} by Bill Smith and Tim Forester
+\cite{smith-87a} under grants from the Engineering and Physical
+Sciences Research Council and is the copyright of the Science and
+Technology Facilities Council (STFC).
+
+\D{} is based on a replicated data parallelism. It is suitable for simulations
+of up to 30,000 atoms on up to 100 processors.  Though it is designed for
+distributed memory parallel machines, we have taken care to ensure that it
+can, with minimum modification, be run on common workstations. Scaling up
+a simulation from a small workstation to a massively parallel machine is
+therefore a useful feature of the package.
+
+We request that our users respect the copyright of the \D{} source and not alter
+any authorship or copyright notices within. 
+
+Further information about the \D{} package can be obtained from
+the CCP5 Program Library website: \[\SOFT{}.\index{WWW}\]
+
+\section{Functionality}
+
+The following is a list of the features in \D{}.
+
+\subsection{Molecular Systems}
+
+\D{} will simulate the following molecular species:
+
+\begin{enumerate}
+\item Simple atomic systems and mixtures e.g. Ne, Ar, Kr, etc.
+\item Simple unpolarisable point ions e.g. NaCl, KCl, etc.
+\item Polarisable point ions and molecules e.g. MgO, H$_{2}$O etc.D
+\item Simple rigid molecules\index{rigid body} e.g. CCl$_{4}$, SF$_{6}$, Benzene, etc.
+\item Rigid molecular\index{rigid body} ions with point charges e.g. KNO$_{3}$,
+(NH$_{4}$)$_{2}$SO$_{4}$, etc.
+\item Polymers with rigid bonds\index{constraints!bond} e.g. C$_{n}$H$_{2n+2}$
+\item Polymers with rigid bonds\index{constraints!bond} and point charges e.g. proteins
+\item Macromolecules and biological systems
+\item Molecules with flexible bonds
+\item Silicate glasses and zeolites
+\item Simple metals and alloys e.g. Al, Ni, Cu etc.
+\item Covalent systems e.g. C, Si, Ge, SiC, SiGe etc.
+\end{enumerate}
+
+In addition, since version 1.10, \DD{} can perform a path integral
+molecular dynamics (PIMD) simulation of atomistic systems and systems
+composed of flexible molecules.
+
+\subsection{The \D{} Force Field\index{force field}}
+
+The \D{} force field\index{force field}\index{force field!DL\_POLY}
+includes the following features: \index{potential!electrostatic}
+
+\begin{enumerate}
+\item All common forms of non-bonded\index{potential!nonbonded} atom-atom potential;
+\item Atom-atom (site-site) Coulombic\index{potential!electrostatic} potentials;
+\item Valence angle\index{potential!valence angle} potentials;
+\item Dihedral\index{potential!dihedral} angle potentials;
+\item Inversion\index{potential!inversion} potentials;
+\item Improper dihedral\index{potential!improper dihedral} angle potentials;
+\item 3-body\index{potential!three-body} valence angle\index{potential!valence angle} and hydrogen bond\index{potential!bond} potentials;
+\item 4-body\index{potential!four-body} inversion\index{potential!inversion} potentials;
+\item Finnis-Sinclair and embedded atom type density dependent potentials\index{potential!metal} (for metals) \cite{finnis-84a,johnson-89a}.
+\item The Tersoff density dependent potential for covalent systems \cite{tersoff-89a}.
+\end{enumerate}
+
+The parameters describing many of these these potentials may be
+obtained, for example, from the GROMOS\index{force
+  field!GROMOS}\index{GROMOS} \cite{gunsteren-87a},
+Dreiding\index{force field!Dreiding} \cite{mayo-90a} or
+AMBER\index{force field!AMBER}\index{AMBER} \cite{weiner-86a}
+force field, which share functional forms.
+
+Note that \D{} does not have its own \index{force field} force
+field. However, the force fields mentioned above can be adapted for
+\D{} using the program \DLF{}, which was developed at Daresbury
+Laboratory by Chin Yong, specifically for constructing \DD{}
+compatible force field files. \DLF{} can be found via the CCP5 Program
+Library website \SOFT{}. Otherwise adaptation by hand is possible for
+simple systems.
+
+\subsection{Boundary Conditions}
+
+\D{} will accommodate the following boundary conditions\index{boundary conditions}:
+
+\begin{enumerate}
+\item None e.g. isolated polymer in space.
+\item Cubic periodic boundaries\index{boundary conditions}.
+\item Orthorhombic periodic boundaries.
+\item Parallelepiped periodic boundaries.
+\item Truncated octahedral periodic boundaries.
+\item Rhombic dodecahedral periodic boundaries.
+\item Slab (x,y periodic, z nonperiodic).
+\item Hexagonal prism periodic boundaries.
+\end{enumerate}
+
+These are describe in detail in Appendix \ref{A5}.
+
+\subsection{The Java Graphical User Interface}
+\index{Graphical User Interface}
+
+\D{} has a Graphical User Interface (GUI) written specifically for the package
+in the Java programming language from Sun microsystems.  The Java programming
+environment is free and it is particularly suitable for building graphical
+user interfaces. An attractive aspect of java is the portability of the
+compiled GUI, which may be run without recompiling on any Java supported
+machine. The GUI is an integral component of the \D{} package and is available
+under the same terms. (See \cite{smith-gui}.)
+
+Other graphics packages are suitable for use with \D. In particular
+VMD \cite{VMD}\index{VMD} and Aten \cite{aten} \index{Aten} are
+recommended. VMD is particularly good for visualizing \DD{} HISTORY
+files and Aten is useful for constructing systems for simulation.
+
+\subsection{Algorithms\index{algorithm}}
+
+\subsubsection{Parallel Algorithms\index{parallelisation}}
+
+\D{} exclusively employs the {\bf Replicated
+  Data}\index{parallelisation!Replicated Data} parallelisation strategy
+\cite{smith-94a,smith-94b} (see section \ref{parallelisation}).
+
+\subsubsection{Molecular Dynamics Algorithms}
+
+The \D{} MD algorithms\index{algorithm} are optionally available in the
+form of the Verlet Leapfrog\index{algorithm!Verlet leapfrog} or the
+Velocity Verlet\index{algorithm!velocity Verlet} integration
+algorithms\index{algorithm} \cite{allen-89a}.
+
+In the leapfrog scheme a parallel version of the SHAKE
+algorithm\index{algorithm!SHAKE} \cite{ryckaert-77a,smith-94b} is used
+for bond constraints\index{constraints!bond} and a similar adaptation
+of the RATTLE\index{algorithm!RATTLE} algorithm \cite{andersen-83a} is
+implmented in the velocity Verlet scheme.
+
+Rigid body rotational motion \index{rigid body} is handled under the
+leapfrog scheme with Fincham's implicit quaternion\index{quaternions}
+algorithm\index{algorithm!FIQA} (FIQA) \cite{fincham-92a}.  For
+velocity Verlet integration of rigid bodies \D{} uses the `NOSQUISH'
+algorithm of Miller {\em et al} \index{algorithm!NOSQUISH} \cite{miller-02a}.
+
+Rigid molecular species linked by rigid bonds\index{rigid body} are
+handled with an algorithm of our own devising, called the QSHAKE
+algorithm\index{algorithm!QSHAKE} \cite{forester-96a} which has been
+adapted for both leapfrog and velocity Verlet schemes.
+
+NVE, NVT, NPT and N\mat{\sigma}T ensembles\index{ensemble} are
+available, with a selection of thermostats\index{thermostat} and
+barostats\index{barostat}. The velocity Verlet versions are based on
+the reversible integrators of Martyna {\em et al} \cite{martyna-96a}. 
+
+The NVT algorithms in \D{} are those of Evans\index{ensemble!Evans
+NVT} \cite{evans-84a}, Berendsen\index{ensemble!Berendsen NVT}
+\cite{berendsen-84a}; and Hoover\index{ensemble!Hoover NVT}
+\cite{hoover-85a}. The NPT algorithms are those of
+Berendsen\index{ensemble!Berendsen NPT} \cite{berendsen-84a} and
+Hoover\index{ensemble!Hoover NPT} \cite{hoover-85a} and the N$\sigma$T
+algorithms are those of Berendsen\index{ensemble!Berendsen N$\sigma$T}
+\cite{berendsen-84a} and Hoover\index{ensemble!Hoover N$\sigma$T}
+\cite{hoover-85a}.
+
+The full range of MD algorithms\index{algorithm} available in \D{} is
+described in section \ref{integration}.
+
+\subsubsection{Structure Relaxation Algorithms}
+
+\D{} has a selection of structure relaxation methods available. These 
+are useful to improve the starting structure of a molecular dynamics 
+simulation. The algorithms available are:
+
+\begin{enumerate}
+\item `Zero' temperature molecular dynamics (sometimes called damped molecular dynamics)\index{minimisation!zero temperature};
+\item Conjugate gradients minimisation\index{minimisation!conjugate gradients};
+\item `Programmed' energy minimisation, involving both molecular dynamics and conjugate gradients \index{minimisation!programmed}.
+\end{enumerate}
+
+Starting structure minimisation is described in section \ref{minimisation}.
+
+\section{Programming Style}
+
+The programming style of \D{} is intended to be as uniform as
+possible. The following stylistic rules apply throughout. Potential
+contributors of code are requested to note the stylistic convention.
+
+\subsection{Programming Language}
+
+\D{} is written exclusively in FORTRAN 90\index{FORTRAN 90}. Use is made
+of F90 Modules. Explicit type declaration is used throughout.
+
+\subsection{Memory Management}
+
+In \D{}, the major array dimensions are calculated at
+the start of execution and the associated arrays created through the
+dynamic array allocation features of FORTRAN 90\index{FORTRAN 90}.
+
+\subsection{Target Computers}
+
+\D{} is intended for distributed memory parallel computers.
+However, versions of the program for serial computers are easily
+produced. To facilitate this all machine specific calls are located in
+dedicated FORTRAN\index{FORTRAN 90} routines, to permit substitution
+by appropriate alternatives.
+
+\D{} will run on a wide selection of computers. This includes most single
+processor workstations for which it requires a FORTRAN 90 compiler and
+(preferably) a UNIX environment. It has also been compiled for a Windows PC
+using both the GFORTRAN and G95 FORTRAN compiler augmented by the CygWin UNIX
+shell.  The Message Passing Interface (MPI) software is essential for parallel
+execution.
+
+\subsection{Version Control System (CVS)}
+
+\D{} was developed with the aid of the CVS\index{CVS} version control
+system. We strongly recommend that users of \D{} adopt this (or a
+similar) system for local development of the \D{} code, particularly
+where several users access the same source code. References to
+suitable software can be found on the internet.
+
+\subsection{Required Program Libraries}
+
+\D{} is, for the most part, self contained and does not require access
+to additional program libraries. The exception is the MPI software
+library required for parallel execution.  
+
+Users requiring the Smoothed Particle Mesh Ewald (SPME)
+\index{Ewald!SPME} method may prefer to use
+a proprietary 3D FFT other than the one ({\sc dlpfft3}) supplied with
+the package for optimal performance. There are comments in the source
+code which provide guidance for applications on Cray and IBM
+computers, which use the routines {\sc ccfft3d} and {\sc dcft3}
+respectively. Similarly users will find comments for the public domain
+FFT routine {\sc fftwnd\_fft}.
+
+\subsection{Internal Documentation}
+
+All subroutines are supplied with a header block of
+FORTRAN\index{FORTRAN 90} COMMENT
+records giving:
+
+\begin{enumerate}
+\item The name of the author and/or modifying author
+\item The version number or date of production
+\item A brief description of the function of the subroutine
+\item A copyright statement
+\end{enumerate}
+
+Elsewhere FORTRAN\index{FORTRAN 90} COMMENT cards are used liberally.
+
+\subsection{Subroutine/Function Calling Sequences}
+
+The variables in the subroutine arguments are specified in the order:
+
+\begin{enumerate}
+\item logical and logical arrays
+\item character and character arrays
+\item integer
+\item real and complex
+\item integer arrays
+\item real and complex arrays
+\end{enumerate}
+
+This is admittedly arbitrary, but it really does help with error detection.
+
+\subsection{FORTRAN Parameters}
+
+All global parameters defined by the FORTRAN\index{FORTRAN 90}
+parameter statements are specified in the module: {\sc
+setup\_module}. All parameters specified in {\sc setup\_module}
+are described by one or more comment cards.
+
+\subsection{Arithmetic Precision}
+
+All real variables and parameters are specified in 64-bit precision
+(i.e real*8).
+
+\subsection{Units}
+\label{units}
+Internally all \D{} subroutines and functions assume the use of the
+following defined {\em molecular units}\index{units!DL\_POLY}:
+
+\begin{enumerate}
+
+\item The unit of time ($t_{o}$) is $1\times 10^{-12}$ seconds (i.e. picoseconds).
+\item The unit of length ($\ell_{o}$) is $1\times 10^{-10}$ metres
+(i.e. \AA ngstroms).
+\item  The unit of mass ($m_{o}$) is $1.6605402\times 10^{-27}$
+kilograms (i.e. atomic mass units).
+\item The unit of charge ($q_{o}$) is $1.60217733\times 10^{-19}$
+coulombs (i.e. unit of proton charge).
+\item The unit of energy ($E_{o}=m_{o}(\ell_{o}/t_{o})^{2}$) is 
+$1.6605402\times 10^{-23}$~Joules (10~J~mol$^{-1}$).
+\item The unit of pressure\index{units!pressure} (${\cal P}_{o}=E_{o}\ell_{o}^{-3}$) is 
+$1.6605402\times 10^{7}$~Pascal ($163.882576$~atm).
+\item Planck's constant ($\hbar$) which is $6.350780719\times E_{o}t_{o}$.
+\end{enumerate}
+
+\noindent In addition the following conversion factors are used:
+
+\noindent The coulombic\index{potential!electrostatic} conversion factor ($\gamma_{o}$) is:
+\[\gamma_{o}=\frac{1}{E_{o}} \left [
+\frac{q_{o}^{2}}{4\pi\epsilon_{o}\ell_{o}}\right ]= 138935.4835 \]
+such that:
+\[U_{MKS}=E_{o}\gamma_{o}U_{Internal}\]
+Where $U$ represents the configuration energy.
+
+\noindent The Boltzmann factor ($k_{B}$) is $0.831451115~E_{o}K^{-1}$,
+such that:
+\[T=E_{kin}/k_{B}\]
+represents the conversion from kinetic energy (in internal units) to
+temperature (in Kelvin).
+
+Note: In the \D{} CONTROL and OUTPUT files, the
+pressure\index{units!pressure} is given in units of kilo-atmospheres
+(k-atm) at all times. The unit of energy is either \D{} units specified above,
+or in other units specified by the user at run time. The default is
+DL\_POLY units.
+
+\subsection{Error Messages}
+
+All errors detected by \D{} during run time initiate a call
+to the subroutine {\sc error}, which prints an error message in the
+standard output file and terminates the program.  All
+terminations of the program are global (i.e. every node of the
+parallel computer will be informed of the termination condition and
+stop executing.)
+
+In addition to terminal error messages, \D{} will sometimes
+print warning messages. These indicate that the code has detected
+something that is unusual or inconsistent. The detection is non-fatal,
+but the user should make sure that the warning does represent a
+harmless condition.
+
+More on error handling can be found in section (\ref{errorprocess}).
+
+\section{The \D{} Directory Structure}
+\label{directory}
+
+The entire \D{} package is stored in a Unix directory structure.  The
+topmost directory is named {\em dl\_poly\_class}.
+Beneath this directory are several sub-directories:
+\begin{tabbing}
+XXXXXXXXXXXXXXX\=XXXXXXXX\= \kill
+sub-directory\> ~ \> contents \\
+\> \> \\
+{\em source} \> primary subroutines for the \D{} package\index{sub-directory!source}\\
+{\em utility} \> subroutines, programs and example data for all utilities\index{sub-directory!utility} \\
+{\em data} \> example input and output files for \D{} \index{sub-directory!data}\\
+{\em execute} \> the \D{} run-time directory \index{sub-directory!execute}\\
+{\em build} \> makefiles to assemble and compile \D{} programs\index{sub-directory!build} \\
+{\em java} \> directory of Java and FORTRAN routines for the Java GUI \index{sub-directory!java}\\
+\end{tabbing}
+
+A more detailed description of each sub-directory follows.
+
+\subsection{The {\em source} Sub-directory}
+
+In this sub-directory all the essential source code for \D{}, excluding the
+utility software. The modules are assembled at compile time using an
+appropriate makefile.
+
+\subsection{The {\em utility} Sub-directory}
+
+This sub-directory stores all the utility programs in \D.  Users who devise
+their own utilities are advised to store them in the {\em utility}
+sub-directory.
+
+\subsection{The {\em data} Sub-directory}
+
+This sub-directory contains examples of input and output files for
+testing the released version of \D. The examples of input data
+are copied into the {\em execute} sub-directory when a program is being
+tested. The test cases are documented in chapter \ref{data}.
+
+\subsection{The {\em execute} Sub-directory}
+
+In the supplied version of \D{}, this sub-directory contains only
+a few macros for copying and storing data from and to the {\em data}
+sub-directory and for submitting programs for execution. (These are
+decribed in section \ref{macros}.) However when
+a \D{} program is assembled using its makefile, it will be placed
+in this sub-directory and will subsequently be executed from here. The
+output from the job will also appear here, so users will find it
+convenient to use this sub-directory if they wish to use \D{} as
+intended. (The experienced user is not absolutely required to use
+\D{} this way however.)
+
+\subsection{The {\em build} Sub-directory}
+
+This sub-directory contains the standard makefiles for the creation
+(i.e. compilation and linking) of the \D{} simulation programs.
+The makefiles supplied select the appropriate subroutines from the
+{\em source} sub-directory and deposit the executable program in the
+{\em execute} directory. The user is advised to copy the appropriate
+makefile into the {\em source} directory, in case any modifications are
+required. The copy in the {\em build} sub-directory will then serve as a
+backup. 
+
+\subsection{The {\em java} Sub-directory}
+
+The \D{} Java Graphical User Interface (GUI)\index{Graphical User
+  Interface} is based on the Java language developed by Sun.  The Java
+source code for this GUI is to be found in this sub-directory togther
+with a java executable GUI.jar which can be run immediately if a Java
+runner is available on your system.
+
+\[java -jar GUI.jar \]
+
+Otherwise the source files are complete and sufficient to create a
+working GUI, provided the user has a java compiler installed (or the
+Java Development Kit, 1.4 or above), both of which are available free
+from \[\href{http://www.oracle.com}{http://www.oracle.com}\] 
+The GUI, once compiled, may be executed on any machine where Java is installed.
+(See \cite{smith-gui}.)
+
+\section{Obtaining the Source Code}
+
+\index{FORGE} \D{} source code and the associated test data is available from
+CCPForge at \[ \FORGE. \]
+
+
+\section{Other Information}
+
+The CCP5 Program Library website: \[\SOFT{} \index{WWW}\] provides
+information on other Daresbury Laboratory programs related to \DD{}.
+
+\clearpage

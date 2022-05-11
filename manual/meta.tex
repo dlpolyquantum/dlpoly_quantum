@@ -1,0 +1,509 @@
+\section{Overview}
+\index{metadynamics}
+
+Metadynamics \cite{laio-02a,quigley-09a} is a method for studying the
+thermodynamics of activated processes, for which purpose it accelerates the
+time scale for structural changes to occur and, at the same time, accumulates
+data describing the free energy surface, from which the free energy of the the
+structural transition may be obtained. The specific implementation within \D{}
+uses this method in the context of transitions to/from crystalline phases.
+Phase transitions, for example from the liquid to the solid state, frequently
+exhibit {\em hysteresis} such that one state persists after it has become
+thermodynamically unstable. This is due to the existence of a free energy
+barrier between the states, which inhibits the transition. Metadynamics
+provides a means to overcome the free energy barrier and facilitate the phase
+transition on a timescale accessible by molecular dynamics simulation.
+
+Metadynamics was originally devised by Laio and Parrinello
+\cite{laio-02a} and the implementation in \D{} is based on the methodology
+described by Quigley and Rodger \cite{quigley-09a}.
+The metadynamics routines in \D{} were originally written by David Quigley and
+Mark Rodger at the University of Warwick and incorporated into the package by
+W. Smith.  
+
+Note that it is intended that this facility be used to study phase transitions
+and there is an accompanying expectation that such studies will be undertaken
+using either an NVT, NPT or N$\sigma$T ensemble. Note also that when used
+together with shell model electrostatics the metadynamics routines revert
+to velocity Verlet integration .
+
+\section{Theory of Metadynamics}
+\index{metadynamics!theory of}
+\label{metadtheory}
+
+In metadynamics the Hamiltonian that defines the dynamics of an $N$-particle
+system is augmented by a {\em time dependent} bias potential which is a function
+of appropriate order parameters\footnote{The term {\em collective variable}
+  may be used as an alternative to {\em order parameter}. } that characterise
+the structure of the system:
+\begin{equation}
+H[\vek{r}^{N},t]=\sum_{i=1}^{N}\frac{p_{i}}{2m_{i}} + U(\vek{r}^{N})+ 
+V[\vek{s}^{M}(\vek{r}^{N}),t].\label{metah}
+\end{equation}
+In this equation $U(\vek{r}^{N})$ is the usual potential energy function
+describing the interactions between, and within, the molecules. $p_{i}$ is the
+momentum of the $i'th$ atom and $m_{i}$ its mass. The novel term
+$V[\vek{s}(\vek{r}^{N}),t]$ is the time dependent bias potential, which is a
+function of a vector $\vek{s}^{M}$ that is an ordered set of $M$ order
+parameters, each of which is defined by the instantaneous positions
+$\vek{r}^{N}$ of the atoms in system. The bias potential is time dependent in
+the sense that it can be `grown' by adding, at periodic intervals of time
+$\tau_{G}$, a Gaussian term of weight $w$ and width $\delta h$:
+\begin{equation}
+\index{metadynamics!Gaussian potential}
+V[\vek{s}^{M}(\vek{r}^{N}),t]=w\sum_{k=1}^{N_{G}}
+exp \left [\frac{-|\vek{s}^{M}(k\tau_{G})-\vek{s}^{M}(t)|^{2}}
+{2\delta h^{2}} \right ], \label{depgauss}
+\end{equation}
+where $k$ runs over all previously deposited Gaussians and
+$N_{G}=int(t/\tau_{G})$. 
+The force on each atom $\vek{f}_{i}$ derived from the Hamiltonian
+(\ref{metah}) is given by
+\begin{equation}
+\vek{f}_{i}=-\vek{\nabla}_{i} U(\vek{r}^{N}) - \sum_{j=1}^{M}
+\frac{\partial V}{\partial s_{j}}\vek{\nabla}_{i} s_{j}(\vek{r}^{N})
+\end{equation}
+If the deposition rate $w/\tau_{G}$ is slow enough the motion of the order
+parameters $\vek{s}^{M}$ is adiabatically separated from the motion of the
+atomic system. After a sufficiently long simulation, the bias potential
+cancels out or `fills' the free energy landscape of the potential
+$U(\vek{r}^{N})$ and permits an accelerated dynamics. Meanwhile the bias
+potential becomes a measure of the free energy surface i.e.
+\begin{equation}
+F_{G}(\vek{s}^{M})=-\frac{lim}{t \rightarrow \infty}
+V[\vek{s}^{M}(\vek{r}^{N}),t] \label{metafree}
+\end{equation}
+The accuracy of this estimation of the free energy surface is dependent on the
+deposition rate and the effective diffusion constant of the order
+parameters. Typically the error is of order $w$, the Gaussian weight.
+A discussion of these issues is given by Laio {\em et al} \cite{laio-05a}.
+and Quigley and Rodger \cite{quigley-09a}.
+
+The importance of using order parameters in the Hamiltonian (\ref{metah}) is
+that they are a direct measure of the structure of a particular phase.
+Increasing the bias potential therefore has the effect of destabilising phases
+that are characterised by these parameters, forcing the simulation to move to
+alternative structures with lower free energy. In general several different
+order parameters can be used at the same time, to improve the control of the
+selectivity of the various phases and the pathways between them. However, this
+must be weighed against the additional computational cost, which grows
+exponentially with the number of order parameters.
+
+Quigley and Rodger have described a protocol for deciding which order
+parameters to use in \cite{quigley-09a}. Firstly a set of simulations of the
+disordered state and any accessible crystalline polymorph are performed and
+the equilibrium distributions for the candidate order parameters obtained (see
+section \ref{metadextras}). Any sets of parameters for which the distributions
+overlap are discarded until the sets remaining describe the known states with
+minimum ambiguity. This ensures that the realisable structures are distinct in
+the collective space of the order parameters. However this approach does not
+guarantee that pathways between states will match those that occur in the
+unbiased system, though it does set an upper bound for the corresponding free
+energy barrier. An alternative method devised by Peters and Trout
+offers a better description of pathways \cite{peters-06a}.
+
+\section{Order Parameters}
+\index{metadynamics!order parameters}
+\index{metadynamics!collective variables|see{hyperdynamics, order parameters}}
+
+The order parameters available in \D{} are as follows:
+\begin{enumerate}
+\item Potential energy \cite{donadio-05a};
+\item The Q4 and Q6 parameters of Steinhardt {\em et al} \cite{steinhardt-83a};
+\item The $\zeta$ tetrahedral parameter of Chau and Hardwick \cite{chau-98a}; 
+\end{enumerate}
+These order parameters are described below.
+
+\subsection{Potential Energy as an Order Parameter}
+\index{metadynamics!potential energy}
+\index{metadynamics!order parameters}
+The use of potential energy as an order parameter was pioneered by Donadio
+{\em et al} \cite{donadio-05a}. It is self evident that the configuration
+energy is a well behaved function that takes on distinct values for different
+structures. It has the additional advantage that it requires no additional
+computation time, since it is normally calculated automatically during any
+molecular dynamics simulation. It is also straightforward to calculate the
+associated biasing forces and stress tensor contributions:
+\begin{eqnarray}
+\vek{f}_{i} &\rightarrow& \vek{f}_{i} (1+\frac{\partial V}{\partial U}) \\
+\vek{\vek{\sigma}} &\rightarrow& \vek{\vek{\sigma}} (1+\frac{\partial V}{\partial U})
+\end{eqnarray}
+
+In addition to using potential energy as a {\em global} parameter Quigley and
+Rodger advocate its use as a {\em local} parameter \cite{quigley-09a}, which
+pertains to a specific subset of atoms in the system - namely those that form
+the central atoms in the definitions of the Steinhardt or tetrahedral order
+parameters discussed in the following sections. This allows the use of
+potential energy in association with these order parameters. This approach has
+the advantage that it allows the user to drive structural changes in parts of
+the system that are of greatest interest and not (say) the solvent or
+substrate. In implementing this, a corresponding calculation of the local
+potential energy and stress tensor needs to be added to each DL\_POLY force
+routine. It turns out that it is not practical to do this in all of DL\_POLY's
+force routines, in particular those that determine many-body forces e.g.
+Tersoff and metal potentials do not have this capability. A similar omission
+occurs with the reciprocal space term of the Ewald sum.
+
+\subsection{Steinhardt Order Parameters}
+\index{metadynamics!Steinhardt parameters}
+\index{metadynamics!order parameters}
+The parameters of Steinhardt, Nelson and Ronchetti \cite{steinhardt-83a}
+employ spherical harmonics to describe the local order of atoms of type
+$\beta$ surrounding an atom of type $\alpha$, thus:
+\begin{equation}
+Q_{\ell}^{\alpha\beta}=\left [\frac{4\pi}{2\ell+1} \sum_{m=-\ell}^{\ell}
+\left | \frac{1}{N_{c}N_{\alpha}}\bar{Q}_{\ell m}^{\alpha\beta} \right |^{2}
+\right ]^{1/2} \label{stein1}
+\end{equation}
+where 
+\begin{equation}
+\bar{Q}_{\ell m}^{\alpha\beta}=\sum_{b=1}^{N_{b}} f_{c}(r_{b})Y_{\ell
+  m}(\theta_{b},\phi_{b}).\label{stein2}
+\end{equation}
+The summation in equation (\ref{stein2}) runs over all $N_{b}$ atoms of type
+$\beta$ within a prescribed cutoff surrounding an atom of type $\alpha$ and
+$r_{b}$ represents the scalar distance between the $\alpha$ and $\beta$ atoms.
+The function $f_{c}(r_{b})$ is a switching function that sets the cutoff range
+at the required separation in a continuous (and therefore differentiable)
+manner. It has the form:
+\begin{equation}
+f_{c}(r) = \left\{ \begin{array} {l@{\qquad:\qquad}l}
+1 & r \le r_{1} \\
+\frac{1}{2} \left \{\cos \left
+    [\frac{\pi~(r-r_{1})}{(r_{2}-r_{1})}\right]+1\right \} & r_{1} < r \le r_{2} \\
+0 & r > r_{2}
+\end{array} \right.\label{stein3}
+\end{equation}
+The parameters $r_{1}$ and $r_{2}$ define a range over which the $\beta$ atoms
+gradually cease to count towards the overall sum.  Note that the numbers
+$N_{c}$ and $N_{b}$ in the above formulas are formally expected to be the same
+in a perfect crystal.  However, while $N_{c}$ remains fixed, $N_{b}$ may
+fluctuate according to circumstance. (In fact the switching function replaces
+the strict cut off in the original definition by Steinhardt {\em et al} in
+which $N_{c}$ would be equivalent to $\sum_{b=1}^{N_{b}}f_{c}(r_{b})$ rather
+than a constant.)  Quigley and Rodger also note that order parameter is not
+scale invariant between systems of different numbers of atoms
+\cite{quigley-09a}, however this does not matter for simulation where the
+numbers are fixed.  The
+spherical harmonic parameter $\ell$ is confined to the values $4$ and $6$ in
+the \D{} implementation, giving the order parameters $Q_{4}^{\alpha\beta}$ and
+$Q_{6}^{\alpha\beta}$.
+
+The forces arising from the Steinhardt parameters are given by:
+\begin{eqnarray}
+\vek{f}_{ij}&=&-\hat{r}_{ij}\frac{\partial V}{\partial Q_{\ell}^{\alpha\beta}}
+\frac{1}{Q_{\ell}^{\alpha\beta}}\frac{4\pi}{2\ell+1}\left
+  (\frac{1}{N_{c}N_{\alpha}} \right )^{2}\times \nonumber \\
+ & & \sum_{m=-\ell}^{\ell} \left \{\Re (\bar{Q}_{\ell m}^{\alpha\beta})
+\frac{d}{dr_{ij}}[f_{c}(r_{ij}) \Re (Y_{\ell m}(\theta_{ij},\phi_{ij}))]
+\right . \nonumber \\
+ & & \left . +\Im (\bar{Q}_{\ell m}^{\alpha\beta}) 
+\frac{d}{dr_{ij}}[f_{c}(r_{ij}) 
+\Im (Y_{\ell m}(\theta_{ij},\phi_{ij}))]\right \}. \label{stein4}
+\end{eqnarray}
+where $\Re$ and $\Im$ indicate the {\em Real} and {\em Imaginary} parts of
+complex quantities.
+
+The stress tensor contributions arising from these forces are given by
+\begin{equation}
+\sigma_{\alpha\beta} \rightarrow
+\sigma_{\alpha\beta}-f_{ij}^{\alpha}r_{ij}^{\beta}.
+\end{equation}
+
+\subsection{Tetrahedral Order Parameters}
+\index{metadynamics!Tetrahedral parameters} 
+\index{metadynamics!order parameters}
+The form of the tetrahedral order parameter in \D{} is that of Chau and
+Hardwick \cite{chau-98a}, which quantify the degree to which atoms
+surrounding a chosen atom are arranged tetrahedrally. When the chosen atom and
+its surrounding neighbours are of the same type ($\alpha$) the parameter is
+defined by formula
+\begin{equation}
+\zeta_{\alpha}=\frac{1}{N_{c}N_{\alpha}}\sum_{i=1}^{N_{\alpha}}
+\sum_{j\ne i}^{N_{\alpha}}\sum_{k>j}^{N_{\alpha}} 
+f_{c}(r_{ij})f_{c}(r_{ik})(cos \theta_{jik}+1/3)^{2}, \label{tetra1}
+\end{equation}
+where indices $i$, $j$ and $k$ run up to $N_{\alpha}$ atoms of type
+$\alpha$. Integer $N_{c}$ and function $f_{c}(r)$ are as for the Steinhardt
+parameters (i.e. $f_{c}$ once again replaces a fixed cut off and $N_{c}$ is a
+fixed constant). This order parameter is maximal for tetrahedral atomic
+arrangements. The atomic forces that arise from this order parameter can be
+expressed in terms of pair forces between atoms $i$ and $j$ and between $i$
+and $k$ which are given by
+\begin{eqnarray}
+\vek{f}_{ij}&=&-\frac{\partial V}{\partial \zeta_{\alpha}} \left \{
+  \frac{2}{r_{ij}}f_{c}(r_{ij})f_{c}(r_{ik})(cos \theta_{jik}+1/3)
+(\hat{r}_{ik}-\hat{r}_{ij}cos \theta_{jik}) \right . \nonumber \\
+& & +\left .(cos \theta_{jik}+1/3)^{2}
+\frac{df_{c}(r_{ij})}{dr_{ij}}f_{c}(r_{ik})\hat{r}_{ij} \right \} 
+\label{tetra2}\\
+\vek{f}_{ik}&=&-\frac{\partial V}{\partial \zeta_{\alpha}} \left \{
+  \frac{2}{r_{ik}}f_{c}(r_{ij})f_{c}(r_{ik})(cos \theta_{jik}+1/3)
+(\hat{r}_{ij}-\hat{r}_{ik}cos \theta_{jik}) \right . \nonumber \\
+& & +\left . (cos \theta_{jik}+1/3)^{2}
+\frac{df_{c}(r_{ik})}{dr_{ik}}f_{c}(r_{ij})\hat{r}_{ik} \right \}.
+\label{tetra3}
+\end{eqnarray}
+
+The stress tensor contributions can be described in terms of these forces:
+\begin{equation}
+\sigma_{\alpha\beta} \rightarrow \sigma_{\alpha\beta}
+-f_{ik}^{\alpha}r_{ik}^{\beta}-f_{ij}^{\alpha}r_{ij}^{\beta}.\label{tetra4}
+\end{equation}
+
+\subsection{Order Parameter Scaling}
+\index{metadynamics!order parameter scaling}
+\label{metascaling}
+The order parameter vector $\vek{s}^{M}$ consists of an ordered set of
+different order parameters and it is not generally the case that all of them
+return numbers of the same order of magnitude. This is particularly true for
+the potential energy. It is therefore sensible that when using the order
+parameters collectively to define the state of a system, that they should be
+scaled to give numbers of simular magnitudes. So when specifying order
+parameters to define the metadynamics \D{} allows the user to include a scale
+factor in the definition. This appears in the STEINHARDT and ZETA data files
+described in the following section.
+
+\section{Running Metadynamics Simulations}
+\index{metadynamics!running simulations}
+
+The recommended procedure for running metadynamics with \D{} is as follows.
+\begin{enumerate}
+\item Scope out the appropriate choices of order parameters for your system
+  following the method of Quigley and Rodger outlined above in section
+  (\ref{metadtheory}) and in \cite{quigley-09a}. You should use one of the
+  (equilibrated) REVCON files as the starting configuration for your
+  metadynamics study.
+\item Decide a suitable interval $\tau_{G}$ for depositing the Gaussians
+  (\ref{depgauss}) and an appropriate Gaussian height $w$ and width $\delta h$
+  to ensure accuracy for the free energy calculation. See \cite{laio-05a} and 
+  \cite{quigley-09a} for details. Along with this the user must also choose a
+  Gaussian deposition/convergence scheme (see section \ref{metadextras}).
+\item Set up the metadynamics option in the CONTROL file as follows:
+\begin{enumerate}
+\item Set the metadynamics directive:\newline {\bf metadynamics} \newline or
+  use the equivalent directive:\newline {\bf metafreeze} \newline Then
+  enter the metadynamics control variables one per record as indicated below.
+  Comment records may be inserted if the first character is the hash symbol
+  (\#) or the ampersand (\&).
+\item Set the number of order parameters to be used ({\em ncolvar}):\newline
+  {\bf ncolvar} $n$ \newline where $n$ is an integer.
+\item If Steinhardt order parameters are required, activate the option with
+  the directive: \newline {\bf lstein}
+\item If tetrahedral order parameters are required, activate the option with
+  the directive: \newline {\bf ltet}
+\item If the global potential energy order parameter is required, activate the
+  the option with the directive: \newline {\bf lglobpe}
+\item If local potential energy order parameters are required, activate the
+  option with the directive (note that global and local potential energy are
+  mutually exclusive options): \newline {\bf llocpe}
+\item Set the scale factor for the global potential energy order parameter:
+  \newline {\bf globpe\_scale} $f$ \newline where $f$ is a real number.
+\item Set the scale factor for the local potential energy order parameter:
+  \newline {\bf locpe\_scale} $f$ \newline where $f$ is a real number.
+\item Set the number of Steinhardt $Q_{4}$ parameters required:
+  \newline {\bf nq4} $n$ \newline where $n$ is an integer.
+\item Set the number of Steinhardt $Q_{6}$ parameters required:
+  \newline {\bf nq6} $n$ \newline where $n$ is an integer.
+\item Set the number of tetrahedral $\zeta$ parameters required:
+  \newline {\bf ntet} $n$ \newline where $n$ is an integer.
+\item Set the Gaussian potential deposition interval (in units of time steps): \newline
+  {\bf meta\_step\_int} $n$ \newline where $n$ is an integer.
+\item Set the height ($w$) of the Gaussian potentials (in units of $k_{B}T$,
+  where $T$ is the simulation temperature): \newline
+  {\bf ref\_W\_aug} $f$ \newline where $f$ is a real number.
+\item Set the Gaussian potential width parameter: \newline
+  {\bf h\_aug} $f$ \newline where $f$ is a real number.
+\item Set the Gaussian control key: \newline
+  {\bf hkey} $n$ \newline where $n$ is an integer. See section
+  (\ref{metadextras}) for guidance.
+\item Set the control parameter for well-tempered dynamics
+  (required when {\bf hkey} is 2): \newline 
+  {\bf wt\_Dt} $f$ \newline where $f$ is a real number.
+\item Close the metadynamics specification: \newline
+  {\bf endmet}
+\end{enumerate}
+\item Set other CONTROL file directives as follow:
+\begin{enumerate}
+\item Select the {\bf restart noscale} option if the CONFIG file was
+      pre-equilibrated, otherwise leave out the {\bf restart} keyword 
+      altogether.
+\item Set the length of the simulation required ({\bf steps}) and the 
+      equilibration period ({\bf equil}) (both in time steps). The
+      equilibration can be short or absent if the system was pre-equilibrated.
+\item You {\bf must} select one of the Nos\'{e}-Hoover NVT, NPT or
+      N$\sigma$T ensembles.  Metadynamics is only available for one of these
+      options. The program automatically defaults to velocity Verlet 
+      integration, if you use shell model electrostatics.
+\item If you wish to follow the structural changes, set the {\bf
+      trajectory} option in the CONTROL file. This will produce a HISTORY file
+      you can view or analyse later.
+\item Set the remaining CONTROL keywords as for a normal molecular dynamics
+  simulation. 
+\end{enumerate}
+\item Prepare, if required, the file STEINHARDT, which defines the 
+  control variables for the Steinhardt order parameters. The file 
+  specification is as follows.  \index{metadynamics!STEINHARDT file}
+\begin{enumerate}
+\item The file contains data for both  $Q_{4}$ and $Q_{6}$ order 
+  parameters. 
+\item The records describing the $Q_{4}$ entries appear first. There is 
+  one information record followed by $nq4$ data records. ($nq4$ is defined in
+  item 3(i) above.) No $Q_{4}$ entries appear if $nq4$ is zero. After this, 
+  the records for the  $Q_{6}$ parameters appear.  There is one information 
+  record, followed by $nq6$ data records. ($nq6$ is defined in item
+  3(j) above.) The records are free format and the content of
+  the information records is ignored by the program.
+\item Each data record (for both $Q_{4}$ and $Q_{6}$) consists of 
+  (in order)\newline
+  - The name of the atom type $\alpha$ (max. 8 characters); \newline
+  - The name of the atom type $\beta$ (max. 8 characters); \newline
+  - The control parameter $r_{1}$ for the function $f_{c}(r)$ in
+    equation (\ref{stein3}) (real); \newline
+  - The control parameter $r_{2}$ for the function $f_{c}(r)$ in
+    equation (\ref{stein3}) (real); \newline
+  - The scale factor for the order parameter (real); \newline
+  - The number $N_{c}$ of expected atoms of type $\beta$ around the $\alpha$
+  atom (integer). 
+\end{enumerate}
+\item Prepare, if required, the file ZETA, which defines the 
+  control variables for the tetrahedral order parameters. The file 
+  specification is as follows. \index{metadynamics!ZETA file}
+\begin{enumerate}
+\item The file consists of 1 information record followed by $ntet$ data 
+  records. The data records are free format and the content of the information
+  record is ignored by the program.
+\item Each data record consists of (in order)\newline
+  - The name of the atom type $\alpha$ (max. 8 characters); \newline
+  - The cutoff parameter $r_{1}$ for the function $f_{c}(r)$ (real); \newline
+  - The cutoff parameter $r_{2}$ for the function $f_{c}(r)$ (real); \newline
+  - The scale factor for the order parameter (real); \newline
+  - The number $N_{c}$ of expected atoms of type $\alpha$ around each
+    $\alpha$ atom (integer). 
+\end{enumerate}
+\item Run the metadynamics simulation. This will perform a simulation at the
+   temperature and pressure requested. When the simulation ends, proceed 
+   as follows.
+\begin{enumerate}
+\item Check the OUTPUT file. Make sure the simulation behaved sensibly and
+  terminated cleanly. If the required number of time steps has not been 
+  reached, the simulation can be restarted from the REVCON and REVIVE files
+  (renaming them as CONFIG and REVOLD for the purpose) and
+  setting the directive {\bf restart} (with no qualifier) in the CONTROL
+  file.
+\item Use the DL\_POLY Java GUI to plot the system energy and temperature
+  for the whole of the simulation and make sure no key variables misbehave.
+\item The HISTORY file, if requested, contains the trajectory of the
+  system. This may be viewed, or otherwise investigated, by appropriate viewing
+  or analysis software.
+\item The METADYNAMICS file produced by the run contains the data describing
+  the evolution of the time dependent bias potential (equation \ref{metah}).
+  \index{metadynamics!METADYNAMICS file}
+  This file consists of a series of records, the content of each is:\newline
+  - The {\em meta-step} (current time step number divided by the Gaussian 
+  deposition interval {\em meta\_step\_int}). Format (i8).\newline
+  - All {\em ncolvar} order parameters selected. Format {\em ncolvar}*(e15.6).\newline
+  - The height of the deposited Gaussian divided by $k_{b}T$. Format (e15.6).
+\end{enumerate}
+  
+\end{enumerate}
+
+\subsection{Additional Considerations}
+\label{metadextras}
+\begin{enumerate}
+\item {\bf Choosing the Gaussian convergence scheme}. \D{} offers three
+  different schemes for handling the addition of the Gaussians to the
+  bias potential. Further details on these schemes can be obtained from
+  Quigley and Rodger \cite{quigley-09a}.
+\begin{enumerate}
+\item {\bf Simple addition}. Gaussians with fixed height and width parameters 
+  are simply added to the bias
+  potential. This option is selected by setting {\bf hkey=0} in the
+  metadynamics section of the CONTROL file.
+\item {\bf Wang-Landau recursion}. Starting from a given Gaussian height a
+  histogram is accumulated with each Gaussian addition recording the visits to
+  each square of the order parameter space. Once this histogram is
+  approximately (say 80\%) flat, the Gaussian height is halved, the histogram
+  is reset to zero and then the process continues until a higher degree of
+  flatness has been achieved, and so on. The procedure is meant to 
+  ensure that the added Gaussians make progressively finer contributions as
+  convergence is approached. Set {\bf hkey=1} for this option. (Note this
+  option has been implemented only for the case where {\bf ncolvar=1}.)
+\item {\bf Well-tempered dynamics}. The well-tempered scheme uses a maximum
+  energy criterion. A threshold energy $V_{max}$ is set above the largest
+  expected energy barrier and at each step the Gaussian deposition height is
+  given by \[ w=w_{0}exp[-V_{aug}(\vek{s}^{M})/V_{max}] \] where $V_{aug}$ is
+  the current value of the bias energy. The parameters
+  $w_{0}$ and $V_{max}$ are defined by the input directives {\bf ref\_W\_aug}
+  and {\bf wt\_Dt} in the CONTROL file (see above). Set {\bf hkey=2} for
+  this option.
+\end{enumerate}
+\item {\bf Defining the switching function $f_{c}(r)$}\newline
+  The switching function is determined by the parameters $r_{1}$ and $r_{2}$
+  in formula (\ref{stein3}). These must be chosen so that $r_{2}$ absolutely
+  excludes near-neighbouring atoms that are not intended to be considered part
+  of the sum in equation (\ref{stein1}) or (\ref{tetra1}). $r_{1}$ should not
+  be so short that is sometimes does not include atoms that should be fully
+  counted. The range $r_{1}\rightarrow r_{2}$ should be set to correspond 
+  to the minimum in the appropriate pair correlation functions in the relevant
+  system states. This choice minimises spurious forces that can arise from
+  order parameters that have different ranges \cite{quigley-09a}.
+\item {\bf Using \D{} to help select appropriate order parameters}\newline
+  \index{metadynamics!order parameters}
+  Section (\ref{metadtheory}) outlined a protocol for deciding suitable order
+  parameters for a particular metadynamics study, which required the
+  construction of distribution functions for candidate order parameters. These
+  may be obtained from \D{} by perform simulations of the relevant system
+  states with the {\bf metadynamics} directive set in the CONTROL file, but
+  with the Gaussian accumulation disabled by setting the Gaussian height
+  parameter {\bf ref\_W\_aug} to zero. The resultant dynamics
+  will be {\em time independent} and the METADYNAMICS file will tabulate
+  values of the order parameters at regular intervals. It remains then to
+  construct histograms of these parameters to determine the degree of overlap
+  between them as required.
+\item {\bf Choosing order parameter scaling factors}\newline
+  The widths of the histograms for the order parameter distributions
+  described in the previous paragraph should also be used to set the 
+  appropriate order parameter scaling factors referred to in section 
+  (\ref{metascaling}).
+\item {\bf Deciding the simulation length}\newline
+  Deciding that the metadynamics simulation has been long enough
+  is a matter of judging whether the system is diffusing like a random walk in
+  the space of the order parameters i.e. that it is sampling all the
+  available parameter space. This is somewhat easier in the cases of
+  Wang-Landau recursion and well-tempered dynamics as it is indicated by the
+  parameter {\em w} (the Gaussian height) becoming relatively small. In
+  general a degree of experience in the technique is required to make a good
+  judgement. 
+\item {\bf Contra-indications}\newline
+  A useful point to note is that if a simulation does not reach a state
+  where transitions between minima occur rapidly without residual hysteresis,
+  then by implication the original choice of order parameters was poor.
+\end{enumerate}
+
+\subsection{Analysing the Metadynamics Results}
+
+Analysis of the results of a metadynamics simulation can take a number of
+forms, some of which are outlined here.
+
+\begin{enumerate}
+\item {\bf Determination of free energy} \newline The information in the
+  METADYNAMCS file is sufficient to define the system free energy surface
+  through equation \ref{metafree}. The free energy is a function of the $M$
+  order parameters in the vector $s^{M}(\vek{r}^{N})$. This information can be
+  used to determine the free energy of activation and free energy differences
+  between states in the following manner. Firstly the free energy is projected
+  down to a smaller subset of order parameters (usually about 2) by
+  integrating $exp(-F/k_{B}T)$ over the other order parameters
+  and then Boltzman-inverting. (This is an expensive operation if $M>3$). 
+  Once the free energy is mapped onto fewer dimensions the free energy 
+  barrier heights and free energy differences can be read off directly.
+\item {\bf Following the system trajectory} \newline It is often useful to
+  track the trajectory of the system in the space of the order parameters to
+  see how well the simulation is exploring that space. For this purpose is is
+  possible to plot the contents of the METADYNAMICS file graphically in a
+  selection of 2D sections. Simple graphics are generally sufficient for this
+  purpose. Alternatively, the HISTORY file may be viewed as a movie, using
+  packages such as VMD \cite{VMD} to show the transformations that occur.
+\end{enumerate}
+

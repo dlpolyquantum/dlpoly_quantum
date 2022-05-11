@@ -1,0 +1,6 @@
+The `build' Sub-directory
+
+This sub-directory stores a master copy of the DL_POLY Makefile.
+The makefile needs to be copied to the `source' sub-directory
+and DL_POLY compiled from there. You are advised to keep the copy
+in this directory as a backup.

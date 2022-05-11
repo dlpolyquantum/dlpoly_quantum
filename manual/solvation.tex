@@ -1,0 +1,643 @@
+
+\section{Overview and Background}
+\index{energy decomposition}\index{solvation energy|see{energy decomposition}}
+\index{free energy!thermodynamic integration} \index{spectroscopic excitation}
+This chapter is about the features within \D{} for studying solutions. These
+include decomposing the system configuration energy into various molecular
+components, calculating free energies by the method of thermodynamic
+integration, and calculating solvent induced spectral shifts. Despite the
+focus on solutions however, some of these features are applicable in other
+scientific areas. In particular the energy decomposition can be employed in
+any system of mixed species and the free energy feature can be used for other
+systems where a free energy difference is required.
+
+A \D{} module {\sc solvation\_module.f} has been devised for these purposes. It
+was developed in a collaboration between Daresbury Laboratory and the Institut
+Pluridisciplinaire de Recherche sur l'Environment et les Materiaux (IPREM), at
+the University of Pau. The collaborators included Ross Brown, Patrice Bordat
+and Pierre-Andre Cazade at Pau and Bill Smith at Daresbury. The bulk of the
+software development was done by Pierre-Andre Cazade and was extended and
+adaptated for general DL\_POLY distribution by Bill Smith.
+
+\section{DL\_POLY Energy Decomposition}
+\label{energy decomposition}
+\index{solvation energy}
+\subsection{Overview}
+
+In \D{} the energy decomposition capability breaks down the system configuration
+energy into its contributions from the constituent molecular types. What
+consitutes a molecule in this context is what is defined as such in the \D{}
+FIELD file (see section \ref{fieldfile}). It is not essential that all the
+atoms in the molecular definition be linked together by chemical bonds. Nor is
+it essential for all identical molecules to be declared as one molecular type.
+Groups of like molecules or individual molecules can be separated out if there
+is a compelling reason to do so. It is not however possible to split molecules
+that are linked by chemical bonds into sub-molecules for this purpose.
+
+The configuration energy decomposition available in \D{} can be summarised as
+follows.
+\begin{enumerate}
+\item For each {\bf unique} molecular type in the system ($A$, $B$, $C$ {\em
+    etc}) the program will calculate:
+\begin{itemize}
+\item the net bond energy;
+\item the net valence angle energy;
+\item the net dihedral angle energy;
+\item the net inversion angle energy; and
+\item the net atomic polarisation energy.
+\end{itemize}
+These are the so-called intramolecular interactions, while those below are
+considered to be intermolecular.
+\item For each {\bf unique pair} of molecular types in the system ($AA$, $AB$,
+  $AC$, $BB$, $BC$, $CC$ {\em etc}) the program will calculate:
+\begin{itemize}
+\item the net coulombic energy; and
+\item the net Van der Waals energy.
+\end{itemize}
+\item For each {\bf unique triplet} of molecular types in the system ($AAA$,
+  $AAB$, $AAC$, $ABB$, $ABC$, $ACC$ {\em etc}) the program will calculate:
+\begin{itemize}
+\item the net three-body angle energy.
+\end{itemize}
+\item For each {\bf unique quartet} of molecular types in the system ($AAAA$,
+  $AAAB$, $AAAC$, $AABB$, $AABC$, $AACC$ {\em etc}) the program will calculate:
+\begin{itemize}
+\item the net four-body angle energy.
+\end{itemize}
+\end{enumerate}
+These are calculated at user-specified intervals in the simulation from a
+chosen starting point and written to a data file called SOLVAT, which is
+decribed in section \ref{solvat} below.  It is not required that all the above
+different kinds of interaction are present in the same system.  The types of
+intramolecular interaction that may be defined in \D{} are described in section
+(\ref{intramolecular}). The types of intermolecular terms that can be defined
+are described in section (\ref{intermolecular}) and the Coulombic methods
+available are described in section (\ref{coulomb}).
+
+Note that all the interaction types that are classed as intermolecular above
+may occur as intramolecular interactions if the molecule concerned is defined
+as including them. Nevertheless they are counted as intermolecular terms for
+the purposes of summation by \D{}.  It should also be noted that for technical
+reasons, the program cannot supply the Coulombic decomposition if the SPME
+option (section \ref{spmesum}) is selected, but the standard Ewald option is
+valid for this purpose.  Furthermore, there is no decomposition available for
+metallic potentials (section \ref{metals}) or the Tersoff potential (section
+\ref{tersoff}), since these are many-body interactions not readily amenable to
+simple decomposition.
+
+\subsection{Invoking the DL\_POLY Energy Decomposition Option}
+
+The energy decomposition option is activated when the appropriate directive is
+inserted into the CONTROL file (section \ref{controlfile}). The directive
+may be either {\bf decompose} or {\bf solvate}, which have the same effect,
+though the user's purpose in invoking each is different. Acceptable
+abbreviations of these directives are {\bf decomp} or {\bf solva}.
+
+The simplest form of invocation is a single line entry:\newline
+\newline
+\noindent {\bf decompose} {\tt n1 n2}\newline
+\noindent or \newline
+\noindent {\bf solvate} {\tt n1 n2}\newline
+\newline
+where the number {\tt n1} specifies the time step at which \D{}  is to start
+calculating the required data, and {\tt n2} is the interval (in time steps)
+between calculations of the data.
+
+The invocation may also be made in a more informative way:\newline
+\newline
+\noindent {\bf decompose}  (or {\bf solvate}) \newline
+\noindent {\bf start} {\tt n1} \newline
+\noindent {\bf interval} {\tt n2} \newline
+\noindent {\bf enddec} (or {\bf endsol})\newline
+\newline
+in which {\bf start} and {\bf interval} specify the start time step ({\tt n1})
+and time step interval ({\tt n2}) respectively. Directives {\bf enddec} or {\bf
+endsol} close the data specification.
+
+\subsection{The SOLVAT File}
+\label{solvat}
+\index{SOLVAT file}
+
+The SOLVAT file is a file in which \D{} writes all the energy
+decomposition/solvation data. It is an appendable file and is written to at
+intervals (defined by the user) during the simulation. Restarts of \D{} will
+continue to append data to an existing SOLVAT file, so the user must be
+careful to ensure that this is what is actually wanted.
+
+Its contents are as follows.\newline\newline
+\noindent{\bf record 1} Format (80a1): The job title, as defined at the top of the
+CONTROL file. \newline\newline
+\noindent{\bf record 2} Format (40a1): Energy units as defined in the FIELD file header. \newline\newline
+\noindent{\bf record 3} Format (2i10): ({\bf natms}, {\bf mxtmls}) - the
+numbers of atoms and molecule types in system.\newline\newline
+\noindent{\bf record 4} Format (1x,11a4): Information record - labels contents
+of record 5: \newline {\bf lex lsw bnd ang dih inv shl cou vdw 3bd 4bd}.\newline\newline
+\noindent{\bf record 5} Format (11L4): {\bf lexcite}, {\bf lswitch}, {\bf
+  lcomp(1-9)}. Logical control variables, where each indicates the following:
+\newline
+{\bf lexcite} = {\tt .true.} - spectroscopic (excited state) calculation (see section \ref{excited});\newline
+{\bf lswitch} = {\tt .true.} - switching between states for solvent relaxation
+study (see section \ref{switching});\newline
+{\bf lcomp(1)} = {\tt .true.} - bond energies are present;\newline
+{\bf lcomp(2)} = {\tt .true.} - valence angle energies are present;\newline
+{\bf lcomp(3)} = {\tt .true.} - dihedral angle energies are present;\newline
+{\bf lcomp(4)} = {\tt .true.} - inversion angle energies are present;\newline
+{\bf lcomp(5)} = {\tt .true.} - atomic polarisation energies are present;\newline
+{\bf lcomp(6)} = {\tt .true.} - coulombic energies are present;\newline
+{\bf lcomp(7)} = {\tt .true.} - van der Waals energies are present;\newline
+{\bf lcomp(8)} = {\tt .true.} - 3-body energies are present;\newline
+{\bf lcomp(9)} = {\tt .true.} - 4-body energies are present;\newline
+\newline
+\noindent{\bf record 6 - end-of-file} Format (5e14.6): All subsequent records
+list the calculated data in individual blocks for each requested time step.
+Each block record may consist of any, or all, of the following data records,
+depending on the system being simulated (as indicated by {\bf record 5}).
+Note that individual data records may require more than one line of the SOLVAT
+file since only five real numbers are presented on each line.  In simulations
+where solvation induced shifts studies are being performed (i.e. where the
+control variable {\bf lexcite} is set {\tt .true.} - see section
+(\ref{SISS})), each of the data records is duplicated, thus providing data for
+the ground and excited state systems separately (see section \ref{excited}).
+In the following {\tt mxtmls} represents the number of molecule types in the
+system.\newline\newline
+\noindent{\bf block record 0}: species temperatures (mxtmls entries)\newline\newline
+\noindent{\bf block record 1}: bond energies (mxtmls entries)\newline\newline
+\noindent{\bf block record 2}: valence angle energies (mxtmls entries)\newline\newline
+\noindent{\bf block record 3}: dihedral angle energies (mxtmls entries)\newline\newline
+\noindent{\bf block record 4}: inversion angle energies (mxtmls entries)\newline\newline
+\noindent{\bf block record 5}: atomic polarisation energies (mxtmls entries)\newline\newline
+\noindent{\bf block record 6}: coulombic energies ((mxtmls(mxtmls+1))/2 entries)\newline\newline
+\noindent{\bf block record 7}: van der Waals energies ((mxtmls(mxtmls+1))/2 entries)\newline\newline
+\noindent{\bf block record 8}: 3-body energies ((mxtmls(2+mxtmls(3+mxtmls)))/6 entries)\newline\newline
+\noindent{\bf block record 9}: 4-body energies
+((mxtmls(6+mxtmls(11+mxtmls(6+mxtmls))))/24 entries)\newline\newline
+
+It should be noted that writing the 2-, 3- and 4-body energies as a linear
+stream implies a certain ordering of molecule pairs (indices i,j), triplets
+(indices i,j,k) and quartets (indices i,j,k,m). The appropriate sequence order
+can be reconstructed from simple nested loops for pair, triple or quadruple
+indices subject to the conditions: i$\ge$j for pairs; i$\ge$j$\ge$k for
+triplets; and i$\ge$j$\ge$k$\ge$m for quartets, with $i$ as the outermost
+loop index.  For example the following code
+generates the correct sequence for a quartet as variable {\tt index}.
+\begin{verbatim}
+      index=0
+      do i=1,mxtmls
+        do j=1,i
+          do k=1,j
+            do m=1,k
+               index=index+1
+            enddo
+          enddo
+        enddo
+      enddo
+\end{verbatim}
+To assist users with analysis of the SOLVAT file two utility programs are
+available in the {\em utility} directory. The program {\bf solsta.f} will
+calculate the averages and RMS deviations for all the variables in the file
+and the program {\bf soldis.f} will construct the distribution functions of
+all the variables in a form suitable for plotting.
+
+\section{Free Energy by Thermodynamic Integration}
+\label{FEbyTI}
+\index{free energy!thermodynamic integration}
+\subsection{Thermodynamic Integration}
+
+Thermodynamic Integration (TI) is a well established method for calculating
+the free energy difference between two systems defined by distinct
+Hamiltonians $H_{1}$ and $H_{2}$. A `mixed' Hamiltonian is defined with the
+aid of a mixing parameter $\lambda$, where $0\le\lambda\le 1$, as follows:
+\begin{equation}
+H_{\lambda}=(1-\lambda)H_{1}+\lambda H_{2}, \label{mixed1}
+\end{equation}
+so that when $\lambda = 0$ the Hamiltonian corresponds to system $1$ and when
+$\lambda = 1$ it corresponds to system $2$. Intermediate values $\lambda$ mix
+the two systems in different proportions. From such a Hamiltonian and the
+relationship between the free energy $F$ and the system partition function it
+is easy to show that
+\begin{equation}
+\frac{d F}{d \lambda}  = \left  <H_{2}-H_{1}\right >_{\lambda}. 
+\end{equation}
+From this it follows that if the average of the difference $(H_{2}-H_{1})$ is
+calculated from a series of simulations over a range of $\lambda$ values
+(between $0$ and $1$), it is possible to integrate this equation numerically
+and obtain the free energy difference between systems $1$ and $2$ i.e.
+\begin{equation}
+\Delta F_{12}=\int_{0}^{1}\left  <H_{2}-H_{1}\right >_{\lambda} d\lambda. \label{TI}
+\end{equation}
+Though simple in principle, there are two problems with the basic technique.
+\begin{enumerate}
+\item Firstly, if the mixed Hamiltonian requires the kinetic energy components
+  to be scaled (by either $\lambda$ or $1-\lambda$) the the equations of
+  motion become unstable when $\lambda$ approaches either 0 or 1. (This is
+  because scaling the kinetic energy components amounts to a rescaling of the
+  atomic masses, which can thus approach zero at the extremes of $\lambda$.
+  Near zero mass dynamics is not stable for normal time steps.)  Fortunately,
+  it is possible in many cases to set up the Hamiltonians $H_{1}$ and $H_{2}$
+  so that the mixed Hamiltonian does not require scaling of the kinetic energy.
+  In these cases there is no problem with the equations of motion. For the
+  awkward cases where the kinetic energy really must be scaled, \D{} has the
+  option {\bf reset\_mass}, which scales the masses as required. Ideally
+  however, this circumstance should be avoided if at all possible.
+\item Secondly, it is well known that when $\lambda$ approaches 0 or 1, the
+  average $\left <H_{2}-H_{1}\right >_{\lambda}$ in equation (\ref{TI}) is
+  subject to large statistical error. This arises because the modified
+  dynamics of the mixed Hamiltonian permits unnaturally close approaches
+  between atoms, and the configuration energy terms arising from this are
+  inevitably extremely large. Fortunately this problem can be mitigated by the
+  use of a suitable weighting function, examples of which are described in the
+  following section.
+\end{enumerate}
+As an example of how this approach maybe used, we present the calculation of the
+free energy of a solution of a solute A in a solvent S.  An appropriate choice 
+of Hamiltonians for this is
+\begin{eqnarray}
+H_{1} &=& K_{S}+K_{A}+V_{SS}+V_{AA}+V_{AS} \nonumber\\
+H_{2} &=& K_{S}+K_{A}+V_{SS}+V_{AA}
+\end{eqnarray}
+in which $K_{S}$ and $K_{A}$ are the kinetic energies of the solvent and
+solute respectively, $V_{SS}$, $V_{AA}$ and $V_{AS}$ are the interaction
+energies between solvent-solvent, solute-solute and solute-solvent molecules
+respectively. Hamiltonian $H_{1}$ contains a term ($V_{AS}$) that causes the
+solvent and solute to interact, while $H_{2}$ has no such interaction. The
+mixed  Hamiltonian in this case is
+\begin{equation}
+H_{\lambda}=K_{S}+K_{A}+V_{SS}+V_{AA}+(1-\lambda)V_{AS}. \label{mixed2}
+\end{equation}
+It will be appreciated that when $\lambda$ is 0, this Hamiltonian represents
+the solution of A in S, and when $\lambda$ is 1, it represents complete
+independence of the solute and solvent from each other. The Hamiltonian thus
+encapsulates the process of solvation. It should also be noted that there is
+no scaling of the kinetic energy in this case, so instabilities are not
+expected in the dynamics when $\lambda$ is near 0 or 1.
+
+Following the above prescription we see that in this case
+\begin{equation}
+\frac{d F}{d \lambda} = \left <V_{AS}\right >_{\lambda}. 
+\end{equation}
+and 
+\begin{equation}
+\Delta F_{12}=-\int_{0}^{1}\left  <V_{AS}\right >_{\lambda} d\lambda. \label{TI2}
+\end{equation}
+This  equation represents the free energy difference between the free solvent
+and solute and the solution. The quantity $-\Delta F_{12}$ is thus the free
+energy of solution.
+
+\subsection{Nonlinear Mixing}
+
+As mentioned above, the linear mixing of Hamiltonians represented by
+equations (\ref{mixed1}) and (\ref{mixed2}) gives rise to poor
+statistical convergence of the required averages when $\lambda$ approaches
+either $0$ or $1$.  One way to reduce the effect this has on the quality of
+the free energy calculation is to introduce weighting into the averaging
+process, so that poor convergence of the averages at the extremes of $\lambda$
+is of less importance.
+
+This is done by defining a more general form for the mixing as follows
+\begin{equation}
+H_{\lambda}=(1-f(\lambda))H_{1}+f(\lambda) H_{2}, \label{mixed3}
+\end{equation}
+in which $f(\lambda)$ is an appropriately designed function of the mixing
+parameter $\lambda$. In this case the derivative of the free energy with
+respect to $\lambda$ is
+\begin{equation}
+\frac{d F}{d \lambda}  = \left  <(H_{2}-H_{1})\frac{d
+    f(\lambda)}{d \lambda} \right >_{\lambda}. \label{genmix}
+\end{equation}
+As before this equation may be integrated to give the free energy difference
+as in equation (\ref{TI}).  
+
+It should now be apparent what desirable properties $f(\lambda)$ needs to
+have. Firstly it should be zero when $\lambda=0$ and unity when $\lambda=1$.
+Secondly the derivative of the function should approach zero when $\lambda$
+approaches either $0$ or $1$, where it will diminish the contribution of the
+extremes of the integral to the overall result. With these requirements in
+mind, \D{} has a number of options for the function $f(\lambda)$.
+\begin{enumerate}
+\item Standard linear mixing:
+\begin{equation}
+f(\lambda)=\lambda, \label{linmix}
+\end{equation}
+\item Nonlinear mixing: 
+\begin{equation}
+f(\lambda)=1-(1-\lambda)^{k}, \label{nonlinmix}
+\end{equation}
+where $k$ is an integer exponent;
+\item Trigonometric mixing: 
+\begin{equation}
+f(\lambda)=\frac{1}{2}(1+sin(\pi(\lambda-\frac{1}{2}))), \label{trigmix}
+\end{equation}
+\item Error function mixing:
+\begin{equation}
+f(\lambda)=\frac{\alpha}{\sqrt{\pi}}\int_{0}^{\lambda}exp(-\alpha^{2}(x
+-\frac{1}{2})^{2})dx, \label{erfmix}
+\end{equation}
+where $\alpha$ is a parameter of order $10\sim 11$;
+\item Polynomial mixing:
+\begin{equation}
+f(\lambda)=1-(1-\lambda)^{k}\sum_{i=0}^{k-1}\frac{(k-1+i)!}{(k-1)!i!}
+\lambda^{i}, \label{polymix}
+\end{equation}
+where $k$ is an integer exponent.
+\item Spline kernel mixing:
+\begin{equation}
+f(\lambda)=2\lambda-8(\lambda-1/2)^{3}(1-abs[\lambda-1/2])-1/2, \label{splmix}
+\end{equation}
+\end{enumerate}
+All these functions except (\ref{linmix} and \ref{nonlinmix}) have the
+required properties (though not all are equally effective). Function
+(\ref{nonlinmix}) is suitable for mixed Hamiltonians which have only one
+problematic end point, such as (\ref{mixed2}), when $\lambda \sim 1$.
+
+\subsection{Invoking the DL\_POLY Free Energy Option}
+
+The free energy option using thermodynamic integration is activated by the
+directive {\bf free} in the CONTROL file (section \ref{controlfile}). This is
+followed by additional directives on the following lines, terminating with
+the directive {\bf endfre}. The invocation is therefore made in the following
+way:\newline \newline
+\noindent {\bf free} \newline
+\noindent {\bf start} {\tt n1} \newline
+\noindent {\bf interval} {\tt n2} \newline
+\noindent {\bf lambda} {\tt r1} \newline
+\noindent {\bf mix} {\tt n3} \newline
+\noindent {\bf expo} {\tt n4} \newline
+\noindent {\bf reset\_mass} - (this is not recommended)\newline
+\noindent {\bf system\_a} {\tt i1 i2} \newline
+\noindent {\bf system\_b} {\tt i3 i4} \newline
+\noindent {\bf endfre}\newline
+\newline
+The meaning of these directives is as follows.
+\begin{enumerate}
+\item {\bf free} - invokes the free energy option and marks the start of the free energy
+  specification in the CONTROL file;
+\item {\bf start} {\tt n1} - specifies the time step at which \D{}
+  should start producing free energy data (integer {\tt n1}) ;
+\item {\bf interval} {\tt n2} - specifies the time step interval 
+  between free energy data calculations (integer {\tt n2});
+\item {\bf lambda} {\tt r1} - value of the mixing parameter $\lambda$  in the
+  Hamiltonian (equation (\ref{mixed1}), range 0-1 (real {\tt r1});
+\item {\bf mix} {\tt n3} - key for choice of mixing protocol (integer {\tt n3}),
+  choices are:
+\begin{itemize}
+\item {\tt n3=1}, linear mixing (equation (\ref{linmix}));
+\item {\tt n3=2}, nonlinear mixing (equation (\ref{nonlinmix}));
+\item {\tt n3=3}, trigonometric mixing (equation (\ref{trigmix}));
+\item {\tt n3=4}, error function mixing (equation (\ref{erfmix}));
+\item {\tt n3=5}, polynomial mixing (equation (\ref{polymix}));
+\item {\tt n3=6}, spline kernel mixing (equation (\ref{splmix}));
+\end{itemize}
+\item {\bf expo} {\tt n4} - exponent for nonlinear
+   or polynomial mixing, as in equations (\ref{nonlinmix})and (\ref{polymix})
+   respectively (required for these options only) (integer {\tt n4});
+\item {\bf reset\_mass} - if this flag is present the Hamiltonian mixing will
+  include the kinetic energy. The default (obtained by removing this flag) is
+  that there is no mixing of the kinetic energy.
+\item {\bf system\_a} {\tt i1 i2} identifies the range of atom indices that
+   consitute the species $A$ in the CONFIG file (integer {\tt i1},{\tt i2});
+\item {\bf system\_b} {\tt i3 i4} identifies the range of atom indices that
+   consitute the species $B$ in the CONFIG file (integer {\tt i3},{\tt i4});
+\item {\bf endfre} - closes specification of free energy.
+\end{enumerate}
+
+The invocation of the free energy option means that \D{} will produce
+an output file named FREENG, the contents of which are described in
+section (\ref{freeng}) below.
+
+Some further comments are in order. Firstly it should be noted that the solute
+species $A$ and $B$, which are specified using directives {\bf system\_a} and
+{\bf system\_b}, are identified by specifying the range of atom indices these
+components have in the CONFIG file (see section \ref{configfile}). It is
+apparent that this allows the user to specify atoms in the categories of $A$
+and $B$ which are not related to underlying molecular structures. This is a
+simple way of identifying the distinct components of the combined system.
+However there is a clear need for the user to be cautious in defining the
+system if `strange' simulations are to be avoided.  Also it is apparent that
+atoms that do not fall under the categories of $A$ or $B$ will be deemed to be
+solvent atoms. It is not really sensible to specify all atoms as either $A$ or
+$B$, with no solvent atoms (in category $S$) at all. In some circumstances
+$A$ and $B$ may have atoms in common, in which case these can be be treated as
+part of the solvent without affecting their physical properties. It is
+permissible to have no atoms in category $A$ or category $B$ if that is required.
+
+\subsection{The FREENG File}
+\label{freeng}
+\index{FREENG file}
+
+The FREENG file is a formatted in which \D{} writes all the free energy data
+requested. It is an appendable file and program restarts will continue to add
+data to it if it already exists. The data are written at user-defined
+intervals during the simulation. The contents of the file are as follows.
+\newline \newline
+\noindent{\bf record 1} Format (80a1): The job title, as defined at the top of the
+CONTROL file. \newline\newline
+\noindent{\bf record 2} Format (40a1): Energy units as defined in the FIELD file header. \newline\newline
+\noindent{\bf record 3} Format (4e16.8)
+{\bf lambda, lambda1, lambda2, dlambda}, with
+\begin{itemize}
+\item {\bf lambda} - Hamiltonian mixing parameter $\lambda$ (real);
+\item {\bf lambda1} - mixing factor $(1-f(\lambda))$ (real);
+\item {\bf lambda2} - mixing factor $f(\lambda)$ (real);
+\item {\bf dlambda} - derivative of {\bf lambda1} w.r.t. $\lambda$.
+\end{itemize}
+\noindent{\bf record 4 - end-of-file} Format (i10,2e16.8) {\bf nstep, engcfg, vircfg}, where
+\begin{itemize}
+\item {\bf nstep} - time step of data (integer);
+\item {\bf engcfg} - configuration energy difference $[V_{2}-V_{1}]$ (real);
+\item {\bf vircfg} - virial difference $[\Psi_{2}-\Psi_{1}]$. (real).
+\end{itemize}
+The configuration energy presented in the FREENG file may be averaged over the
+entire run to obtain the configuration energy contribution to the average on
+the right of equation (\ref{mixed1}). The virial presented there may be used
+in the calculation of the Gibbs free energy, but it is not needed for
+Helmholtz (NVT) free energies.  Note that the configuration energy and virial
+differences {\em include} the factor $d f(\lambda)/d \lambda$ that appears in
+equation (\ref{genmix}).  To facilitate the averaging operation the \D{} {\em
+  utility} directory contains a program {\bf fresta.f} which calculates the
+averages of the potential and kinetic energies and their RMS deviations.
+
+\section{Solution Spectroscopy}
+\label{excitation} \index{spectroscopic excitation} 
+
+\subsection{Spectroscopy and Classical Simulations}
+
+Spectroscopy is the study of the absorption of photons by an atomic or
+molecular species (the chromophore) to create an excited state and the
+subsequent de-excitation of the excited state by photon emission or quenching:
+\begin{eqnarray}
+  (Absorption)~~~~~~~M+h\nu &\rightarrow & M^{*} \nonumber \\
+  (Emission)~~~~~~~~~~~M^{*} &\rightarrow & M+h\nu \\
+  (Quenching)~~~~~~~~~~~M^{*} &\rightarrow & M \nonumber
+\end{eqnarray}
+Clearly these are quantum mechanical processes with limited scope for
+modelling by classical molecular dynamics. However, if certain simplifying
+assumptions are made, classical simulation can yield useful information. An
+example of this is the calculation of solvent induced spectral shifts, in
+which a solvent affects a spectroscopic transition (absorption or emission)
+through broadening the spectral line and shifting its location in the energy
+spectrum.  In this case the simplifying assumptions are that the spectroscopic
+transition occurs instantaneously without a change in the structural
+conformation of the chromophore (though its interaction with the solvent is
+expected to change as a result of the transition).  In general classical
+simulations are concerned with the interactions between the chromophore and
+solvent in the ground and excited states.
+
+\D{} offers two capabilities in this area. Firstly, it can be used to determine
+the interaction energy between the solvent and the chromophore in the ground
+and excited states at the instant of the transition - information which
+quantifies the solvent induced spectral shift. Secondly, it can be used to
+calculate the relaxation energy resulting from the solvent response to the
+change in solvent-chromophore interaction after the transition.
+
+\subsection{Calculating Solvent Induced Spectral Shifts}
+\label{excited}
+
+A chromophore in solution differs from in vacuum by virtue of the
+solvent-chromophore interactions which occur in both the ground and exited
+states. Since the solvation energy usually different for the two states, it
+follows that the spectroscopic transition in solution will be different from
+the vacuum to an extent determined by the solvation energy difference.
+Spectroscopically the effect of this is to shift the location of the
+transition in the electromagnetic spectrum. Furthermore, the solvation energy
+is not constant, but fluctuates in time with a characteristic probability
+distribution. It follows that both the ground and excited states of the
+chromophore possess a distribution of possible energies which gives rise to a
+broadening of the spectral line.
+
+Subject to the assumptions that the transition is instantaneous and that the
+chromophore retains the same geometric structure, \D{} can calculate both of
+these effects. The technique is to simulate the chromophore in solution in the
+ground state at equilibrium and, at regular intervals, after obtaining the
+solvation energy of the ground state molecule, replace it with its excited
+state (changing its interaction potential with the solvent, but not its
+molecular structure) and obtain the interaction energy of the excited state.
+The replacement is not permanent, the excited state is used only to probe the
+solvation energy and has no influence on the system dynamics. It is a `ghost'
+molecule.  The average of the difference in the solvation energies determines
+the spectral shift and the distribution of the energy differences determines
+the line broadening.
+
+The same procedure may be used to study the emission process. In this case the
+simulation is based on an equilibrated solution of the chromophore in the
+excited state, with replacement by the ground state chromophore at intervals.
+
+The data produced by this option are written in the SOLVAT file (see section
+(\ref{solvat})). The {\em utility} programs {\bf solsta.f} and {\bf soldis.f}
+are useful for analysing these results.
+\subsection{Solvent Relaxation}
+\label{switching}
+Following the absorption of a photon a chromophore may persist in an excited
+state for an extended period. This period may be long enough for the solvent
+to relax around the excited chromophore and lower the configuration energy to
+some degree. Subject to the assumption that the chromophore structure does not
+change during the relaxation period the relaxation energy may be calculated by
+simulation. A the same time the relaxation time of the solvent may be
+estimated. In \D{} this is accomplished by switching from the ground to the
+excited state molecule at intervals during the simulation, leaving sufficient
+time for the solvent to relax to equilibrium around the excited state. At the
+end of the chosen relaxation interval, the system may be switched back to the
+ground state to afford the determination of the relaxation around the ground
+state. The relaxation energy may be
+extracted from the energy difference between the equilibrated ground and
+excited state systems and the relaxation time from fitting to the average of
+many energy relaxation time plots.
+
+The data from these simulations are written to the SOLVAT file (see section
+(\ref{solvat}) at the user-defined intervals.
+
+\subsection{Invoking the Solvent Induced Spectral Shift Option}
+
+This option is activated by inserting the directive {\bf excite}
+in the CONTROL file (\ref{controlfile}), followed by further directives to
+enter the control parameters and ending with the {\bf endexc} directive. The
+specification is as follows.\newline \newline
+\noindent {\bf excite} \newline
+\noindent {\bf start} {\tt n1} \newline
+\noindent {\bf inter} {\tt n2} \newline
+\noindent {\bf system\_a} {\tt i1 i2} \newline
+\noindent {\bf system\_b} {\tt i3 i4} \newline
+\noindent {\bf endexc}\newline       
+\newline
+The meaning of these directives is as follows.
+\begin{enumerate}
+\item {\bf excite} - invokes the solvent induced shift option;
+\item {\bf start} {\tt n1} - specifies the time step of the first calculation
+  of the solvation energy of the excited state (integer {\tt n1});
+\item {\bf inter} {\tt n2} - the time step interval (sampling interval)
+  between excited state solvation calculations (integer {\tt n2}) ;
+\item {\bf system\_a} {\tt i1 i2} identifies the range of atom indices in 
+the CONFIG file that consitute the chromophore in the first state (integer 
+{\tt i1},{\tt i2});
+\item {\bf system\_b} {\tt i3 i4} identifies the range of atom indices in 
+the CONFIG file that consitute the chromophore in the second state (integer 
+{\tt i3},{\tt i4});
+\item {\bf endexc} - closes specification of solvent induced shift option.
+\end{enumerate}
+The following additional comments should be noted. 
+
+Atoms in the CONFIG file that are not included in the ranges defined by either
+directive {\bf system\_a} or {\bf system\_b} are categorised as solvent
+atoms. This categorisation has no effect on their physical properties.
+Both {\bf system\_a} and {\bf system\_b} directives specify the atoms of the
+chromophore, though they represent different states of the chromophore. This
+of course means the chromophore appears twice in the CONFIG file. The
+atoms specified by {\bf system\_a} are considered to be {\bf real} atoms and
+participate fully in the molecular dynamics of the system. The atoms specified
+by {\bf system\_b} are considered to be {\bf virtual} and do not affect the
+dynamics or contribute to the energy of the system. They are however used to
+determine the interaction energy of the chromophore with the solvent in the
+manner of a virtual probe. 
+
+{\bf Important:} The {\bf system\_b} atoms must be the last group of atoms
+listed in the CONFIG file. This is absolutely essential. (It will be necessary
+to restructure the FIELD file if changes are made to CONFIG.)  If the
+chromophore is only part of a molecule instead of being the whole of it, it
+will be found most convenient to let the molecule containing the chromophore
+be the last one defined in the CONFIG and FIELD files. This will make it
+possible to minimise the the number of virtual atoms it is necessary to
+define, which reduces the file sizes and improves computational efficiency.
+
+\subsection{Invoking the Solvent Relaxation Option}
+\label{SISS}
+This option is activated by inserting the directive {\bf switch}
+in the CONTROL file (\ref{controlfile}), followed by further directives to
+enter the control parameters and ending with the {\bf endswi} directive. The
+specification is as follows.\newline \newline
+\noindent {\bf switch} \newline
+\noindent {\bf start} {\tt n1} \newline
+\noindent {\bf inter} {\tt n2} \newline
+\noindent {\bf period} {\tt n3} \newline
+\noindent {\bf system\_a} {\tt i1 i2} \newline
+\noindent {\bf system\_b} {\tt i3 i4} \newline
+\noindent {\bf endswi}\newline       
+\newline
+The meaning of these directives is as follows.
+\begin{enumerate}
+\item {\bf switch} - invokes the solvent relaxation option;
+\item {\bf start} {\tt n1} - specifies the  time step at
+  which \D{} should first switch to the excited state (integer {\tt n1});
+\item {\bf inter} {\tt n2} - the time step interval (sampling interval)
+  between spectroscopic data calculations (integer {\tt n2}) ;
+\item {\bf period} {\tt n3} - the interval in time steps for the system to
+  remain in the excited state before returning to ground state (where it will
+  remain for an equal interval to re-equilibrate)(integer {\tt n3});
+\item {\bf system\_a} {\tt i1 i2} identifies the range of atom indices in 
+the CONFIG file that consitute the chromophore in the first state (integer 
+{\tt i1},{\tt i2});
+\item {\bf system\_b} {\tt i3 i4} identifies the range of atom indices in 
+the CONFIG file that consitute the chromophore in the second state (integer 
+{\tt i3},{\tt i4});
+\item {\bf endswi} - closes specification of solvent relaxation option.
+\end{enumerate}
+
+See section (\ref{SISS}) for comments on the specification of atoms in {\bf
+  system\_a} and {\bf system\_b}, which are equally valid here.  Furthermore,
+when {\bf system\_a} and {\bf system\_b} atoms are exchanged under the {\bf
+  switch} option, the former {\bf system\_a} atoms become virtual and {\bf
+  system\_b} become real, until they are swapped over again at intervals
+defined by the {\bf period} directive. The data in the SOLVAT file may be
+plotted to give a clear representation of the progress of the simulation and
+the relaxation of specific components of the solvation energy.
+
+
+

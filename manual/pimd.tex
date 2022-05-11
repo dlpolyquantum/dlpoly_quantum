@@ -1,0 +1,634 @@
+\section{Overview}
+\index{pimd}
+
+Path Integral Molecular Dynamics (PIMD) is an adaptation of Feynmann's
+path integral method \cite{feynmann-65} for calculating the properties
+of quantum systems. PIMD is derived from an earlier method known as
+Path Integral Monte Carlo (PIMC) and is applicable to the same range
+of molecular systems. However, despite being a molecular dynamics
+technique PIMD is {\em not} an implementation of quantum dynamics and,
+unlike classical molecular dynamics, provides {\em no} dynamical
+information about the system under study. Properties such as time
+dependent correlation functions and transport coefficients are
+therefore beyond its scope.  It is purely concerned with obtaining
+quantum corrected thermodynamics and structural properties. For this
+reason, PIMD is best thought of as PIMC by other means.
+
+PIMD was implemented in \D{} by Bill Smith. Users should note that the
+implementation cannot deal with rigid bonds, rigid molecules (or rigid
+molecular parts) or polarisable ions. It can however handle free atoms,
+rigid ions and fully flexible molecules.
+
+\section{Theory of PIMD}
+\index{pimd!theory of}
+\label{pimdtheory}
+
+The theory of path integrals is described in a very accessible manner
+in the book `Quantum Mechanics and Path Integrals' by Feynmann and
+Hibbs \cite{feynmann-65} and a modern take on the subject can be found
+in Mark Tuckermann's book `Statistical Mechanics: Theory and Molecular
+Simulation' \cite{tuckerman-10}. Both are highly recommended. Aspects
+of the theory implemented in \DD{} are described in chapter 12 of the
+e-book `Elements of Molecular Dynamics' by Smith \cite{smith-14}. In
+this section we outline the essential details only.
+
+The central idea of both PIMD and PIMC is that the partition function
+of a system of {\em quantum} particles is isomorphic with that of a
+system of {\em classical} ring polymers. In this isomorphism each ring
+polymer corresponds to one quantum particle\footnote{As far as \DD{}
+  is concerned, a `quantum particle' is a simple atom or
+  ion.}. The so-called `beads' of the polymer represent alternative
+locations for the quantum particle according to the probabilistic
+interpretation of the wave function and collectively describe the
+`Heisenberg uncertainty' in the quantum particle's location. The ring
+polymer is linked together by harmonic bonds acting between pairs of
+beads, which maintain the integrity of the ring and constrain the
+beads to locations that are consistent with quantum
+probability. Otherwise the beads are essentially free particles
+independently exploring phase space.
+
+We can write the partition function ($Z_{N}$) for the N-particle
+quantum system as follows (in which the resemblance to a system
+composed of classical ring polymers should be evident):
+\begin{equation}
+  Z_{N}= \left ( \frac{mL}{2 \pi \hbar^{2} \beta} \right )^{3LN/2} \int \ldots \int \exp \left ( -\beta \sum_{j=1}^{N} 
+\sum_{k=1}^{L} \left [ \frac{\kappa}{2}(|\vek{ r}_{j,k}-\vek{ r}_{j,k-1}| )^{2}+ 
+ \frac{1}{L} \Phi\left(\vek{ r}_{j,k}\right) \right ] \right ) \Pi_{j}^{N} \Pi_{k}^{L} d \vek{ r}_{j,k}, \label{qpartition}
+\end{equation}
+with
+\begin{equation}
+  \kappa = \frac{mL}{(\beta \hbar)^{2}}. \label{qspring}
+\end{equation}
+In this equation $N$ is the number of quantum particles and $L$ is the
+number of beads chosen to represent each particle. Each pair of
+indices $j$ and $k$ identifies the $j'th$ particle and its $k'th$
+bead. Symbols $\Pi_{j}^{N} \Pi_{k}^{L} d \vek{r}_{j,k}$ represent a
+product of the differential coordinates of all beads
+(i.e. $dx_{j,k}dy_{j,k}dz_{j,k} \ldots etc.$).  The parameter $\kappa$
+is the force constant of the harmonic bonds and (\ref{qspring}) shows
+that it is defined by the quantum particle's mass, the system
+temperature (through Boltzmann's constant $\beta=1/k_{B}T$), Planck's
+constant $\hbar$ and the number of beads in the ring $(L)$. The number
+$L$ is an adjustable parameter and its value reflects how
+`quantum-like' the particle behaves. A low number of beads $(L\sim
+10)$ implies the particle behaves semi-classically, while a large
+number $L\sim 300$ implies significant quantum behaviour. This gives
+some scope for `tuning' the quantum nature of the simulation to suit
+the application. Formally, equation (\ref{qpartition}) is exact only
+in the limit: $L \rightarrow \infty$, otherwise PIMD should be
+regarded as semi-quantitative.
+
+The potential function $\Phi\left (\vek{r}_{j,k}\right)$ appearing in
+equation (\ref{qpartition}) describes how an individual bead, with
+indices $j$ and $k$, interacts with its environment, and it is
+significant from a quantum perspective that it appears in
+(\ref{qpartition}) with the associated factor $1/L$.  The most
+important quantum effect in atomistic simulations is arguably quantum
+tunnelling - the ability of an atom to penetrate regions that are
+classically forbidden. This effect can be seen in the radial
+distribution function (for example), which describes the atomistic
+structure and therfore impacts on the thermodynamics of the system. In
+this context the potential factor of $1/L$ indicates that the bead
+interaction with the environment is reduced in comparison with the
+original classical particle. This allows a greater ability of the beads
+to penetrate into classically improbable regions, which is consistent
+with the idea of quantum tunnelling.
+
+The energy of the harmonic bonds (determined by the parameter $\kappa$
+in (\ref{qpartition})) is a component of the kinetic energy of the
+quantum particle related to its zero point energy.  However, in the
+classical simulation of the isomorphic ring polymers, this term is
+manifestly a contributor to the configurational energy of the
+rings. Its meaning is therefore different in the two systems and this
+fact should be noted. (Incidentally, note that when the subscript
+$k-1$ equals zero in (\ref{qpartition}) this is interpreted as the
+index $L$, which is required by the closure of the ring polymer.)
+
+When the environment of the quantum particle consists of other quantum
+particles, the form of the potential function $\Phi\left
+(\vek{r}_{j,k}\right)$ may (for example) be written as a sum of
+bead-bead pair potentials:
+\begin{equation}
+  \Phi\left (\vek{r}_{j,k}\right )= \frac{1}{2} \sum_{j' \ne j}^{N} \phi_{pair}
+  ( |\vek{r}_{j,k}- \vek{r}_{j',k} |), \label{qpair}
+\end{equation}
+where $\phi_{pair}$ is a pair potential of the van der Waals or
+Coulombic kind.  What is noticeable about equation (\ref{qpair}) is
+that there is no sum over the bead index $k$ on the right. This
+reflects the fact that, due to a quirk of the path integral origins of
+(\ref{qpair}) \cite{smith-14}, a given bead on the polymer ring ($k$)
+can only interact with a single corresponding bead ($k'$) on
+neighbouring polymer rings i.e. $k=k'$ and interactions where $k'\ne
+k$ are forbidden\footnote{Technically speaking, beads $k$ and $k'$
+  exist at different instants of imaginary time and are therefore
+  invisible to each other.}. This requirement means the calculation of
+the potential energy and force is considerably less costly than would
+be expected in a simulation of true classical ring polymers. This
+amounts to a substantial `decoupling' of the bead-bead interactions
+(in classical terms) and means that, to a large extent, the whole
+system can be simulated as a set of $L$ quasi-independent systems,
+which are coupled via the harmonic springs. This decoupling is
+exploited in the way \DD{} performs the PIMD simulations.
+
+In principle, the simulation of a system of ring polymers with harmonic
+bonds, bead masses and bead-bead interactions as defined above, will
+effectively be a simulation of the corresponding quantum system, correct to
+an accuracy determined by the chosen number of beads. From such a
+simulation the structure and thermodynamics of the quantum system can
+be obtained in a manner that is similar to any classical simulation.
+It is evident that the simulation could equally be performed using
+either molecular dynamics or Monte Carlo, though in the case of \DD{},
+it is inevitably the former choice that is taken.
+
+A potential problem with PIMD simulations is that harmonic bonds are
+notoriously non-ergodic, which means that energy exchange between
+degrees of freedom is inefficient and the system is slow to
+equilibrate. Indeed, even very long simulations can fail to achieve
+the equipartition necessary for a successful calculation of
+thermodynamic properties {\em unless strong preventative measures are
+  taken}.  As described in \cite{tuckerman-10} these measures include
+the use of staging variables in place of the usual atomic coordinates
+and an extensive regime of thermostatting using either Nos\'{e}-Hoover
+chains \cite{martyna-92a,tuckerman-10} or the so-called `gentle'
+thermostats of Leimkuhler {\em et al} \cite{leimkuhler-09a}, both of
+which which are options in the \DD{} implementation.  Note that,
+according to (\ref{qspring}), a large particle mass $m$, or a large
+number of beads $L$, or a high temperature (i.e. small $\beta$)
+implies a large force constant $\kappa$.  Large values of $\kappa$
+worsen the ergodicity problems and simultaneously demand an unusually
+short time step for stable simulations, which leads to slower sampling of
+phase-space. It is therefore usual to decrease the number of beads
+when the particle mass is large or the simulation temperature is high,
+since the quantum particles behave more classically in these cases.
+
+In PIMD molecular dynamics is used entirely as a means to explore the
+phase space of the system. (In PIMC the same job is done by Metropolis
+sampling.) The dynamics is based on a Hamiltonian of the form
+\begin{equation}
+H(\{\vek{p}_{j,k}\},\{\vek{r}_{j,k}\})=\sum_{j=1}^{N} \sum_{k=1}^{L}
+\left [ \frac{p^{2}_{j,k}}{2m'}+ \frac{\kappa}{2}(|\vek{r}_{j,k}-\vek{
+    r}_{j,k-1}| )^{2}+ \frac{1}{L} \Phi \left (\vek{ r}_{j,k} \right ) \right ], \label{qhamil}
+\end{equation} 
+in which we have introduced the bead momentum $\vek{p}_{j,k}$ and a
+so-called bead dynamical mass $m'$, which need not be the same as the
+formal mass $m$ of the quantum particle if the intention is merely to
+use this Hamiltonian to drive the dynamics of the classical system.
+Suitable equations of motion are easily obtained from this. However,
+as was mentioned above, it is essential to augment the dynamics with
+methods to ensure ergodic behaviour. This is described in greater
+detail below, following a description of properties calculable by
+PIMD.
+
+An important thermodynamic property of a quantum system is the
+internal energy $E$, which is given thermodynamically as the
+derivative of the partition function:
+\begin{equation}
+  \left \langle E \right \rangle =-\frac{\partial}{\partial \beta} ln (Z_{N}). 
+\end{equation}
+Applying this rule to the partition function (\ref{qpartition}) leads
+to the standard energy estimator for PIMD:
+\begin{equation}
+  \left \langle E \right \rangle =\frac{3LN}{2 \beta}- \left \langle
+  \sum_{j=1}^{N} \sum_{k=1}^{L} \left [ \frac{\kappa}{2} (| \vek{ r}_{j,k}-\vek{
+      r}_{j,k-1}| )^{2} -\frac{1}{L} \Phi\left (\vek{ r}_{j,k} \right ) \right ]  \right \rangle .
+  \label{Est1}
+\end{equation}
+However, it was shown by Herman {\em et al.} \cite{herman-82a} that
+fluctuations in this estimator grow linearly with the number of beads
+$L$, raising concerns about the accuracy of the mean value. An
+alternative estimator based on the virial was offered that overcame this
+deficiency. This is written as
+\begin{equation}
+  \left \langle E \right \rangle =\frac{3N}{2 \beta}+ \left \langle \frac{1}{L}
+  \sum_{j=1}^{N} \sum_{k=1}^{L} \left [ \frac{1}{2} (\vek{ r}_{j,k}-\vek{
+      R}_{j} )\cdot \frac{\partial}{\partial \vek{r}_{j,k}}\Phi \left (\vek{ r}_{j,k} \right )+
+    \Phi \left (\vek{ r}_{j,k} \right )\right ]  \right \rangle , \label{Est2}
+\end{equation}
+where
+\begin{equation}
+  \vek{R}_{j}=\frac{1}{L} \sum_{k=1}^{L} \vek{r}_{j,k}, \label{qcom}
+\end{equation}
+is the centre of mass of the $j'th$ ring. The virial estimator
+(\ref{Est2}) ought to be more accurate than the standard energy
+estimator (\ref{Est1}), but in practice this is not always the
+case. Both versions are available in \DD{} and a comparison between the
+two is useful as an indicator of statistical convergence.
+
+A formula for the system pressure in PIMD simulations can be obtained
+by differentiating the Hamiltonian (\ref{qhamil}) with respect to volume:
+\begin{equation}
+  P=-\left \langle \left ( \frac{\partial}{\partial V}H(\{\vek{p}_{j,k}\},\{\vek{r}_{j,k}\})
+     \right ) \right \rangle .
+\end{equation}
+Assuming exclusively pair potentials for the bead-bead interactions leads to
+\begin{equation}
+  PV=\frac{LN}{\beta}-\frac{1}{3} \left \langle \sum_{j=1}^{N} \sum_{k=1}^{L}
+  \left [ \kappa (| \vek{r}_{j,k}-\vek{r}_{j,k-1} |)^{2}+\frac{1}{2L} \sum_{j' \ne j}^{N}
+    \left ( \frac{\partial}{\partial \vek{r}_{jj',k}}\phi_{pair}(\vek{ r}_{jj',k}) 
+    \right )\cdot \vek{ r}_{jj',k}) \right ] \right \rangle .
+\end{equation}
+where
+\begin{equation}
+  \vek{r}_{jj',k}=\vek{r}_{j',k}-\vek{r}_{j,k} .
+\end{equation}
+
+With regard to structural properties, the radial distribution function
+$g(r)$ can be obtained in a manner closely resembling the classical
+case (allowing for the multiplicity of beads per atom):
+\begin{equation}
+  g(r)=\frac{1}{LN \rho} \left \langle \sum_{k=1}^{L} \sum_{j=2}^{N} \sum_{j'=1}^{j}
+  \delta(|\vek{r}-\vek{r}_{j',k}+\vek{r}_{j,k}|) \right \rangle .
+\end{equation}
+From this formula it can be seen that $g(r)$ is calculated entirely
+from correlations between corresponding beads $k$ on different ring
+polymers.
+
+Another useful structural property is the mean-square radius of
+gyration of the polymer rings $\langle R^{2} \rangle$ . This provides a
+measure of the {\em delocalisation} of the quantum particle implied by
+Heisenberg uncertainty. It is defined as
+\begin{equation}
+  \left \langle R^{2} \right \rangle = \left \langle \frac{1}{LN}
+  \sum_{j=1}^{N} \sum_{k=1}^{L} | \vek{r}_{j,k}-\vek{R}_{j} |^{2} \right \rangle
+\end{equation}
+where $\vek{R}_{j}$ is the centre of mass of the $j'th$ polymer ring
+and is given by (\ref{qcom}).
+
+The mean-square radius is related to the mean-square bondlength $
+\langle B^{2} \rangle $ defined as
+\begin{equation}
+  \langle B^{2} \rangle =\left \langle |\vek{r}_{j+1,k}-\vek{r}_{j,k}|^{2} \right \rangle
+\end{equation}
+(where the index $j+1 \equiv 1$ when $j=L$.) The mean-square
+radius and bondlength are related through the expression
+\begin{equation}
+  \left \langle R^{2} \right \rangle =\frac{L}{12} \langle B^{2} \rangle,
+\end{equation}
+which holds for ideal ring polymers in equilibrium. This relation
+affords a rough check that the system is properly equilibrated, along
+with other indicators of equilibrium, which are described below.
+
+\section{Path Integral Dynamics}
+\index{pimd!dynamics}
+\label{pimddynamics}
+In the main, the implementation of PIMD in \D{} follows the
+prescription given by Tuckerman {\em et al} \cite{tuckerman-93a}. In
+the first part, the Cartesian coordinates defining the positions of
+the polymer beads are cast into collective coordinates better able to
+address the range of time scales in the motion of the rings. This
+process is known as `staging'. In the second part the dynamics of the
+staged coordinates are subjected to an efficient thermostatting regime
+to ensure the system dynamics are properly ergodic.
+
+The staging coordinates $\vek{u}_{j,k}$  are defined in the following manner:
+\begin{eqnarray}
+  \vek{u}_{j,1}&=&\vek{r}_{j,1}  \nonumber \\
+  \vek{u}_{j,k}&=&\vek{r}_{j,k}-\frac{(k-1)\vek{r}_{j,k+1}+\vek{r}_{j,1}}{k}\phantom{xxxxx} (k=2,\ldots,L),
+\end{eqnarray}
+for which the inverse is obtained using the reverse formula:
+\begin{eqnarray}
+  \vek{r}_{j,1}&=&\vek{u}_{j,1}  \nonumber \\
+  \vek{r}_{j,k}&=&\vek{u}_{j,k}-\frac{(k-1)\vek{r}_{j,k+1}+\vek{r}_{j,1}}{k}\phantom{xxxxx} (k=L,\ldots,2).
+\end{eqnarray}
+
+In addition, a set of parameters $\mu_{k}$ is introduced, which is defined as follows:
+\begin{eqnarray}
+  \mu_{1}&=&0 \nonumber \\
+  \mu_{k}&=&\frac{k}{k-1}\phantom{xxxxxxxxxxxxx} (k=2,\ldots,L).
+\end{eqnarray}
+
+In terms of these variables the driving Hamiltonian (\ref{qhamil}) can be re-written as
+\begin{equation}
+  H(\{\vek{\pi}_{j,k}\},\{\vek{u}_{j,k}\})=\sum_{j=1}^{N} \sum_{k=1}^{L}
+  \left [ \frac{\pi^{2}_{j,k}}{2m_{k}'}+\mu_{k}\frac{\kappa}{2}(\vek{u}_{j,k}
+    \cdot\vek{u}_{j,k} )+ \frac{1}{L} \Phi \left (\vek{r}_{j,k}(\{\vek{u}_{j',k}\} \right )) \right ],
+  \label{qhamil2}
+\end{equation}
+where $\vek{\pi}_{j,k}$ represents the momentum associated with the
+staged coordinate $\vek{u}_{j,k}$.  In this equation a new mass
+parameter $m_{k}'$ has been introduced as the dynamical mass. The
+recommended values given by Tuckerman {\em et al.} \cite{tuckerman-93a}
+are
+\begin{eqnarray}
+  m_{1}'&=&m \nonumber \\
+  m_{k}'&=& \mu_{k} m \phantom{xxxx}(k>1).
+\end{eqnarray}
+Using the Hamiltonian (\ref{qhamil2}) we may proceed to obtain the
+equations of motion for the system of ring polymers. These are
+presented below with the necessary thermostats included. The
+thermostats, it should be noted, are applied to {\em every} degree of
+freedom in the system individually - not collectively as is more
+common in conventional molecular dynamics.
+
+The equations of motion including Nos\'{e}-Hoover chains of length $M$
+per bead degree of freedom \cite{tuckerman-93a} are
+\begin{eqnarray}
+  \vek{\dot{u}}_{j,k}&=&\frac{\vek{\pi}_{j,k}}{m_{k}'} \nonumber \\
+  {\dot \pi}_{j,k}^{\alpha}&=&-\kappa \mu_{k}u_{j,k}^{\alpha}-\frac{1}{L} \frac{\partial}
+  {\partial u_{j,k}^{\alpha}}\Phi\left (\vek{r}_{jk}(\{\vek{u}_{j',k}^{\alpha}\})\right )-
+  \zeta_{j,k,1}^{\alpha}{\pi}_{j,k}^{\alpha} \nonumber \\
+  {\dot \zeta}_{j,k,1}^{\alpha}&=&\frac{1}{Q_{1}} \left (\frac{(\pi_{j,k}^{\alpha})^{2}}{m_{k}'}-k_{B}T_{o} \right )
+  -\zeta_{j,k,1}^{\alpha}\zeta_{j,k,2}^{\alpha} \label{pimd-nhc}\\
+  {\dot \zeta}_{j,k,n}^{\alpha}&=&\frac{1}{Q_{k}} \left (Q_{k}(\zeta_{j,k,n-1}^{\alpha})^{2}-k_{B}T_{o} \right )
+  -\zeta_{j,k,n}^{\alpha}\zeta_{j,k,n+1}^{\alpha}  \nonumber\\
+  {\dot \zeta}_{j,k,M}^{\alpha}&=&\frac{1}{Q_{k}} \left (Q_{k}(\zeta_{j,k,M-1}^{\alpha})^{2}-k_{B}T_{o} \right ) \nonumber
+\end{eqnarray}
+where $\alpha=x,y,z$ as appropriate and $T_{o}$ is the target
+temperature.  The variables $\zeta_{j,k,n}$ {\em etc.} are the
+thermostat variables. The values of the thermostat `mass' parameters
+$Q_{k}$ recommended by Tuckerman {\em et al} \cite{tuckerman-93a} are
+\begin{equation}
+  Q_{1}=k_{B}T_{o} \tau^{2}, \phantom{xxxxx} Q_{k}=\hbar^{2}/Lk_{B}T_{o},
+\end{equation}
+where $\tau$ is a user defined time scale parameter appropriate for
+the timescale of the ring centre of mass motion..
+
+The forces required to update the momentum components
+${\pi}_{j,k}^{\alpha}$ above are obtained from
+\begin{eqnarray}
+  \frac{\partial}{\partial u_{j,1}^{\alpha}}\Phi \left (\vek{r}_{jk}(\{\vek{u}_{j',k}^{\alpha}\}) \right )&=&
+  \frac{1}{L}\sum_{k=1}^{L}\frac{\partial}{\partial r_{j,k}^{\alpha}}\Phi\left (\vek{r}_{jk} \right ), \nonumber \\
+  \frac{\partial}{\partial u_{j,k}^{\alpha}}\Phi\left (\vek{r}_{jk}(\{\vek{u}_{j',k}^{\alpha}\}) \right )&=&
+  \frac{1}{L}\left ( \frac{(k-2)}{(k-1)}\frac{\partial}{\partial u_{j,k}^{\alpha}}+
+  \frac{\partial}{\partial r_{j,k}^{\alpha}} \right ) \Phi\left (\vek{r}_{jk}(\{\vek{u}_{j',k}^{\alpha}\}) \right ).
+\end{eqnarray}
+In \DD{} these equations are integrated using the velocity Verlet
+algorithm and it is useful to note that the following quantity is
+formally conserved during the integration.
+\begin{equation}
+  E_{cons}=\sum_{j=1}^{N}\sum_{k=1}^{L} \left [ \frac{\pi_{j,k}^{2}}{2 m_{k}'}+
+    \mu_{k} \frac{\kappa}{2} (\vek{u}_{j,k} \cdot \vek{u}_{j,k})+
+    \frac{1}{L}\Phi\left (\vek{r}_{jk}(\{\vek{u}_{j',k}^{\alpha}\}) \right )+ \newline
+    \sum_{n=1}^{M} \sum_{\alpha} \left \{ \frac{1}{2}Q_{k}({\dot \zeta}_{j,k,n}^{\alpha})^{2}
+    +\frac{1}{\beta}\eta_{j,k,n}^{\alpha} \right \} \right ]. \label{qcons}
+\end{equation}
+The variables $\eta_{j,k,n}$ are obtained by integrating the variables
+$\zeta_{j,k,n}$ using the equation
+\begin{equation}
+  {\dot \eta}_{j,k,n}^{\alpha}=\zeta_{j,k,n}^{\alpha}.
+\end{equation}
+The last sum on the right of (\ref{qcons}) clearly represents the
+energy of the thermostats, while the preceeding terms refer to the quantum system.
+
+The corresponding equations of motion with the gentle thermostats
+of Leimkuhler {\em et al} \cite{leimkuhler-09a} (which is again
+applied to every degree of freedom) are
+\begin{eqnarray}
+  \vek{\dot{u}}_{j,k}&=&\frac{\vek{\pi}_{j,k}}{m_{k}'} \nonumber \\
+  {\dot \pi}_{j,k}^{\alpha}&=&-\kappa \mu_{k}u_{j,k}^{\alpha}-\frac{1}{L} \frac{\partial}
+  {\partial u_{j,k}^{\alpha}}\Phi\left (\vek{r}_{jk}(\{\vek{u}_{j',k}^{\alpha}\})\right )-
+  \zeta_{j,k}^{\alpha}{\pi}_{j,k}^{\alpha}   \label{pimd-gt} \\
+  d{\zeta}_{j,k}^{\alpha}&=&\frac{1}{Q} \left (\frac{(\pi_{j,k}^{\alpha})^{2}}{m_{k}'}-k_{B}T_{o} \right )dt
+  -\frac{Q\chi^{2}}{2 k_{B}T_{o}}\zeta_{j,k}^{\alpha}dt +\chi dW. \nonumber 
+\end{eqnarray}
+The first two equations in this series determine the thermostatted
+motion of the beads ({\em c.f.} (\ref{pimd-nhc})), while the third
+determines the motion of the thermostats $\zeta_{j,k}$. On the far
+right the third equation includes an impulse term $\chi dW$ for each
+thermostat, where $\chi$ defines the impulse magnitude and $dW$ is a
+random number selected from Gaussian distribution with zero mean and
+unit standard deviation. Preceding this on the right is the
+dissipation term, which extracts heat energy from the system to
+maintain the average temperature. $\chi$ is a user-selected
+parameter chosen to control the rate at which energy is put into the
+system. The constant of dissipation $Q \chi^{2}/2 k_{B}T_{o}$ is
+fixed by the fluctuation-dissipation theorem. In its original
+conception \cite{leimkuhler-09a}, the gentle thermostat was intended
+to have a minimal effect on the system dynamics, so $\chi$ was
+small, which meant that time dependent properties could be preserved,
+but that need not be a concern in PIMD simulations, which are
+concerned with structure only.
+
+In both approaches (\ref{pimd-nhc}) and (\ref{pimd-gt}), it is useful
+to have some means of monitoring the simulation to ensure that it
+properly samples from the canonical ensemble. This requires that the
+kinetic energy of every degree of freedom has an average value of
+$k_{B}T_{o}/2$ and that the staged momenta of the beads are
+collectively represented by a Gaussian distribution. In \DD{} the
+quality of the obtained momentum distribution is assessed by comparing
+the even moments of the simulated distribution function with the ideal
+values for a true Gaussian (see \cite{smith-14} ch. 12).  The expected
+values for true Gaussian moments are
+\begin{eqnarray}
+  \left \langle (\pi_{j,k}^{2}/m_{k}') \right \rangle &=& k_{B}T_{o} \nonumber \\
+  \left \langle (\pi_{j,k}^{2}/m_{k}')^{2} \right \rangle &=& 3 (k_{B}T_{o})^{2} \nonumber \\
+  \left \langle (\pi_{j,k}^{2}/m_{k}')^{3} \right \rangle &=& 15(k_{B}T_{o})^{3}  \label{moments}\\
+  \left \langle (\pi_{j,k}^{2}/m_{k}')^{4} \right \rangle &=& 105(k_{B}T_{o})^{4} \nonumber \\
+  \left \langle (\pi_{j,k}^{2}/m_{k}')^{5} \right \rangle &=& 945(k_{B}T_{o})^{5}. \nonumber
+\end{eqnarray}
+Note that, in a simulation, the averages $\langle \ldots \rangle$ are
+calculated over all momenta $\vek{\pi}_{j,k}$ and over many
+configurations of the equilibrated simulation.  From (\ref{moments})
+it follows that, in the ideal case
+\begin{equation}
+  1=\frac{\left \langle (\pi_{j,k}^{2}/m_{k}') \right \rangle }{k_{B}T_{o}}=
+  \frac{\left \langle (\pi_{j,k}^{2}/m_{k}')^{2} \right \rangle }{3 (k_{B}T_{o})^{2}}=
+  \frac{\left \langle (\pi_{j,k}^{2}/m_{k}')^{3} \right \rangle }{15 (k_{B}T_{o})^{3}}=
+  \frac{\left \langle (\pi_{j,k}^{2}/m_{k}')^{4} \right \rangle }{105 (k_{B}T_{o})^{4}}=
+  \frac{\left \langle (\pi_{j,k}^{2}/m_{k}')^{5} \right \rangle }{945 (k_{B}T_{o})^{5}}.
+  \label{nmom}
+\end{equation}
+Thus the closeness of these ratios to the value unity indicates the
+quality of the assumed Gaussian distribution for all momenta.  Note
+the same analysis may also be conducted for the thermostat momenta and
+this can be useful when exploring ergodicity issues. This is not
+available in the default version of \D{}, but a subroutine for doing
+this ({\sc thermostat\_moments}) is available in the module {\sc
+  integrator\_module.f} and can be activated for the purpose.
+
+\section{Invoking the PIMD Option}
+
+To activate the PIMD option in \D{} appropriate entries must be made
+in the CONTROL file. At the head of the CONTROL file, in place of the
+{\bf integration} keyword, the keyword {\bf pimd} should be inserted,
+followed by additional options. The syntax is one of the following
+three options\newline
+\newline
+\noindent {\bf pimd nvt} {\em nbeads taut} \newline
+\newline
+\noindent for PIMD with a single Nos\'{e}-Hoover thermostat per degree of freedom, or \newline
+\newline
+\noindent {\bf pimd gth} {\em nbeads taut xsi} \newline
+\newline
+\noindent for PIMD with `gentle' thermostats, or \newline
+\newline
+\noindent {\bf pimd nhc} {\em nbeads nchain taut} \newline
+\newline    
+\noindent for PIMD with Nos\'{e}-Hoover chains. \newline
+\newline
+The additional options appearing on the directives are:
+\begin{itemize}
+\item {\em nbeads} (integer) is the number of beads in each ring polymer.
+\item {\em nchain} (integer) is the number of chained thermostats per degree of freedom.
+\item {\em taut} (real) is the thermostat relaxation time $(\tau)$ in $ps$.
+\item {\em chi} (real) is the magnitude of the impulse `force' $(\chi)$ in $ps^{-1}$
+\end{itemize}
+\noindent Each of these must be written in the indicated order. It is
+permissible to use more informative invocations of these directives
+({\em provided the sequence order given above is preserved}), such
+as \newline
+\newline
+\noindent {\bf pimd nhc} nbeads=10 nchain=4 taut=0.1  \newline
+\newline
+\noindent These simple directives are sufficient to invoke a PIMD simulation.
+However, the following points should also be noted.
+\begin{itemize}
+\item As is mentioned in the theory section above, the number of beads
+  per ring polymer is a choice based on the expected degree of quantum
+  behaviour of the constituent atoms. Some experience is required to
+  make an appropriate choice, but note that the same number of beads
+  represents {\em all} the atoms in the system, regardless of the
+  different atoms that may be present.  The choice must therefore be
+  made on the basis of the smallest atomic mass in the system if the
+  quantum behaviour is to be properly handled.
+
+\item The PIMD option implies velocity Verlet integration. The user
+  should {\bf not} therefore specify the {\bf integration} keyword at
+  the head of the CONTROL file. If one is specified, \DD{} will
+  {\bf terminate} due to conflicting instructions.
+
+\item PIMD also implies the NVT ensemble, so the user should {\bf not} use
+  the {\bf ensemble} keyword in the CONTROL file. {\bf Termination} will
+  again result if this is specified.
+\end{itemize}
+
+\section{PIMD Files}
+
+In addition to the usual files \DD{} requires or creates, the PIMD
+option also makes use of the following files.
+
+\subsection{THENEW and THEOLD}
+
+The file THENEW is created when a PIMD simulation completes. It
+contains the current values of all the thermostat variables at the
+time of completion. The data is required for a subsequent continuation
+of the simulation using the {\bf restart} directive in the CONTROL
+file. For this purpose the THENEW file must be renamed as THEOLD at
+the restart. These files are {\em unformatted} and not human
+readable. The contents, should the user need to know, are as follows.\\
+
+\noindent {\bf Record 1} lists three variables:
+
+\begin{itemize}
+  \item Total number of beads in the system i.e. $natms \times nbeads$;
+  \item Length of thermostat chain per bead i.e. the variable $nchain$;
+  \item The system temperature i.e. that variable $temp$.
+\end{itemize}
+
+The subsequent records contain the thermostat chains. There are
+$nchain \times natms \times nbeads$ records, each of which contains the following.
+
+\noindent {\bf Records $2$ to $nchain \times natms \times nbeads+1$} list
+six variables per record:
+
+\begin{itemize}
+  \item $\eta_{x}$ - x component of integrated thermostat of one bead 
+  \item $\eta_{y}$ - y component of integrated thermostat of one bead 
+  \item $\eta_{z}$ - z component of integrated thermostat of one bead 
+  \item $\zeta_{x}$ - x component of thermostat of one bead
+  \item $\zeta_{y}$ - y component of thermostat of one bead
+  \item $\zeta_{z}$ - y component of thermostat of one bead
+\end{itemize}
+
+The order in which the records are written is determined by three
+nested loops, the first (outer) loop runs over the $nchain$ thermostat
+chains, the second loop runs over the $natms$ atoms and the third
+(inner) loop runs over the $nbeads$ beads for each atom.
+
+\subsection{RNDNEW and RNDOLD}
+
+The file RNDNEW is created when a PIMD simulation employing the gentle
+thermostats completes. It contains the current values of all the
+variables defining the state of the \DD{} parallel random number
+generator {\sc puni()} at the time of completion. The information is
+required to restart a simulation using the {\bf restart} directive in
+the CONTROL file. The RNDNEW file must be renamed as RNDOLD at the
+restart. These files are also {\em unformatted} and not human
+readable.
+
+For a simulation performed on a parallel computer with $mxnode$
+processors, the files contain $mxnode$ records, each with 102
+variables defining the state of {\sc puni()} on each processor.
+
+\section{Things to be aware of when running a PIMD simulation}
+
+\begin{itemize}
+\item Usually, when starting a \DD{} simulation, the user supplies a
+  CONFIG file for the system of interest containing the initial
+  coordinates of every atom in the system. For the first run of a PIMD
+  simulation however, it is not necessary to supply the coordinates
+  for every bead of the ring polymers. Instead the user supplies the
+  coordinates for each corresponding classical particle, which \DD{}
+  expands using small random displacements into {\em nbeads} coordinates
+  to complete the ring. This represents a first approximation to the
+  ring polymers, which evolve dynamically thereafter.
+
+\item After the first run of the simulation, the resulting REVCON file
+  will contain coordinates for {\em all} the beads in the system. It
+  follows that the CONFIG file used to {\bf restart} a simulation
+  necessarily contains coordinates for every bead and \DD{} expects
+  these data to be present in the file or else the restart will
+  fail. This requirement also applies to the {\bf restart scale} and
+  {\bf restart noscale} options.
+
+\item The format of the expanded CONFIG file is essentially the same
+  as a normal CONFIG file. If there are formally $N$ atoms (i.e. $N$
+  quantum particles) in the system and each is represented by $L$
+  beads, the expanded file contains $N\times L$ bead coordinates. The
+  first $N$ coordinates refer to the first bead of each ring, the
+  second set of $N$ coordinates refer to the second bead of each ring,
+  and so on. This is important to know if the CONFIG file is to be
+  used properly for non-\DD{} applications.
+
+\item In addition to producing the standard output files: OUTPUT,
+  REVCON, STATIS, REVIVE, RDFDAT {\em etc}, the PIMD option also
+  produces a {\em thermostats} file called THENEW \index{THENEW file}
+  (the format of which is described above). This file contains the
+  current values of the thermostat parameters at the time the run
+  finished. This file should be renamed THEOLD \index{THEOLD file} for
+  a {\bf restart} of the PIMD simulation. The file THEOLD is not
+  required for the {\bf restart scale} or {\bf restart noscale}
+  options.
+
+ \item The {\bf pimd gth} option also produces a thermostat file
+   THENEW \index{THENEW file} on termination (and requires the
+   corresponding THEOLD file for a restart). In addition however, it
+   also produces a file RNDNEW, \index{RNDNEW} which stored the
+   current state of the \DD parallel random number generator {\sc
+     puni}. This must be renamed RNDOLD \index{RNDOLD} for a
+   successful {\bf restart} of the simulation. It is important to
+   note that in the current implementation it is assumed the restart
+   will require the same number of parallel processors as the previous
+   run. The file RNDOLD is not required for the {\bf restart scale} or
+   {\bf restart noscale} options.
+
+\item Equilibration and ergodicity are key issues in PIMD
+  simulations. A good deal of effort is required sometimes to ensure
+  that these requirements are properly fulfilled. Fortunately there
+  are some indicators to assist with these matters. Firstly, the
+  OUTPUT file lists the second, fourth, sixth, eighth and tenth
+  moments (equation \ref{nmom}) of the momentum at the end of the
+  simulation. If the momentum distribution is properly ergodic, the
+  normalised moments should all be unity. In practice however, the
+  higher moments tend to deviate increasingly from unity, though the
+  agreement should still be close. Significant departure should be
+  viewed critically. Also, if equilibration is good the standard
+  \ref{Est1} and virial \ref{Est2} estimators should give closely
+  similar results. If they don't then it is likely that ergodicity is
+  an issue. The remedy is largely a matter of experimenting with the
+  control parameter values for the {\bf pimd} directive or setting a
+  shorter time step. To be more certain, using a different
+  thermostatting method should afford a good comparison.
+
+\item Two test cases are available to try out the \DD{} PIMD
+  implementation (see Chapter \ref{data}). These systems are (a)
+  neon (Test Case 40) and (b) water (Test Case 41), which both show
+  significant quantum effects but are quite different in character.
+  The first is an atomic system, while the latter includes the water
+  as a polyatomic molecular entity. Both are outlined in the following
+  chapter and both are available from the CCPForge repository, where
+  the source code is located. It is worth trying different
+  thermostatting methods in these systems from the one supplied.
+\end{itemize}
+
+

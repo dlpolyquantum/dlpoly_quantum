@@ -1,0 +1,12 @@
+List of Current DL_POLY Test Cases:
+
+TEST1 - Sodium/potassium mixed silicate glass
+TEST2 - Aluminium metal with Sutton-Chen potential
+TEST3 - Valinomycin antibiotic in water
+TEST4 - Dynamical shell model for water
+TEST5 - Magnesium chloride with dynamical shell model
+TEST6 - Potential of mean force on potassium in water
+TEST7 - Biphenyl molecule and QSHAKE algorithm
+TEST8 - Model of semipermeable membrane
+TEST9 - Model surfactant system
+TEST10- Model DNA system

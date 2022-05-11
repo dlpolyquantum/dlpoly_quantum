@@ -1,0 +1,32 @@
+#!/bin/tcsh
+#
+# DL_POLY script to run multiple test cases
+# note use of qsub in job submission - may
+# need replacing
+#
+
+set n=$1
+set m=$2
+set TYPE="LF VV CB RB"
+
+while ($n <= $m)
+  if !(-e  TEST$n) mkdir TEST$n
+  cd TEST$n
+  echo TEST$n
+  foreach typ ($TYPE)
+    if (-e ../../data/TEST$n/$typ ) then
+      if !(-e  $typ) mkdir $typ
+      cd $typ
+      cp ../../../data/TEST$n/$typ/CONTROL .
+      cp ../../../data/TEST$n/$typ/CONFIG .
+      cp ../../../data/TEST$n/$typ/FIELD .
+      if (-e  ../../../data/TEST$n/$typ/TABLE) cp ../../../data/TEST$n/$typ/TABLE .
+      if(-e  ../../../data/TEST$n/$typ/TABEAM) cp ../../../data/TEST$n/$typ/TABEAM .
+      qsub ../../gopoly
+      cd ../
+    endif
+  end
+  cd ../
+  set n=`expr $n + 1`
+end
+

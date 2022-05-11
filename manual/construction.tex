@@ -1,0 +1,52 @@
+
+\section{Constructing \D{}}
+
+\subsection{Overview}
+
+The \D{} executable program is constructed as follows.
+
+\begin{enumerate}
+\item \D{} is supplied as a gzipped tar file. This must be unpacked
+to create the \D{} directory (section \ref{directory}).
+\item In the {\em build} subdirectory you will find the required \D{}
+makefile (see section \ref{compile} and Appendix \ref{A1}, where a
+sample Makefile is listed). This must
+be copied into the subdirectory containing the relevant source
+code. In most cases this will be the {\em source} subdirectory.
+\item The makefile is executed with the appropriate keywords
+(section \ref{compile}) which selects for specific computers (including
+serail and parallel machines) and the appropriate communication software.  
+\item The makefile produces the executable version of the code, which
+as a default will be named DLPOLY.X and located in the {\em execute}
+subdirectory.
+\item DL\_POLY also has a Java GUI. The files for
+this are stored in the subdirectory {\em java}. Compilation of this is
+simple and requires running the javac compiler and the jar
+utility. Details for these procedures are provided in the GUI manual
+\cite{smith-gui}.
+\item To run the executable for the first time you require (as a
+minimum) the files CONTROL, FIELD and CONFIG (and possibly TABLE or
+TABEAM if you have tabulated potentials). These must be present in
+the directory from which the program is executed. (See section
+\ref{inputfiles} for the description of the input files.)
+\item Executing the program will most often produce the files OUTPUT,
+REVCON and REVIVE (and optionally STATIS, HISTORY, RDFDAT and
+ZDNDAT) in the executing directory.  (See section \ref{outputfiles}
+for the description of the output files.)
+\end{enumerate}
+
+This simple procedure is enough to create a standard version to run
+most \D{} applications. However it sometimes happens that additional
+modifications may be necessary. 
+
+On starting, \D{} scans the input data and makes an estimate of the
+sizes of the arrays it requires to do the simulation. Sometimes the
+estimates are not good enough. The most common occurrences of this are
+NPT and NST simulations, or simulations where the local density on the
+MD cell may significantly exceed the mean density of the cell (systems
+with a vacuum gap for example). Under these circumstances arrays
+initally allocated may be insufficent. In which case \D{} may report a
+memory problem and request that you recompile the code with
+hand-adjusted array dimensions. This topic is dealt with more fully in
+Appendix C.
+

@@ -1,0 +1,65 @@
+The `data' Sub-directory
+
+This sub-directory normally stores the standard test cases for
+DL_POLY Classic and Quantum. The test cases for DL_POLY Classic 
+are also available via the DL_POLY Classic site on CCPForge.
+
+The test cases are as follows. Each test case has its own
+sub-sub-directory.
+
+DL_POLY Classic v1.10 tests (TESTs 1-41):
+DL_POLY Quantum v1.0 tests (TESTs 42-44):
+
+TEST1  - Potassium disilicate glass (with 3-body forces). 1080 atoms 
+TEST2  - Aluminium metal with Sutton-Chen potential. 256 atoms.
+TEST3  - Valinomycin molecule in water. 3837 atoms.
+TEST4  - Water using dynamical shell model. 1024 sites.
+TEST5  - Magnesium chloride dynamical shell model. 1280 sites.
+TEST6  - Potential of mean-force K-water solvation. 304 atoms
+TEST7  - Biphenyl molecule rotation. 144 atoms.
+TEST8  - Model semi-permeable membrane. 3148 atoms.
+TEST9  - Surfactant+H2O using Ewald method. 2658 atoms.
+TEST10 - DNA+H2O with Dreiding force field. 3378 atoms.
+TEST11 - Surfactant using Hautman-Klein-Ewald. 2300 atoms.
+TEST12 - HKE test system. 1024 charged particles.
+TEST13 - Carbon Buckytube with Tersoff potential. 800 atoms.
+TEST14 - Carbon Diamond with Tersoff potential. 512 atoms.
+TEST15 - Silicon Carbide diamond structure with Tersoff. 2744 atoms.
+TEST16 - Magnesium Oxide with relaxed shell model. 324 sites.
+TEST17 - Sodium ion in SPC water. 421 sites
+TEST18 - Sodium chloride molecule in SPC water (constraints). 419 sites.
+TEST19 - Sodium chloride molecule in SPC water (constaints+euler). 419 sites.
+TEST20 - Dibenzene linked rigid molecules. Multiple descriptions. 1782 sites.
+TEST21 - Aluminium metal with EAM potential. 256 atoms.
+TEST22 - Copper metal with EAM potential. 256 atoms.
+TEST23 - Copper-Gold (3/1) alloy with Gupta potential. 256 atoms.
+TEST24 - Iron metal with Finnis Sinclair potential. 250 atoms.
+TEST25 - Nickel-Aluminium alloy (1/1) with EAM potential. 432 atoms.
+TEST26 - Nickel metal with EAM potential. 256 atoms.
+TEST27 - Calcium Carbonate (Calcite). 2100 atoms.
+TEST28 - Optimisation of SPC IceVII structure. 1296 atoms.
+TEST29 - Programmed optimisation of SPC IceVII structure. 1296 atoms.
+TEST30 - Zero K optimisation of DNA structure. 1260 atoms.
+TEST31 - Linear molecule fluid.  4050 atoms.
+TEST32 - TAD simulation LJ Argon (solid state). 255 atoms.
+TEST33 - BPD simulation Sodium Chloride (solid state). 998 atoms.
+TEST34 - Simulation of liquid DMSO with energy decomposition.
+TEST35 - Free energy difference of DMSO and DMSO* in DMSO as solvent.
+TEST36 - Solvent shift calculation for DMSO* in DMSO solvent.
+TEST37 - Solvent relaxation (switch) calculation for DMSO*/DMSO.
+TEST38 - Metadynamics of freezing of TIP4P water. 512 molecules.
+TEST39 - Metadynamics of calcite nanoparticle in water. 2984 atoms.
+TEST40 - PIMD Test Case: Neon
+TEST41 - PIMD TEST CASE: 102 water molecules
+TEST42 - NVT Nose-Hoover chain (NHC) classical simulation of Bulk water using flexible q-TIP4P/F potential
+TEST43 - NPT NHC simulation of Cu3(HHTP)2 2-dimensional metal-organic framework
+TEST44 - NPT NHC simulation of zeolitic-imidazolate framework ZIF-8
+TEST45 - NVT NHC simulation of Bulk water using flexible q-TIP4P/F potential in Feynman's Path Integral formalism (PIMD simulations)
+TEST46 - NPT NHC simulation of Cu3(HHTP)2 2-dimensional metal-organic framework containing 48 q-TIP4P/F water molecules
+
+If you wish to run them with your compiled version of DL_POLY
+you should copy the required input files CONTROL, FIELD, 
+CONFIG and (possibly) TABLE into the execute sub-directory
+(using the `select' macro you will find there). Compare the
+results with the supplied versions.
+

@@ -1,0 +1,12 @@
+#!/bin/tcsh
+#
+# DL_POLY utility to gather test data files for program run
+#
+cp ../data/TEST$1/$2/CONTROL CONTROL
+cp ../data/TEST$1/$2/FIELD   FIELD
+cp ../data/TEST$1/$2/CONFIG  CONFIG
+if (-e  ../data/TEST$1/$2/TABLE)then
+  cp ../data/TEST$1/$2/TABLE   TABLE
+else if (-e  ../data/TEST$1/$2/TABEAM)then
+  cp ../data/TEST$1/$2/TABEAM  TABEAM
+endif

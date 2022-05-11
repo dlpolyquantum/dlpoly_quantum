@@ -1,0 +1,277 @@
+\documentclass[11pt,a4paper,dvipdfmx]{report}
+\setcounter{secnumdepth}{5}
+
+
+%packages
+\usepackage{makeidx}
+\usepackage{comment}
+\usepackage[dvips]{graphicx}
+\usepackage[usenames,dvipsnames]{color}
+\usepackage
+[dvipdfmx,
+%------------- Back referencing Info --------------------
+pagebackref, %or backref
+%------------ Doc View ----------------------------------
+bookmarksopen=true,
+bookmarks=true,
+pdfpagemode=UseOutlines,
+pdfstartpage=1,
+pdfstartview=FitH,
+%------------- Doc Colours ------------------------------
+colorlinks=true,
+filecolor=webbrown, %defined below
+citecolor=webgreen, %defined below
+linkcolor=webblue, %defined below
+urlcolor=webblue, %defined below
+%------------- Doc Info ---------------------------------
+pdftitle={The DL-POLY Classic User Manual},
+pdfauthor={W. Smith},
+pdfsubject={Guide to the DL-POLY-Classic Package},
+pdfkeywords={Molecular Dynamics (MD) Software, Open Source Code},
+]{hyperref}
+%
+%Define some eye-pleasing colors for this document
+%
+\definecolor{webgreen}{rgb}{0,0.5,0}
+\definecolor{webbrown}{rgb}{0.6,0,0}
+\definecolor{webblue}{rgb}{0,0,0.75}
+
+% Layout settings
+\setlength{\textheight}{236mm} \setlength{\textwidth}{165mm}
+\setlength{\topmargin}{-7mm} \setlength{\headsep}{10mm}
+\setlength{\footskip}{10mm} \setlength{\oddsidemargin}{-2mm}
+\setlength{\evensidemargin}{-2mm}
+
+%pagestyle
+%\pagestyle{myheadings}
+%\markboth{\copyright STFC}{\copyright STFC}
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\lhead{\copyright STFC}
+\chead{}
+\rhead{Preface}
+\lfoot{}
+\cfoot{\thepage}
+\rfoot{}
+
+%paragraph settings
+%\parindent 0ex
+%\parskip 1ex
+
+%commands
+\newcommand{\D}{\mbox{DL\_POLY Classic}}
+\newcommand{\DD}{\mbox{DL\_POLY}}
+\newcommand{\DLF}{\mbox{DL\_FIELD}}
+\newcommand{\SOFT}{\href{http://www.ccp5.ac.uk/software/}{http://www.ccp5.ac.uk/software/}}
+\newcommand{\FORGE}{\href{http://ccpforge.cse.rl.ac.uk}{http://ccpforge.cse.rl.ac.uk}}
+\newcommand{\vek}[1]{\mbox{$\underline{#1}$}}
+\newcommand{\mat}[1]{\mbox{$\underline{\underline{\bf #1}}$}}
+\newcommand{\para}[1]{\paragraph{#1}}
+%\newcommand{\tilde}[1]{\mbox{$\~{#1}$}}
+
+\makeindex
+
+
+\begin{document}
+\pagenumbering{alph} \setcounter{page}{0}
+\addcontentsline{toc}{chapter}{\underline{The \D{} User Manual}}
+
+\begin{titlepage}
+\title{The \D{} User Manual}
+\author{W. Smith, T.R. Forester and I.T. Todorov\\ \\
+STFC  Daresbury Laboratory \\
+Daresbury, Warrington WA4 4AD \\
+Cheshire, UK}
+\date{Version 1.10,~~January 2017}
+\end{titlepage}
+
+\maketitle
+\clearpage
+
+\pagenumbering{roman} \setcounter{page}{1}
+
+\maketitle \addcontentsline{toc}{section}{About \D{}}
+\input about_dlpoly.tex
+\maketitle \addcontentsline{toc}{section}{Disclaimer}
+\input disclaimer.tex
+\maketitle \addcontentsline{toc}{section}{Acknowledgements}
+\input acknowledgements.tex
+\maketitle \addcontentsline{toc}{section}{Manual Notation}
+\input manual_notation.tex
+
+%pagestyle
+\rhead{Contents}
+
+\addcontentsline{toc}{chapter}{\underline{Contents}}
+\tableofcontents
+\clearpage
+\addcontentsline{toc}{chapter}{\underline{List of Tables}}
+\listoftables
+\clearpage
+\addcontentsline{toc}{chapter}{\underline{List of Figures}}
+\listoffigures
+\clearpage
+
+\pagenumbering{arabic} \setcounter{page}{1}
+
+%pagestyle
+\rhead{Section \thesection}
+
+\chapter{Introduction}
+\label{intro}
+\setcounter{equation}{0}
+\newpage
+\section*{Scope of Chapter}
+This chapter describes the concept, design and directory structure
+of \D{} and how to obtain a copy of the source code.
+\newpage
+\input introduction.tex
+
+\chapter{Force Fields and Algorithms}
+\label{field}
+\setcounter{equation}{0}
+\newpage
+\section*{Scope of Chapter}
+This chapter describes the interaction potentials and simulation
+algorithms coded into \D{}.
+\newpage
+\input forfield.tex
+\input integration.tex
+\input repdata.tex
+\newpage
+\chapter{Construction and Execution}
+\label{conex}
+\setcounter{equation}{0}
+\newpage
+\section*{Scope of Chapter}
+This chapter describes how to compile a working version of \D{}
+and how to run it.
+\newpage
+\input construction.tex
+\input compile.tex
+\input ewald.tex
+\input diagnos.tex
+\newpage
+
+\chapter{Data Files}
+\label{files}
+\setcounter{equation}{0}
+\newpage
+\section*{Scope of Chapter}
+This chapter describes the standard input and output files for \D{},
+examples of which are to be found in the {\em data} sub-directory.
+\newpage
+\input input.tex
+\newpage
+\input output.tex
+\newpage
+
+\chapter{Solvation}
+\label{solvation}
+\setcounter{equation}{0}
+\newpage
+\section*{Scope of Chapter}
+This chapter describes the features within \D{} relevant to the subject of
+solvation.  The main features are: decomposing the system configuration energy
+into its molecular components; free energy calculations by thermodynamic
+integration; and the calculation of solvent induced spectral shifts.  Some of
+these features are sufficently general to have applications in other areas
+besides solutions.
+\newpage
+\input solvation.tex
+\newpage
+
+\chapter{Hyperdynamics}
+\label{hyperdynamics}
+\setcounter{equation}{0}
+\newpage
+\section*{Scope of Chapter}
+This chapter describes the facilities within \D{} for performing
+accelerated dynamics (or hyperdynamics) using the {\em Bias Potential
+Dynamics} and {\em Temperature Accelerated Dynamics} methods.
+\newpage
+\input hyper.tex
+\newpage
+
+\chapter{Metadynamics}
+\label{metadynamics}
+\setcounter{equation}{0}
+\newpage
+\section*{Scope of Chapter}
+This chapter describes the facilities within \D{} for studying the 
+thermodynamics of phase transitions using the method of metadynamics.
+\newpage
+\input meta.tex
+\newpage
+
+\chapter{Path Integral Molecular Dynamics}
+\label{pimd}
+\setcounter{equation}{0}
+\newpage
+\section*{Scope of Chapter}
+This chapter describes the implementation of Path Integral Molecular
+Dynamics (PIMD) in \D{}, which permits the calculation of quantum
+corrected thermodynamic and structural properties for atomistic
+systems.
+\newpage
+\input pimd.tex
+\newpage
+
+\begin{comment}
+\chapter{The Java GUI}
+\label{javagui}
+\setcounter{equation}{0}
+\newpage
+\section*{Scope of Chapter}
+This chapter describes the \D{} Java Graphical User Interface which
+offers utilities for running \D{}, constructing example input files
+and performing basic analysis of \D{} output.
+\newpage
+\input javagui.tex
+\newpage
+\end{comment}
+
+\chapter{Example Simulations}
+\label{data}
+\setcounter{equation}{0}
+\newpage
+\section*{Scope of Chapter}
+This chapter describes the standard test cases for \D{}, the input
+and output files for which are in the {\em data} sub-directory.
+\newpage
+\input examples.tex
+
+\chapter{Utilities}
+\label{utility}
+\setcounter{equation}{0}
+\newpage
+\section*{Scope of Chapter}
+This chapter describes the more important utility programs and
+subroutines of \D{}, found in the sub-directory {\em utility}. 
+
+\section{Miscellaneous Utilities}
+\input macros.tex
+
+\clearpage
+\addcontentsline{toc}{chapter}{Bibliography}
+\bibliographystyle{dl_poly}
+\bibliography{dl_poly}
+
+\clearpage
+\appendix
+\addcontentsline{toc}{chapter}{\underline{Appendices}}
+
+
+\chapter{The \D{} Makefile}
+\input makefile.tex
+\chapter{Periodic Boundary Conditions in \D{}}
+\input boundaries.tex
+\chapter{Error Messages and User Action}
+\input messages.tex
+\chapter{Subroutine Locations}
+\input locations.tex
+
+\clearpage
+\addcontentsline{toc}{chapter}{Index}
+\printindex
+\end{document}

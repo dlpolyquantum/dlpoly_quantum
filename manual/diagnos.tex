@@ -1,0 +1,48 @@
+\section{\D{} Error Processing\label{errorprocess}}
+\subsection{The \D{} Internal Error Facility}
+
+\D{} contains a number of in-built error checks scattered
+throughout the package which detect a wide range of possible errors.
+In all cases, when an error is detected the subroutine {\sc error}
+is called, resulting in an appropriate message and termination of the
+program execution (either immediately, or after additional
+processing.).
+
+Users intending to insert new error checks should ensure that all
+error checks are performed {\em concurrently} on {\em all} nodes, and
+that in circumstances where a different result may obtain on different
+nodes, a call to the global status routine {\sc gstate} is made to set
+the appropriate global error flag on all nodes. Only after this is
+done, a call to subroutine {\sc error} may be made. An example of such
+a procedure might be:
+
+{\tt
+\begin{tabbing}
+XXXXXX\=\kill
+\> logical safe\\
+\> safe=({\em test\_condition})\\
+\> call gstate(safe)\\
+\> if(.not.safe) call error(node\_id,message\_number)\\
+\end{tabbing}
+}
+
+In this example it is assumed that the logical operation {\em
+test\_condition} will result in the answer {\em .true.} if it is safe
+for the program to proceed, and {\em .false.} otherwise. The call to
+{\sc error} requires the user to state the identity of the calling
+node ({\tt node\_id}), so that only the nominated node in {\sc error}
+(i.e. node 0) will print the error message. The variable {\tt
+message\_number} is an integer used to identify the appropriate
+message to be printed. 
+
+In all cases, if {\sc error} is called with a {\em non-negative}
+message number, the program run terminates. If the message
+number is {\em negative}, execution continues, but even in this case
+\D{} will terminate the job at a more appropriate place. This
+feature is used in processing the CONTROL and FIELD file directives.
+A possible modification users may consider is to dump additional data
+before the call to {\sc error} is made.
+
+A full list of the \D{} error messages \index{error messages} and the
+appropriate user action can be found in Appendix \ref{A2} of this document.
+

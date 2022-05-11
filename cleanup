@@ -1,0 +1,12 @@
+#!/bin/tcsh
+#
+# DL_POLY utility to clean up after a program run
+#
+if (-e  CFGMIN) rm CFGMIN
+if (-e  OUTPUT) rm OUTPUT
+if (-e  RDFDAT) rm RDFDAT
+if (-e  REVCON) rm REVCON
+if (-e  REVIVE) rm REVIVE
+if (-e  REVOLD) rm REVOLD
+if (-e  STATIS) rm STATIS
+if (-e  ZDNDAT) rm ZDNDAT

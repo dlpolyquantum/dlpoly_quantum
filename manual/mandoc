@@ -1,0 +1,33 @@
+#!/bin/sh
+# Clean old compilation
+#
+mv USRMAN.tex .USRMAN.tex
+rm -f USRMAN.*
+mv .USRMAN.tex USRMAN.tex
+
+# First round
+#
+latex USRMAN.tex
+
+# Process indices
+#
+bibtex USRMAN.aux
+makeindex USRMAN.idx
+
+# Three more rounds
+#
+latex USRMAN.tex
+latex USRMAN.tex
+latex USRMAN.tex
+
+# Convert to PDF
+#
+dvipdfm -o USRMAN.pdf USRMAN.dvi
+
+# Clean compilation
+#
+mv USRMAN.tex .USRMAN.tex
+mv USRMAN.pdf .USRMAN.pdf
+rm -f USRMAN.*
+mv .USRMAN.tex USRMAN.tex
+mv .USRMAN.pdf USRMAN.pdf

@@ -1,0 +1,4908 @@
+
+
+\label{A2} 
+\subsection*{Introduction}
+In this appendix we document the error messages\index{error
+messages} encoded in \D{} and the recommended user action. 
+The correct response is described as the {\bf standard user
+response} in the approriate sections below, to which the user should
+refer before acting on the error encountered.
+
+The reader should also be aware that some of the error messages listed
+below may be either disabled in, or absent from, the installed version
+of \D{}. Disabled messages generally apply to older releases of the
+code, while absent messages apply to newer versions of the code and
+will not usually apply to previous releases.  They are all included
+for completeness. Note that the wording of some of the messages may
+also have changed over time, usually to provide more specific
+information. The most recent wording appears below.
+
+\D{} incorporates FORTRAN 90 dynamic array allocation to set
+the array sizes at run time. It is not foolproof however. Sometimes an
+estimate of the required array sizes is difficult to obtain and the
+calculated value may be too small. For this reason \D{} retains a number
+of array dimension checks and will terminate when an array bound error
+occurs.
+
+When a dimension error occurs, the {\bf standard user response} is to
+edit the \D{} subroutine {\sc parset.f}. Locate where the variable
+defining the array dimension is fixed and increase accordingly. To do
+this you should make use of the dimension information that \D{} prints in
+the OUTPUT file prior to termination. If no information is supplied,
+simply doubling the size of the variable will usually do the trick.
+If the variable concerned is defined in one of the support subroutines
+{\sc cfgscan.f, fldscan.f, conscan.f} you will need to insert a new
+line in {\sc parset.f} to redefine it - after the relevant subroutine
+has been called! Finally the code must be recompiled, but in this case
+it will be necessary only to recompile {\sc parset.f} and not the
+whole code.
+
+\subsection*{The \D{} Error Messages}
+
+\subsubsection*{Message 3: error - unknown directive found in CONTROL
+file}
+
+This error most likely arises when a directive is misspelt.\\
+
+\noindent
+{\em Action:} \\
+Locate incorrect directive in CONTROL file and replace.
+
+\subsubsection*{Message 4: error - unknown directive found in FIELD
+file}
+
+This error most likely arises when a directive is misspelt or is
+encountered in an incorrect location in the FIELD file, which can
+happen if too few or too many data records are included.\\
+
+\noindent
+{\em Action:} \\ Locate the erroneous directive in the FIELD file and
+correct error.
+
+\subsubsection*{Message 5: error - unknown energy unit requested}
+
+The \D{} FIELD file permits a choice of units for input of energy
+parameters. These may be: electron volts ({\bf ev}); kilocalories
+({\bf kcal}); kilojoules ({\bf kj}); or the \D{} internal units (10 J mol$^{-1}$)
+({\bf internal}). There is no default value. Failure to specify
+any of these correctly, or reference to other energy units, will
+result in this error message. See documentation of the FIELD file.\\
+
+\noindent
+{\em Action:} \\ 
+Correct energy keyword on {\bf units} directive in
+FIELD file and resubmit.
+
+\subsubsection*{Message 6: error - energy unit not specified}
+
+A {\bf units} directive is mandatory in the FIELD file. This error
+indicates that \D{} \newline has failed to find the required record.\\
+
+\noindent
+{\em Action:} \\
+Add {\bf units} directive to FIELD file and resubmit.
+
+\subsubsection*{Message 7: error - energy unit respecified}
+
+\D{} expects only one {\bf units} directive in the FIELD file.
+This error results if it encounters another - implying an ambiguity in
+units. \\
+
+\noindent
+{\em Action:} \\ Locate extra {\bf units} directive in FIELD file and
+remove.
+
+\subsubsection*{Message 8: error - time step not specified}
+
+\D{} requires a {\bf timestep} directive in the CONTROL file.
+This error results if none is encountered.\\
+
+\noindent
+{\em Action:} \\ Insert{\bf timestep} directive in CONTROL file with
+an appropriate numerical value.
+
+\subsubsection*{Message 10: error - too many molecule types specified}
+
+\D{} has a set limit on the number of kinds of molecules it will
+handle in any simulation (this is not the same as the number of
+molecules). If this permitted maximum is exceeded, the program
+terminates. The error arises when the {\bf molecules} directive in the
+FIELD file specifes too large a number.\\
+
+\noindent
+{\em Action:} \\ 
+Standard user response. Fix parameter {\tt mxtmls}.
+
+\subsubsection*{Message 11: error - duplicate molecule directive in
+FIELD file}
+
+The number of different types of molecules in a simulation should only
+be specified once. If \D{} encounters more than one {\bf molecules}
+directive, it will terminate execution.\\
+
+\noindent
+{\em Action:} \\ 
+Locate the extra {\bf molecule} directive in the FIELD file and remove.
+
+\subsubsection*{Message 12: error - unknown molecule directive in
+FIELD file}
+
+Once \D{} encounters the {\bf molecules} directive in the FIELD
+file, it assumes the following records will supply data describing the
+intramolecular force field. It does not then expect to encounter
+directives not related to these data. This error message results if it
+encounters a unrelated directive. The most probable cause is
+incomplete specification of the data (e.g.  when the {\bf finish}
+directive has been omitted.)\\
+
+\noindent
+{\em Action:} \\ 
+Check the molecular data entries in the FIELD file and correct.
+
+\subsubsection*{Message 13: error - molecule species not yet specified}
+
+This error arises when \D{} encounters non-bonded  force data in
+the FIELD file, {\em before} the molecular species have been
+specified. Under these circumstances it cannot assign the data
+correctly, and therefore terminates.\\
+
+\noindent
+{\em Action:} \\ 
+Make sure the molecular data appears before the
+non-bonded  forces data
+in the FIELD file and resubmit.
+
+\subsubsection*{Message 14: error - too many unique atom types  specified}
+
+This error arises when \D{} scans the FIELD file and discovers that
+there are too many different types of atoms in the system (i.e. the
+number of unique atom types exceeds the {\tt mxsvdw} parameter.\\
+
+\noindent
+{\em Action:} \\ 
+Standard user response. Fix parameter {\tt mxsvdw}.
+
+\subsubsection*{Message 15: error - duplicate pair potential specified}
+
+In processing the FIELD file, \D{} keeps a record of the specified
+short range pair potentials as they are read in. If it detects that a
+given pair potential has been specified before, no attempt at a
+resolution of the ambiguity is made and this error message results.
+See specification of FIELD file. \\
+
+\noindent
+{\em Action:} \\ 
+Locate the duplication in the FIELD file and rectify.
+
+\subsubsection*{Message 16: error - strange exit from FIELD file processing}
+
+This should never happen! However one remote possibility is that there
+are more than 10,000 directives in the FIELD file! It simply means
+that \D{} has ceased processing the FIELD data, but has not
+reached the end of the file or encountered a {\bf close} directive.
+Probable cause: corruption of the \D{} executable or of the FIELD
+file. We would be interested to hear of other reasons!\\
+
+\noindent
+{\em Action:} \\ 
+Recompile the program or recreate the FIELD file. If neither of these
+works, send the problem to us.
+
+\subsubsection*{Message 17: error - strange exit from CONTROL file
+processing}
+
+See notes on message 16 above.
+
+\subsubsection*{Message 18: error - duplicate 3-body potential
+specified}
+
+\D{} has encountered a repeat specification of a 3-body
+potential  in the FIELD file.\\
+
+\noindent
+{\em Action:} \\ 
+Locate the duplicate entry, remove and resubmit job.
+
+\subsubsection*{Message 19: error - duplicate 4-body potential specified}
+
+A 4-body potential has been duplicated in the FIELD file.\\
+
+\noindent
+{\em Action:}\\
+Locate the duplicated 4-body potential  and remove. Resubmit job.
+
+\subsubsection*{Message 20: error - too many molecule sites specified}
+
+\D{} has a fixed limit on the number of unique molecular sites in
+any given simulation. If this limit is exceeded, the program
+terminates. \\ 
+
+\noindent
+{\em Action:} \\ 
+Standard user response. Fix parameter {\tt mxsite}.
+
+\subsubsection*{Message 21: error - duplicate tersoff potential specified}
+
+The user has defined more than one Tersoff potential for a given pair
+of atoms types.
+
+\noindent
+{\em Action:} \\ 
+Locate the duplication in the FIELD file and correct.
+
+\subsubsection*{Message 22: error - unsuitable radial increment in
+TABLE file}
+
+This arises when the tabulated potentials  presented in the TABLE file
+have an increment that is greater than that used to define the other
+potentials in the simulation. Ideally the increment should be
+$r\_{cut}/(mxgrid-4)$, where $r\_{cut}$ is the potential cutoff for the
+short range potentials and {\tt mxgrid} is the parameter defining the
+length of the interpolation arrays. An increment less than this is
+permissible however.\\
+
+\noindent
+{\em Action:} \\
+The tables must be recalculated with an appropriate increment.
+
+\subsubsection*{Message 23: error - incompatible FIELD and TABLE file
+potentials}
+
+This error arises when the specification of the short range potentials
+is different in the FIELD and TABLE files. This usually means that the
+order of specification of the potentials is different. When
+\D{} finds a change in the order of specification, it assumes
+that the user has forgotten to enter one.\\
+
+\noindent
+{\em Action:} \\
+Check the FIELD and TABLE files. Make sure that you correctly specify
+the pair potentials in the FIELD file, indicating which ones are to be
+presented in the TABLE file. Then check the TABLE file to make sure
+all the tabulated potentials  are present in the order the FIELD file
+indicates.
+
+\subsubsection*{Message 24: error - end of file encountered in TABLE file}
+
+This means the TABLE file is incomplete in some way: either by having
+too few potentials included, or the number of data points is
+incorrect.\\
+
+\noindent
+{\em Action:} \\
+Examine the TABLE file contents and regenerate it if it appears to be
+incomplete. If it look intact, check that the number of data points
+specified is what \D{} is expecting.
+
+\subsubsection*{Message 25: error - wrong atom type found in CONFIG file}
+
+On reading the input file CONFIG, \D{} performs a check to ensure
+that the atoms specified in the configuration provided are compatible
+with the corresponding FIELD file. This message results if they are
+not. \\ 
+
+\noindent
+{\em Action:} \\ 
+The possibility exists that one or both of the CONFIG or FIELD files
+has incorrectly specified the atoms in the system. The user must
+locate the ambiguity, using the data printed in the OUTPUT file as a
+guide, and make the appropriate alteration.
+
+\subsubsection*{Message 26: error - cutoff smaller than EAM potential
+range}
+
+\D{} has detected an inconsistency in the definition of the EAM
+potential, namely that the user is not using the correct potential
+range.
+
+\noindent
+{\em Action:} \\ Look up the correct range for this potential and
+adjust the DL\_POLY cutoff accordingly.
+
+\subsubsection*{Message 27: error - incompatible FIELD and TABEAM file
+potentials} 
+
+The user has (or has not) specified a set of EAM potentials in the FIELD
+file which are not (or are) available in the TABEAM file.
+
+\noindent
+{\em Action:} \\ Examine the FIELD file. Make sure you have correctly
+specified the EAM potentials. Check that these appear in the TABEAM
+file if required.
+
+\subsubsection*{Message 28: error - transfer buffer too small in
+mettab}
+
+The number of points specifying an EAM potential in the TABEAM file
+exceeds the default buffer size in {\sc mettab.f}. 
+
+\noindent
+{\em Action:} \\ Reset the {\tt mxbuff} parameter in {\sc parset.f}
+subroutine to accommodate the required array length and recompile.
+
+\subsubsection*{Message 29: error - end of file encountered in TABEAM
+file}
+
+\D{} has reached the end of the TABEAM file without finding all the data
+it expects. 
+
+\noindent
+{\em Action:} \\ Either the TABEAM file is incomplete or it is
+improperly defined. Check the structure and content of the file with
+the TABEAM file specification in the manual and fix the error.
+
+\subsubsection*{Message 30: error - too many chemical bonds specified}
+
+\D{} sets a limit on the number of chemical bond
+potentials  that
+can be specified in the FIELD file. Termination results if this number
+is exceeded. See FIELD file documentation. Do not confuse this error
+with that described by message 31 (below). \\ 
+
+\noindent
+{\em Action:} \\ 
+Standard user response. Fix parameter {\tt mxtbnd}.
+
+\subsubsection*{Message 31: error - too many chemical bonds in system}
+
+\D{} sets a limit on the number of chemical bond  potentials in the
+simulated system as a whole. (This number is a combination of the
+number of molecules and the number of bonds per molecule, divided by
+the number of processing nodes.) Termination results if this number is
+exceeded. Do not confuse this error with that described by message
+30 (above). \\ 
+
+\noindent
+{\em Action:} \\ 
+Standard user response. Fix the parameter {\tt mxbond}.
+
+\subsubsection*{Message 32: error - integer array memory allocation
+failure}
+
+\D{} has failed to allocate sufficient memory to accommodate one or more
+of the integer arrays in the code. \\
+
+\noindent
+{\em Action:} \\ This may simply mean that your simulation is too
+large for the machine you are running on. Consider this before wasting
+time trying a fix. Try using more processing nodes if they are
+available. If this is not an option investigate the possibility of
+increasing the heap size for your application. Talk to your systems
+support people for advice on how to do this. 
+
+\subsubsection*{Message 33: error - real array memory allocation
+failure}
+
+\D{} has failed to allocate sufficient memory to accommodate one or more
+of the real arrays in the code. \\
+
+\noindent
+{\em Action:} \\ This may simply mean that your simulation is too
+large for the machine you are running on. Consider this before wasting
+time trying a fix. Try using more processing nodes if they are
+available. If this is not an option investigate the possibility of
+increasing the heap size for your application. Talk to your systems
+support people for advice on how to do this. 
+
+\subsubsection*{Message 34: error - character array memory allocation
+failure}
+
+\D{} has failed to allocate sufficient memory to accommodate one or more
+of the character arrays in the code. \\
+
+\noindent
+{\em Action:} \\ This may simply mean that your simulation is too
+large for the machine you are running on. Consider this before wasting
+time trying a fix. Try using more processing nodes if they are
+available. If this is not an option investigate the possibility of
+increasing the heap size for your application. Talk to your systems
+support people for advice on how to do this. 
+
+\subsubsection*{Message 35: error - logical array memory allocation
+failure}
+
+\D{} has failed to allocate sufficient memory to accommodate one or more
+of the logical arrays in the code. \\
+
+\noindent
+{\em Action:} \\ This may simply mean that your simulation is too
+large for the machine you are running on. Consider this before wasting
+time trying a fix. Try using more processing nodes if they are
+available. If this is not an option investigate the possibility of
+increasing the heap size for your application. Talk to your systems
+support people for advice on how to do this. 
+
+\subsubsection*{Message 36: error - failed fmet array allocation in
+mettab}
+
+\D{} is unable to allocate the {\tt fmet} array in the definition of an
+EAM potential.
+
+\noindent
+{\em Action:} \\ 
+Most probable cause is working too near the memory limit for the
+machine. Try using more processors to free up some memory. Check the
+TABEAM file in case the data are incorrectly specified.
+
+\subsubsection*{Message 40: error - too many bond constraints specified}
+
+\D{} sets a limit on the number of bond constraints  that can be
+specified in the FIELD file. Termination results if this number is
+exceeded. See FIELD file documentation. Do not confuse this error with
+that described by message 41 (below). \\ 
+
+\noindent
+{\em Action:} \\ 
+Standard user response. Fix the parameter {\tt mxtcon}.
+
+\subsubsection*{Message 41: error - too many bond constraints in system}
+
+\D{} sets a limit on the number of bond constraints  in the
+simulated system as a whole. (This number is a combination of the
+number of molecules and the number of per molecule,
+divided by the number of processing nodes.) Termination results if
+this number is exceeded. 
+Do not confuse
+this error with that described by message 40 (above). \\ 
+
+\noindent
+{\em Action:} \\ 
+Standard user response. Fix the parameter {\tt mxcons}.
+
+\subsubsection*{Message 42: error - transfer buffer too small in merge1}
+
+The buffer used to transfer data between nodes in the {\sc merge1}
+subroutines has been dimensioned too small.\\
+
+\noindent
+{\em Action:}\\ Standard user response. Fix the parameter {\tt mxbuff}.
+
+\subsubsection*{Message 45: error - too many atoms in CONFIG file}
+
+\D{} limits the number of atoms in the system to be simulated and
+checks for the violation of this condition when it reads the CONFIG
+file. Termination will result if the condition is violated. 
+
+\noindent
+{\em Action:} \\ Standard user response. Fix the parameter {\tt
+mxatms}.  Consider the possibility that the wrong CONFIG file is being
+used (e.g similar system, but larger size.)
+
+\subsubsection*{Message 46: error - ewlbuf array too small in ewald1}
+
+The {\tt ewlbuf} array used to store structure factor data in
+subroutine {\sc ewald1} has been dimensioned too small.\\
+
+\noindent
+{\em Action:}\\ Standard user response. Fix the parameter {\tt mxebuf}.
+
+\subsubsection*{Message 47: error - transfer buffer too small in merge}
+
+The buffer used to transfer data between nodes in the {\sc merge}
+subroutines has been dimensioned too small.\\
+
+\noindent
+{\em Action:}\\ Standard user response. Fix the parameter {\tt mxbuff}.
+
+\subsubsection*{Message 48: error - transfer buffer too small in fortab}
+
+The buffer used to transfer data between nodes in the {\sc fortab}
+subroutines has been dimensioned too small.\\
+
+\noindent
+{\em Action:}\\ Standard user response. Fix the parameter {\tt mxbuff}.
+
+\subsubsection*{Message 49: error - frozen core-shell unit specified}
+
+The \D{} option to freeze the location of an atom (i.e. hold
+it permanently in one position) is not permitted for core-shell units.
+This includes freezing the core or the shell independently. \\
+
+\noindent
+{\em Action:} \\
+Remove the frozen atom option from the FIELD file. Consider using a
+non-polarisable atom instead. 
+
+\subsubsection*{Message 50: error - too many bond angles specified}
+
+\D{} limits the number of valence angle
+potentials  that can be
+specified in the FIELD file and checks for the violation of this.
+Termination will result if the condition is violated.
+Do not confuse
+this error with that described by message 51 (below). \\ 
+
+\noindent
+{\em Action:} \\ 
+Standard user response. Fix the parameter {\tt mxtang}.
+
+\subsubsection*{Message 51: error - too many bond angles in system}
+
+\D{} limits the number of valence angle  potentials in the system
+to be simulated (actually, the number to be processed by each node)
+and checks for the violation of this.  Termination will result if the
+condition is violated. Do not confuse
+this error with that described by message 50 (above). \\ 
+
+\noindent
+{\em Action:} \\ Standard user response. Fix the parameter {\tt
+mxangl}.  Consider the possibility that the wrong CONFIG file is being
+used (e.g similar system, but larger size.)
+
+\subsubsection*{Message 52: error - end of FIELD file encountered}
+
+This message results when \D{} reaches the end of the FIELD file,
+without having read all the data it expects. Probable causes: missing
+data or incorrect specification of integers on the various directives.\\
+
+\noindent
+{\em Action:} \\ 
+Check FIELD file for missing or incorrect data and correct.
+
+\subsubsection*{Message 53: error - end of CONTROL file encountered}
+
+This message results when \D{} reaches the end of the CONTROL file,
+without having read all the data it expects. Probable cause: missing
+{\bf finish} directive.\\
+
+\noindent
+{\em Action:} \\ 
+Check CONTROL file and correct.
+
+\subsubsection*{Message 54: error - problem reading CONFIG file}
+
+This message results when \D{} encounters a problem reading the CONFIG file.
+Possible cause: corrupt data. \\
+
+\noindent
+{\em Action:} \\ 
+Check CONFIG file and correct.
+
+\subsubsection*{Message 55: error - end of CONFIG file encountered}
+
+This error arises when \D{} attempts to read more data from the
+CONFIG file than is actually present. The probable cause is an
+incorrect or absent CONFIG file, but it may be due to the FIELD file
+being incompatible in some way with the CONFIG file. \\ 
+
+\noindent
+{\em Action:} \\ 
+Check contents of CONFIG file. If you are convinced it is correct,
+check the FIELD file for inconsistencies.
+
+\subsubsection*{Message 57: error - too many core-shell units
+specified}
+
+\D{} has a restriction of the number of types of core-shell
+unit in the FIELD file and will terminate if too many are present.  Do
+not confuse this error with that described by message 59 (below).
+\\
+
+\noindent
+{\em Action:} \\ 
+Standard user response. Fix the parameter {\tt mxtshl}.
+
+\subsubsection*{Message 59: error - too many core-shell units in system}
+
+\D{} limits the number of core-shell units in the simulated system.
+Termination results if too many are encountered.  Do not confuse this
+error with that described by message 57 (above). \\
+ 
+\noindent
+{\em Action:} \\ 
+Standard user response. Fix the parameter {\tt mxshl}.
+
+\subsubsection*{Message 60: error - too many dihedral angles specified}
+
+\D{} will accept only a limited number of dihedral
+angles  in the FIELD file and will terminate
+if too many are present.  Do not confuse this error with that
+described by message 61 (below). \\
+
+
+\noindent
+{\em Action:} \\ 
+Standard user response. Fix the parameter {\tt mxtdih}.
+
+\subsubsection*{Message 61: error - too many dihedral angles in system}
+
+The number of dihedral angles  in the whole
+simulated system is limited by \D{}. Termination results if too many are
+encountered.  Do not confuse this error with that described by message
+60 (above). \\
+ 
+
+\noindent
+{\em Action:} \\ 
+Standard user response. Fix the parameter {\tt mxdihd}.
+
+\subsubsection*{Message 62: error - too many tethered atoms specified}
+
+\D{} will accept only a limited number of tethered atoms in the
+FIELD file and will terminate if too many are present.
+Do not confuse
+this error with that described by message 63 (below). \\ 
+
+\noindent
+{\em Action:} \\ 
+Standard user response. Fix the parameter {\tt mxteth}.
+
+\subsubsection*{Message 63: error - too many
+tethered  atoms in system}
+
+The number of tethered atoms in the simulated system is limited by
+\D{}. Termination results if too many are encountered.  Do
+not confuse this error with that described by message 62 (above).
+\\
+
+\noindent
+{\em Action:} \\ 
+Standard user response. Fix the parameter {\tt msteth}.
+
+\subsubsection*{Message 65: error - too many excluded pairs specified}
+
+This error can arise when \D{} is identifying the atom pairs that
+cannot have a pair potential between them, by virtue of being
+chemically bonded for example (see subroutine {\sc exclude}). Some of
+the working arrays used in this operation may be exceeded, resulting
+in termination of the program. \\ 
+
+\noindent
+{\em Action:} \\ 
+Standard user response. Fix the parameter {\tt mxexcl}.
+
+\subsubsection*{Message 66: error - incorrect boundary condition for HK ewald}
+
+The Hautman-Klein Ewald method can only be used with XY planar
+periodic boundary conditions (i.e. {\tt imcon} = 6). \\
+
+\noindent
+{\em Action:} \\ 
+Either the periodic
+boundary condition, or the choice of calculation of the electrostatic
+forces must be changed. \\
+
+\subsubsection*{Message 67: error - incorrect boundary condition in
+thbfrc}
+
+Three body forces in \D{} are only permissible with cubic, orthorhombic and
+parallelepiped  periodic
+boundaries. Use of other boundary conditions  results in this error. \\
+
+\noindent
+{\em Action:} \\
+If nonperiodic boundaries are required, the only option is to use a
+very large simulation cell, with the required system at the centre
+surrounded by a vacuum. This is not very efficient however and use of
+a realistic periodic system is the best option.
+
+\subsubsection*{Message 69: error - too many link cells required in
+thbfrc}
+
+The calculation of three body forces  in \D{} is handled by
+the link cell algorithm. This error arises if the required number of
+link cells exceeds the permitted array dimension in the code. \\
+
+\noindent
+{\em Action:} \\
+Standard user response. Fix the parameter {\tt mxcell}.
+
+\subsubsection*{Message 70: error - constraint bond quench failure}
+
+When a simulation with bond constraints  is started, \D{} attempts
+to extract the kinetic energy of the constrained atom-atom bonds
+arising from the assignment of initial random velocities. If this
+procedure fails, the program will terminate. The likely cause is a
+badly generated initial configuration.\\
+
+\noindent
+{\em Action:} \\ Some help may be gained from increasing the cycle
+limit, by following the standard user response to increase the control
+parameter {\tt mxshak}.  You may also consider reducing the tolerance
+of the SHAKE iteration, the directive {\bf shake} in the CONTROL
+file. However it is probably better to take a good look at the
+starting conditions!
+
+\subsubsection*{Message 71: error - too many metal potentials specified}
+
+The number of metal potentials  that can be specfied in the FIELD file
+is limited. This error results if too many are used. \\
+
+\noindent
+{\em Action:} \\ Standard user response. Fix the parameter {\tt
+mxvdw}.  Note that this parameter must be {\em double} the number of
+required metal potentials. Recompile the
+program.
+
+\subsubsection*{Message 72: error - different metal potential types
+specified}
+
+\D{} does not permit the user to mix different types of metal potential
+in the same simulation. There are no known rules for making alloys in
+this way.
+
+\noindent
+{\em Action:}\\
+Change the FIELD (and TABEAM) file as required so that only one type
+of metal potential is used.
+
+\subsubsection*{Message 73: error - too many inversion potentials specified}
+
+The number of inversion potentials specified in the FIELD file exceeds
+the permitted maximum.\\
+
+\noindent
+{\em Action:}\\
+Standard user response. Fix the parameter {\tt mxtinv}.
+
+\subsubsection*{Message 74: error - work array allocation failed in minimiser}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 75: error - too many atoms in specified system}
+
+\D{} places a limit on the number of atoms that can be simulated.
+Termination results if too many are specified.  \\ 
+
+\noindent
+{\em Action:} \\ 
+Standard user response. Fix the parameter {\tt mxatms}.
+
+\subsubsection*{Message 77: error - too many inversion
+potentials  in system}
+
+The simulation contains too many inversion potentials overall, causing
+termination of run.\\
+
+\noindent
+{\em Action:}\\
+Standard user response. Fix the parameter {\tt mxinv}.
+
+\subsubsection*{Message 79: error - incorrect boundary
+condition  in fbpfrc}
+
+The 4-body  force routine assumes a
+cubic  or parallelepiped  periodic
+boundary condition is in operation. The job will terminate if this is
+not adhered to.\\
+
+\noindent
+{\em Action:}\\
+You must reconfigure your simulation to an appropriate boundary
+condition.
+
+\subsubsection*{Message 80: error - too many pair potentials specified}
+
+\D{} places a limit on the number of pair potentials that can be
+specified in the FIELD file. Exceeding this number results in
+termination of the program execution. \\ 
+
+\noindent
+{\em Action:} \\Standard user response. Fix the parameters {\tt
+ mxsvdw}. and {\tt mxvdw}.
+
+\subsubsection*{Message 81: error - unidentified atom in pair potential list}
+
+\D{} checks all the pair potentials specified in the FIELD file
+and terminates the program if it can't identify any one of them from
+the atom types specified earlier in the file. \\ 
+
+\noindent
+{\em Action:} \\ 
+Correct the erroneous entry in the FIELD file and resubmit.
+
+\subsubsection*{Message 82: error - calculated pair potential index too large}
+
+In checking the pair potentials specified in the FIELD file \D{}
+calculates a unique integer index that henceforth identifies the
+potential within the program. If this index becomes too large,
+termination of the program results. \\ 
+
+\noindent
+{\em Action:} \\ 
+Standard user response. Fix the parameters {\tt mxsvdw} and {\tt mxvdw}.
+
+\subsubsection*{Message 83: error - too many three
+body  potentials
+specified}
+
+\D{} has a limit on the number of three body potentials that
+can be defined in the FIELD file. This error results if too many are
+included. \\
+
+\noindent
+{\em Action:} \\
+Standard user response. Fix the parameter {\tt mxtbp}.
+
+\subsubsection*{Message 84: error - unidentified atom in 3-body potential list}
+
+\D{} checks all the 3-body  potentials specified in the FIELD file
+and terminates the program if it can't identify any one of them from
+the atom types specified earlier in the file. \\ 
+
+\noindent
+{\em Action:} \\ 
+Correct the erroneous entry in the FIELD file and resubmit.
+
+\subsubsection*{Message 85: error - required velocities not in CONFIG file}
+
+If the user attempts to start up a \D{} simulation with the {\bf restart} or {\bf
+restart scale} directives (see description of CONTROL file,) the
+program will expect the CONFIG file to contain atomic velocities as
+well as positions. Termination results if these are not present. \\
+
+\noindent
+{\em Action:} \\ 
+Either replace the CONFIG file with one containing the velocities, or
+if not available, remove the {\bf restart} directive altogether 
+and let \D{} create the velocities for itself.
+
+\subsubsection*{Message 86: error - calculated
+3-body  potential index
+too large}
+
+\D{} has a permitted maximum for the calculated index for any
+three body  potential in the system (i.e. as defined in the FIELD
+file). If there are $m$ distinct types of atom in the system, the
+index can possibly range from $1$ to $(m^{2}*(m-1))/2$. If the
+internally calculated index exceeds this number, this error report
+results. \\
+
+\noindent
+{\em Action:} \\
+Standard user response. Fix the parameter {\tt mxtbp}.
+
+\subsubsection*{Message 87: error - too many link cells required in fbpfrc}
+
+The {\sc fbpfrc} subroutine uses link cells to compute the four body
+forces. This message indicates that the link cell arrays have
+insufficient size to work properly.\\
+
+\noindent
+{\em Action:}\\
+Standard user response. Fix the parameter {\tt mxcell}.
+
+\subsubsection*{Message 88: error - too many tersoff potentials specified}
+
+Too many Tersoff potentials  have been defined in the FIELD file.
+Certain arrays must be increased in size to accommodate the data.\\
+
+\noindent
+{\em Action:}\\
+Standard user response. Fix the parameter {\tt mxter}.
+
+\subsubsection*{Message 89: error - too many four body potentials
+specified}
+
+Too many four body potential  have been defined in the FIELD file.
+Certain arrays must be increased in size to accommodate the data.\\
+
+\noindent
+{\em Action:}\\
+Standard user response. Fix the parameter {\tt mxfbp}.
+
+\subsubsection*{Message 90: error - system total electric charge nonzero}
+
+In \D{} a check on the total system charge will
+result in an error if the net charge of the system is nonzero.  (Note:
+In \D{}  this message has been disabled. The program
+merely prints a warning stating that the system is not electrically neutral 
+but it does not terminate the program - watch out for this.) \\  
+
+\noindent
+{\em Action:} \\ 
+Check the specified atomic charges and their populations. Make sure
+they add up to zero. If the system is required to have a net zero charge,
+you can enable the call to this error message in subroutine {\sc sysdef}.
+
+\subsubsection*{Message 91: error - unidentified atom in 4-body
+potential list}
+
+The specification of a four-body  potential in the FIELD file has
+referenced an atom type that is unknown.\\
+
+\noindent
+{\em Action:}\\
+Locate the erroneous atom type in the four body potential definition in
+the FIELD file and correct. Make sure this atom type is specified by
+an {\tt atoms} directive earlier in the file.
+
+\subsubsection*{Message 92: error - unidentified atom in tersoff potential list}
+
+The specification of a Tersoff  potential in the FIELD file has
+referenced an atom type that is unknown.\\
+
+\noindent
+{\em Action:}\\
+Locate the erroneous atom type in the Tersoff potential definition in
+the FIELD file and correct. Make sure this atom type is specified by
+an {\tt atoms} directive earlier in the file.
+
+\subsubsection*{Message 93: error - cannot use shell model with rigid
+molecules}
+
+The dynamical shell model  implemented in \D{} is not designed
+to work with rigid molecules. This error results if these two options
+are simultaneously selected. \\
+
+\noindent
+{\em Action:} \\ 
+In some circumstances you may consider overriding
+this error message and continuing with your simulation.  For example
+if your simulation does not require the polarisability to be a feature
+of the rigid species, but is confined to free atoms or flexible
+molecules in the same system. The appropriate error trap is found in
+subroutine {\sc sysdef}.
+
+\subsubsection*{Message 95: error - potential cutoff exceeds half cell width}
+
+In order for the minimum image convention to work correctly within
+\D{}, it is necessary to ensure that the cutoff applied to the
+pair potentials does not exceed half the perpendicular width of the
+simulation cell. (The perpendicular width is the shortest distance
+between opposing cell faces.) Termination results if this is detected.
+In NVE simulations this can only happen at the start of a simulation,
+but in NPT, it may occur at any time. \\ 
+
+\noindent
+{\em Action:} \\ 
+Supply a cutoff that is less than half the cell width. If running
+constant pressure calculations, use a cutoff that will accommodate
+the fluctuations in  the simulation cell. Study the fluctuations
+in the OUTPUT file to help you with this.
+
+\subsubsection*{Message 97: error - cannot use shell model with neutral
+groups}
+
+The dynamical shell model  was not designed to work with neutral
+groups. This error results if an attempt is made to combine both. \\
+
+\noindent
+{\em Action:} \\
+There is no general remedy for this error if you wish to
+combine both these capabilities. However if your simulation does not
+require the polarisability to be a feature of rigid species
+(comprising the charged groups), but
+is confined to free atoms or flexible molecules in the same system,
+you may consider overriding this error message and continuing with
+your simulation. The appropriate error trap is found in subroutine
+{\sc sysdef}.
+
+\subsubsection*{Message 99: error - cannot use shell model with
+constraints}
+
+The dynamical shell model was not designed to work in conjunction with
+constraint bonds. This error results if both are used in the same
+simulation. \\
+
+\noindent
+{\em Action:}
+There is no general remedy if you wish to combine both these
+capabilities. However if your simulation does not
+require the polarisability to be a feature of the constrained species,
+but is confined to free atoms or flexible molecules, you may
+consider overriding this error message and continuing with your simulation.
+The appropriate error trap is in subroutine {\sc sysdef}.
+
+\subsubsection*{Message 100: error - forces working arrays too small}
+
+There are a number of arrays in \D{} that function as workspace
+for the forces calculations. Their dimension is equal to the number of
+atoms in the simulation cell divided by the number of nodes. If these
+arrays are likely to be exceeded, \D{} will terminate execution. \\ 
+
+\noindent
+{\em Action:} \\ 
+Standard user response. Fix the parameter {\tt msatms}.
+
+\subsubsection*{Message 101: error - calculated
+4-body  potential index too large}
+
+\D{} has a permitted maximum for the calculated index for any
+four body potential in the system (i.e. as defined in the FIELD
+file). If there are $m$ distinct types of atom in the system, the
+index can possibly range from $1$ to $(m^{2}*(m+1)*(m+2))/6$. If the
+internally calculated index exceeds this number, this error report
+results. \\
+
+\noindent
+{\em Action:} \\
+Standard user response. Fix the parameter {\tt mxfbp}.
+
+\subsubsection*{Message 102: error - parameter mxproc exceeded in shake arrays}
+
+The RD-SHAKE algorithm  distributes data over all nodes of a parallel
+computer. Certain arrays in RD-SHAKE have a minimum dimension equal to
+the maximum number of nodes \D{} is likely to encounter. If the
+actual number of nodes exceeds this, the program terminates. \\ 
+
+\noindent
+{\em Action:} \\ 
+Standard user response. Fix the parameter {\tt mxproc}.
+
+\subsubsection*{Message 103: error - parameter mxlshp exceeded in shake arrays}
+
+The RD-SHAKE algorithm requires that information about `shared' atoms
+be passed between nodes. If there are too many atoms, the arrays
+holding the information will be exceeded and \D{} will terminate
+execution. \\ 
+
+\noindent
+{\em Action:} \\ 
+Standard user response. Fix the parameter {\tt mxlshp}.
+
+\subsubsection*{Message 105: error - shake algorithm failed to converge}
+
+The RD-SHAKE  algorithm for bond
+constraints   is iterative. If the
+maximum number of permitted iterations is exceeded, the program
+terminates. Possible causes include: a bad starting configuration; too
+large a time step used; incorrect force field  specification; too high
+a temperature; inconsistent constraints involving shared atoms etc. \\ 
+
+\noindent
+{\em Action:} 
+\\ Corrective action depends on
+the cause. It is unlikely that simply increasing the iteration number
+will cure the problem, but you can try: follow the standard user
+response to increase the control parameter {\tt mxshak}. But the
+trouble is much more likely to be cured by careful consideration of
+the physical system being simulated. For example, is the system
+stressed in some way? Too far from equilibrium?
+
+\subsubsection*{Message 106: error - neighbour list array too small in
+          parlink}
+
+Construction of the Verlet neighbour list 
+in subroutine {\tt parlink} nonbonded (pair) force has exceeded the
+neighbour list array dimensions. \\
+
+\noindent
+{\em Action:} \\ 
+Standard user response. Fix the parameter {\tt mxlist}.
+
+\subsubsection*{Message 107: error - neighbour list array too small in
+          parlinkneu}
+
+Construction of the Verlet neighbour list 
+in subroutine {\tt parlinkneu} nonbonded (pair) force has exceeded the
+neighbour list array dimensions. \\
+
+\noindent
+{\em Action:} \\ 
+Standard user response. Fix the parameter {\tt mxlist}.
+
+\subsubsection*{Message 108: error - neighbour list array too small in
+          parneulst}
+
+Construction of the Verlet neighbour list 
+in subroutine {\tt parneulst} nonbonded (pair) force has exceeded the
+neighbour list array dimensions. \\
+
+\noindent
+{\em Action:} \\ 
+Standard user response. Fix the parameter {\tt mxlist}.
+
+\subsubsection*{Message 109: error - neighbour list array too small in
+          parlst\_nsq}
+
+Construction of the Verlet neighbour list 
+in subroutine {\tt parlst\_nsq} nonbonded (pair) force has exceeded the
+neighbour list array dimensions. \\
+
+\noindent
+{\em Action:} \\ 
+Standard user response. Fix the parameter {\tt mxlist}.
+
+\subsubsection*{Message 110: error - neighbour list array too small in
+          parlst}
+
+Construction of the Verlet neighbour list 
+in subroutine {\tt parlst} nonbonded (pair) force has exceeded the
+neighbour list array dimensions. \\
+
+\noindent
+{\em Action:} \\ 
+Standard user response. Fix the parameter {\tt mxlist}.
+
+\subsubsection*{Message 112: error - vertest array too small}
+
+This error results when the dimension of the \D{} {\sc
+vertest} arrays, which are used in checking if the Verlet list needs
+updating, have been exceeded.\\
+
+\noindent
+{\em Action:} \\ 
+Standard user response. Fix the parameter {\tt mslst}.
+
+\subsubsection*{Message 120: error - invalid determinant in matrix inversion}
+
+\D{} occasionally needs to calculate matrix inverses (usually the
+inverse of the matrix of cell vectors, which is of size 3 $\times$ 3).
+For safety's sake a check on the determinant is made, to prevent
+inadvertent use of a singular matrix. \\ 
+
+\noindent
+{\em Action:} \\ Locate the incorrect matrix and fix it - e.g. are
+cell vectors correct?
+
+\subsubsection*{Message 130: error - incorrect octahedral boundary condition}
+
+When calculating minimum images \D{} checks that the periodic
+boundary of the simulation cell is compatible with the specifed
+minimum image algorithm. Program termination results if an
+inconsistency is found. In this case the error refers to the truncated
+octahedral minimum image, which is inconsistent with the simulation
+cell. The most probable cause is the incorrect definition of the
+simulation cell vectors present in the input file CONFIG, these must
+equal the vectors of the enscribing cubic cell. \\ 
+
+\noindent
+{\em Action:} \\ 
+Check the specified simulation cell vectors and correct accordingly.
+
+\subsubsection*{Message 135: error - incorrect hexagonal prism boundary condition}
+
+When calculating minimum images \D{} checks that the periodic
+boundary of the simulation cell is compatible with the specifed
+minimum image algorithm. Program termination results if an
+inconsistency is found. In this case the error refers to the hexagonal
+prism minimum image, which is inconsistent with the simulation
+cell. The most probable cause is the incorrect definition of the
+simulation cell vectors present in the input file CONFIG, these must
+equal the vectors of the enscribing orthorhombic cell. \\ 
+
+\noindent
+{\em Action:} \\ 
+Check the specified simulation cell vectors and correct accordingly.
+
+\subsubsection*{Message 140: error - incorrect dodecahedral boundary condition}
+
+When calculating minimum images \D{} checks that the periodic
+boundary of the simulation cell is compatible with the specifed
+minimum image algorithm. Program termination results if an
+inconsistency is found. In this case the error refers to the rhombic
+dodecahedral minimum image, which is inconsistent with the simulation
+cell. The most probable cause is the incorrect definition of the
+simulation cell vectors present in the input file CONFIG, these must
+equal the vectors of the enscribing tetragonal simulation cell. \\ 
+
+\noindent
+{\em Action:} \\ 
+Check the specified simulation cell vectors and correct accordingly.
+
+\subsubsection*{Message 141: error - duplicate metal potential specified}
+
+The user has specified a particular metal potential more than once in
+the FIELD file. \\
+
+\noindent
+{\em Action:} \\ 
+Locate the metal potential specification in the FIELD file and remove
+or correct the potential concerned. \\
+
+\subsubsection*{Message 142: error - interpolation outside range of 
+metal potential attempted}
+
+The program has found that an interatomic distance in a simulated metallic
+system is such that it requires a potential value outside range for which the
+potential is defined. \\
+
+\noindent
+{\em Action:} \\ 
+The probable cause of this is that the density of the system is unrealistic or
+the potential is being used in unsuitable circumstances. The attempted
+simulation should be examined, and if considered reasonable a new potential
+must be found. \\
+
+\subsubsection*{Message 145: error - no van der waals potentials defined}
+
+This error arises when there are no VDW potentials specified in the
+FIELD file but the user has not specified {\bf no vdw} in the CONTROL
+file.  In other words \D{} expects the FIELD file to contain VDW
+potential specifications. \\
+
+\noindent
+{\em Action:} \\ 
+Edit the FIELD file to insert the required potentials  or specify {\bf
+no vdw} in the CONTROL file.
+
+\subsubsection*{Message 150: error - unknown van der waals potential selected}
+
+\D{} checks when constructing the interpolation tables for the short ranged
+potentials that the potential function requested is
+one which is of a form known to the program. If the requested
+potential form is unknown, termination of the program results.
+The most probable cause of this is the incorrect choice of the potential
+keyword in the FIELD file or one in the wrong columns (input is formatted). \\ 
+
+\noindent
+{\em Action:} \\ 
+Read the \D{} documentation and find the potential keyword for the
+potential desired. Insert the correct index in the FIELD file
+definition and ensure it occurs in the correct columns (17-20).
+If the correct form is not available, look at the
+subroutine {\sc forgen} (or its variant) and define the potential
+for yourself. It is easily done.
+
+\subsubsection*{Message 151: error - unknown metal potential selected}
+
+The metal potentials  available in \D{} are confined to density
+dependent forms of the Sutton-Chen type. This error results if the
+user attempts to specify another.\\
+
+\noindent
+{\em Action:} \\
+Re-specify the potential as Sutton-Chen type if possible. Check the potential keyword
+appears in columns 17-20 of the FIELD file.
+
+\subsubsection*{Message 153: error - metals not permitted with multiple timestep}
+
+The multiple timestep algorithm  cannot be used in conjunction with
+metal potentials in \D{}. \\
+
+\noindent
+{\em Action:} \\
+The simulation must be run without the multiple timestep option.
+
+\subsubsection*{Message 160: error - unaccounted for atoms in exclude list }
+
+This error message means that \D{} has been unable to find all the
+atoms described in the exclusion list within the simulation cell. This
+should never occur, if it does it means a serious bookkeeping error has
+occured. The probable cause is corruption of the code somehow. \\ 
+
+\noindent
+{\em Action:} \\ 
+If you feel you can tackle it - good luck!  Otherwise we recommend you
+get in touch with the program authors. Keep all relevant data files to
+help them find the problem.
+
+\subsubsection*{Message 170: error - too many variables for statistic array }
+
+This error means the statistics arrays appearing in subroutine {\sc
+static} are too small. This can happen if the number of unique atom
+types is too large. \\ 
+
+\noindent
+{\em Action:} \\ Standard user response. Fix the parameter {\tt
+mxnstk}.  {\tt mxnstk} should be at least (45+{\em number of unique
+atom types}).
+
+\subsubsection*{Message 180: error - Ewald sum requested in
+non-periodic system}
+
+\D{} can use either the Ewald method or direct summation to
+calculate the electrostatic potentials and forces in periodic (or
+pseudo-periodic) systems.  For non-periodic systems only direct
+summation is possible. If the Ewald summation  is requested (with the
+{\bf ewald sum} or {\bf ewald precision} directives in the CONTROL file) without periodic boundary
+conditions, termination of the program results. \\
+
+\noindent
+{\em Action:} \\ 
+Select periodic boundaries by setting the variable {\tt imcon}$>$0 in
+the CONFIG file (if possible) or use a different method to evaluate electrostatic interactions
+e.g. by usinf the {\bf coul} directive in the CONTROL file.
+
+\subsubsection*{Message 185: error - too many reciprocal space vectors}
+
+\D{} places hard limit on the number of k vectors to be used in the
+Ewald sum  and terminates if more than this is requested. \\
+
+\noindent
+{\em Action:} \\ Either consider using fewer k vectors in the Ewald
+sum (and a larger cutoff in real space) or follow standard user
+response to reset the parameters {\tt kmaxb, kmaxc}.
+
+\subsubsection*{Message 186: error - transfer buffer array too small in sysgen}
+
+In the subroutine {\sc sysgen.f} \D{} requires dimension of the array
+{\tt buffer} (defined by the parameter {\tt mxbuff}) to be no less
+than the parameter {\tt mxatms} or the product of parameters {\tt
+mxnstk*mxstak}. If this is not the case it will be unable to restart
+the program correctly to continue a run. (Applies to parallel
+implementations only.)\\
+
+\noindent
+{\em Action:} \\ Standard user response. Fix the parameter {\tt mxbuff}.
+
+\subsubsection*{Message 190: error - buffer array too small in splice}
+
+\D{} uses a workspace array named {\tt buffer} in several
+routines. Its declared size is a compromise of several r\^{o}les and
+may sometimes be too small (though in the supplied program, this
+should happen only very rarely). The point of failure is in the
+{\sc splice} routine, which is part of the RD-SHAKE
+algorithm. \\
+
+\noindent
+{\em Action:} \\ Standard user response. Fix the parameter {\tt
+mxbuff}.
+
+\subsubsection*{Message 200: error - rdf buffer array too small in
+revive}
+
+This error indicates that the buffer array used to globally sum the
+rdf arrays in subroutine {\sc revive} is too small. \\
+
+\noindent
+{\em Action:} \\ Standard user response. Fix the parameter {\tt
+mxbuff}.  Alternatively {\tt mxrdf} can be set smaller.
+
+
+\subsubsection*{Message 220: error - too many neutral groups in system}
+
+\D{} has a fixed limit on the number of charged groups  in a simulation.
+This error results if the number is exceeded. \\
+
+\noindent
+{\em Action:} \\
+Standard user response. Fix the parameter {\tt mxneut}.
+
+\subsubsection*{Message 225: error - multiple selection of optimisation options}
+
+The user has specified more than one optimisation directive in the
+CONTROL file//
+
+\noindent
+{\em Action:} \\
+Remove redundant optimisation directive(s) from CONTROL file.
+
+\subsubsection*{Message 230: error - neutral groups improperly
+arranged}
+
+In the \D{} FIELD file the charged groups  must be defined in
+consecutive order. This error results if this convention is not
+adhered to.\\
+
+\noindent
+{\em Action:} \\
+The arrangement of the data in the FIELD file must be sorted. All
+atoms in the same group must be arranged consecutively. Note that
+reordering the file in this way implies a rearrangement of the
+CONFIG file also.
+
+\subsubsection*{Message 250: error - Ewald sum requested with neutral
+groups}
+
+\D{} will not permit the use of neutral groups with the Ewald
+sum.  This
+error results if the two are used together. \\
+
+\noindent
+{\em Action:} \\
+Either remove the {\bf neut} directive from the FIELD file or use a different
+method to evaluate the electrostatic interactions. 
+
+\subsubsection*{Message 260: error - parameter mxexcl exceeded in 
+excludeneu routine}
+
+An error has been detected in the construction of the excluded atoms
+list for neutral groups. This occurs when the parameter {\tt mxexcl} is
+exceeded in the {\sc excludeneu} routine. \\
+
+\noindent
+{\em Action:}\\ Standard user response. Fix parameter {\tt mxexcl}.
+
+\subsubsection*{Message 300: error - incorrect boundary condition in
+parlink}
+
+The use of link cells in \D{} implies the use of appropriate boundary
+conditions. This error results if the user specifies octahedral,
+dodecahedral or slab  boundary conditions. \\
+
+\noindent
+{\em Action:}\\
+The simulation must be run with cubic, orthorhombic or parallelepiped
+ boundary conditions.
+
+\subsubsection*{Message 301: error - too many rigid body types}
+
+The maximum number of rigid body  types permitted by \D{} has been
+exceeded.\\
+
+\noindent
+{\em Action:}\\
+Standard user response. Fix the parameter {\tt mxungp}.
+
+\subsubsection*{Message 302: error - too many sites in rigid body}
+
+This error arises when \D{} finds that the number of sites in a rigid
+body  exceeds the dimensions of the approriate storage arrays.\\
+
+\noindent
+{\em Action:}\\
+Standard user response. Fix the parameter {\tt mxngp}.
+
+\subsubsection*{Message 303: error - too many rigid bodies specified}
+
+The maximum number of rigid bodies  in a simulation has been reached.
+Do not confuse this with message 304 below. \\
+
+\noindent
+{\em Action:}\\
+Standard user response. Fix the parameter {\tt mxgrp}.
+
+\subsubsection*{Message 304: error - too many rigid body sites in
+system}
+
+This error occurs when the total number of sites within all rigid
+bodies  exceeds the permitted maximum. Do not confuse this with
+message 303 above. \\
+
+\noindent
+{\em Action:} \\
+Standard user response. Fix the parameter {\tt mxgatms}.
+
+\subsubsection*{Message 305: error - box size too small for link cells}
+
+The link cells algorithm in \D{} cannot work with less than 27 link
+cells. Depending on the cell size and the chosen cut-off, \D{} may
+decide that this minimum cannot be achieved and terminate.\\
+
+\noindent
+{\em Action:}\\
+If a smaller cut-off is acceptable use it. Otherwise do not use link
+cells. Consider running a larger system, where link cells will work.
+
+\subsubsection*{Message 306: error - failed to find principal axis
+system}
+
+This error indicates that the routine {\sc quatbook} has failed to
+find the principal axis for a rigid unit. \\
+
+\noindent
+{\em Action:}\\
+This is an unlikely error. The code should correctly handle linear,
+planar and 3-dimensional rigid units. Check the definition of the
+rigid unit in the CONFIG file, if sensible report the error to the
+authors.
+
+\subsubsection*{Message 310: error - quaternion setup failed}
+
+This error indicates that the routine {\sc quatbook} has failed to
+reproduce all the atomic positions in rigid units from the
+centre of mass and quaternion vectors it has calculated. \\
+
+\noindent
+{\em Action:}\\ Check the contents of the CONFIG file. \D{} builds its
+local body description of a rigid unit type from the {\em first} occurrence
+of such a unit in the CONFIG file. The error most likely occurs because 
+subsequent occurrences were not sufficiently similar to this reference
+structure. If the problem persists increase the value of the variable
+{\tt tol} in {\sc quatbook} and recompile. If problems still persist
+double the value of {\tt dettest} in {\sc quatbook} and recompile.
+If you still encounter problems contact the authors.
+
+\subsubsection*{Message 320: error - site in multiple rigid bodies}
+
+\D{} has detected that a site is shared by two or more rigid
+bodies. There is no integration algorithm available in this version of
+the package to deal with this type of model. \\
+
+\noindent
+{\em Action:}\\
+The only course is to redefine the molecular model (e.g. introducing
+flexible bonds and angles in suitable places) to allow \D{}
+to proceed.
+
+\subsubsection*{Message 321: error - quaternion integrator failed}
+
+The quaternion algorithm has failed to converge. If the
+maximum number of permitted iterations is exceeded, the program
+terminates. Possible causes include: a bad starting configuration; too
+large a time step used; incorrect force field specification; too high
+a temperature; inconsistent constraints involving shared atoms etc. \\ 
+
+\noindent
+{\em Action:}\\ Corrective action depends on the cause. Try reducing
+the timestep or running a zero kelvin structure optimization for a
+hundred timesteps or so.  It is unlikely that simply increasing the
+iteration number will cure the problem, but you can try: follow the
+standard user response to increase the parameter {\tt mxquat}. But the
+trouble is much more likely to be cured by careful consideration of
+the physical system being simulated. For example, is the system
+stressed in some way? Too far from equilibrium?
+
+\subsubsection*{Message 330: error - mxewld parameter incorrect}
+
+\D{} has two strategies for parallelization of the reciprocal space part
+of the Ewald sum. If {\sc ewald1} is used the
+parameter {\tt mxewld} should equal the parameter {\tt msatms}. If
+{\sc ewald1a} is used this parameter should equal {\tt mxatms}.\\
+
+\noindent
+{\em Action:} \\ Standard user response. Set the parameter {\tt
+mxewld} to the value appropriate for the version of {\sc ewald1} you
+are using. Recompile the program.
+
+\subsubsection*{Message 331: error - mxhke parameter incorrect}
+
+The parameter {\tt mxhke}, which defines the dimension of some arrays
+used in the Hautman-Klein Ewald method, should equal the parameter
+{\tt msatms}.\\
+
+\noindent
+{\em Action:} \\ Standard user response. Set the parameter {\tt
+mxhke} to the value regquired. Recompile the program.
+
+\subsubsection*{Message 332: error - mxhko parameter too small}
+
+The parameter {\tt mxhko} defines the maximum order for the Taylor
+expansion implicit in the Hautman-Klein Ewald method. \D{} has a maximum
+of {\tt mxhko} = 3, but it can be set to less in some
+implementations. If this error arises when the user requestes an
+order in excess of this parameter.\\
+
+\noindent
+{\em Action:} \\ Standard user response. Set the parameter {\tt mxhko}
+to a higher value (if it is $<$3) and recompile the
+program. Alternatively request a lower order in the CONTROL file
+through the {\tt nhko} variable (see \ref{controlfile}).
+
+\subsubsection*{Message 340: error - invalid integration option requested}
+
+\D{} has detected an incompatibility in the simulation instructions,
+namely that the requested integration algorithm is not compatible with
+the physical model. It {\em may} be possible to override this error trap,
+but it is up to the user to establish if this is sensible.
+\noindent
+{\em Action:} \\ 
+This is a non recoverable error, unless the user chooses to override
+the restriction.
+
+\subsubsection*{Message 350: error - too few degrees of freedom}
+
+This error can arise if a small system is being simulated and the
+number of constraints applied is too large.\\
+
+\noindent
+{\em Action:} \\ 
+Simulate a larger system or reduce the number of constraints.
+
+\subsubsection*{Message 360: error - frozen atom found in rigid
+body}
+
+\D{} does not permit a site in a rigid body  to be frozen i.e.
+fixed in one location in space. \\
+
+\noindent
+{\em Action:} \\
+Remove the `freeze' condition from the site concerned. Consider using
+a very high site mass to achieve a similar effect.
+
+\subsubsection*{Message 380: error - simulation temperature not specified}
+
+\D{} has failed to find a {\bf temp} directive in the CONTROL file.\\
+
+\noindent
+{\em Action:} \\ 
+Place a {\bf temp} directive in the CONTROL file, with the required
+temperature specified.
+
+\subsubsection*{Message 381: error - simulation timestep not specified}
+
+\D{} has failed to find a {\bf timestep} directive in the CONTROL file.\\
+
+\noindent
+{\em Action:} \\ 
+Place a {\bf timestep} directive in the CONTROL file, with the required
+timestep specified.
+
+\subsubsection*{Message 382: error - simulation cutoff not specified}
+
+\D{} has failed to find a {\bf cutoff} directive in the CONTROL file.\\
+
+\noindent
+{\em Action:} \\ 
+Place a {\bf cutoff} directive in the CONTROL file, with the required
+forces cutoff specified.
+
+\subsubsection*{Message 383: error - simulation forces option not specified}
+
+\D{} has failed to find any directive specifying the electrostatic interactions
+options in the CONTROL file.\\
+
+\noindent
+{\em Action:} \\ 
+Ensure the CONTROL file contains at least one directive specifying the
+electrostatic potentials  (e.g. {\bf ewald}, {\bf coul}, 
+{\bf no electrostatics} etc.)
+
+\subsubsection*{Message 384: error - verlet strip width not specified}
+
+\D{} has failed to find the {\bf delr} directive in the CONTROL file.\\
+
+\noindent
+{\em Action:} \\ 
+Insert a {\bf delr} directive in the CONTROL file, specifying the
+width of the verlet strip augmenting the forces cutoff.
+
+\subsubsection*{Message 385: error - primary cutoff not specified}
+
+\D{} has failed to find the {\bf prim} directive in the CONTROL
+file. Necessary only if multiple timestep  option required. \\
+
+\noindent
+{\em Action:} \\ 
+Insert a {\bf prim} directive in the CONTROL file, specifying the
+primary cutoff radius in the multiple timestep
+algorithm.
+
+\subsubsection*{Message 386: error - primary cutoff larger than rcut}
+
+The primary cutoff specified by the {\bf prim} directive in the
+CONTROL file exceeds the value specified for the forces cutoff
+(directive {\bf cut}). Applies only if the multiple
+timestep option
+is required.\\
+
+\noindent
+{\em Action:} \\ 
+Locate the {\bf prim} directive in the CONTROL file, and alter the
+chosen cutoff. Alternatively, increase the real space cutoff specified
+with the {\bf cut} directive. Take care to avoid error number 398.
+
+\subsubsection*{Message 387: error - system pressure not specified}
+
+The target system pressure has not been specified in the CONTROL file.
+Applies to NPT simulations only. \\
+
+\noindent
+{\em Action:}\\
+Insert a {\bf press} directive in the CONTROL file specifying the
+required system pressure.
+
+\subsubsection*{Message 388: error - npt incompatible with multiple timestep}
+
+The use of NPT (constant pressure) and temperature is not compatible
+with the multiple timestep option.\\
+
+\noindent
+{\em Action:}\\
+Simulation must be run at fixed volume in this case. But note it may
+be possible to use NPT without the multiple timestep, in ourder to
+estimate the required system volume, then switch back to multiple
+timestep and NVT dynamics at the required volume.
+
+\subsubsection*{Message 390: error - npt ensemble requested in
+non-periodic system}
+
+A non-periodic system has no defined volume, hence the NPT algorithm
+cannot be applied.\\
+
+\noindent
+{\em Action:} \\ Either simulate the system with a periodic boundary,
+or use another ensemble.
+
+\subsubsection*{Message 391: error - incorrect number of pimd beads in config file}
+
+The CONFIG file must specify the position of all the beads in a PIMD
+simulation, not just the positions of the parent atoms, otherwise this
+error results. \\
+
+\noindent
+{\em Action:}\\
+The CONFIG file must be reconstructed to provide the required data.
+
+\subsubsection*{Message 392: error - too many link cells requested}
+
+The number of link cells required for a given simulation exceeds the
+number allowed for by the \D{} arrays. \\
+
+\noindent
+{\em Action:} \\
+Standard user response. Fix the parameter {\tt mxcell}.
+
+\subsubsection*{Message 394: error - minimum image arrays exceeded}
+
+The work arrays used in {\sc images} have been exceeded.
+
+\noindent
+{\em Action:} Standard user response. Fix the parameter {\tt mxxdf}.
+
+\subsubsection*{Message 396: error - interpolation array exceeded}
+\D{} has sought to read past the end of an interpolation array. This should
+never happen!\\
+
+\noindent
+{\em Action:} \\
+Contact the authors.
+
+\subsubsection*{Message 398: error - cutoff too small for rprim and
+delr}
+
+This error can arise when the multiple timestep  option is used. It is
+essential that the primary cutoff ({\tt rprim}) is less than the real
+space cutoff ({\tt rcut}) by at least the Verlet shell
+width {\tt delr} (preferably much larger!). \D{} terminates
+the run if this condition is not satisfied. \\
+
+\noindent
+{\em Action:} \\
+Adjust {\tt rcut}, {\tt rprim} and {\tt delr} to satisfy the
+\D{} requirement. These are defined with the directives {\bf cut}, {\bf
+prim} and {\bf delr} respectively.
+
+\subsubsection*{Message 400: error - rvdw greater than cutoff}
+
+\D{} requires the real space cutoff ({\tt rcut}) 
+to be larger than, or equal to, the van der Waals  cutoff ({\tt rvdw})
+and terminates the run if this condition is not satisfied. \\
+
+\noindent
+{\em Action:} \\ 
+Adjust {\tt rvdw} and {\tt rcut} to satisfy the \D{} requirement.
+
+\subsubsection*{Message 402: error - van der waals cutoff unset}
+
+The user has not set a cutoff ({\tt rvdw}) for the van der
+Waals 
+potentials. The simulation cannot proceed without this being
+specified. \\
+
+\noindent
+{\em Action:} \\
+Supply a cutoff value for the van der Waals terms in the CONTROL file
+using the directive {\bf rvdw}, and resubmit job.
+
+\subsubsection*{Message 410: error - cell not consistent with image convention}
+
+The simulation cell vectors appearing in the CONFIG file are not
+consistent with the specified image convention. \\
+
+\noindent
+{\em Action:} \\ Locate the variable {\tt imcon} in the CONFIG file
+and correct to suit the cell vectors.
+
+\subsubsection*{Message 412: error - mxxdf parameter too small for
+shake routine}
+
+In \D{} the parameter {\tt mxxdf} must be greater than
+or equal to the parameter {\tt mxcons}. If it is not, this error is a
+possible result.\\
+
+\noindent
+{\em Action:} \\ Standard user response. Fix the parameter {\tt mxxdf}.
+
+\subsubsection*{Message 414: error - conflicting ensemble  options in
+CONTROL file}
+
+\D{} has found more than one {\bf ensemble} directive in the
+CONTROL file.\\
+
+\noindent
+{\em Action:} \\ 
+Locate extra {\bf ensemble} directives in CONTROL file and remove.
+
+\subsubsection*{Message 416: error - conflicting force options in
+CONTROL file}
+
+\D{} has found incompatible directives in the CONTROL file
+specifying the electrostatic interactions options.\\
+
+\noindent
+{\em Action:} \\ Locate the conflicting directives in the
+CONTROL file and correct.
+
+\subsubsection*{Message 418: error - bond vector work arrays too small
+in bndfrc}
+
+The work arrays in {\sc bndfrc} have been exceeded.\\
+
+\noindent
+{\em Action:} \\
+Standard user response. Fix the parameter {\tt msbad}.
+
+
+\subsubsection*{Message 419: error - bond vector work arrays too small
+in angfrc}
+The work arrays in {\sc angfrc} have been exceeded.\\
+
+\noindent
+{\em Action:} \\
+Standard user response. Fix the parameter {\tt msbad}.
+
+
+\subsubsection*{Message 420: error - bond vector work arrays too small
+in tethfrc}
+The work arrays in {\sc tethfrc} have been exceeded.\\
+
+\noindent
+{\em Action:} \\
+Standard user response. Fix the parameter {\tt msbad}.
+
+
+\subsubsection*{Message 421: error - bond vector work arrays too small
+in dihfrc}
+The work arrays in {\sc dihfrc} have been exceeded.\\
+
+\noindent
+{\em Action:} \\
+Standard user response. Fix the parameter {\tt msbad}.
+
+
+\subsubsection*{Message 422: error - all-pairs must use multiple
+timestep}
+
+In \D{} the `all pairs' option must be used in conjunction
+with the multiple timestep. \\
+
+\noindent
+{\em Action:} \\
+Activate the multiple timestep option in the CONTROL file and resubmit.
+
+\subsubsection*{Message 423: error - bond vector work arrays too small
+in shlfrc}
+
+The dimensions of the interatomic distance vectors have been exceeded
+in subroutine {\sc shlfrc}. \\
+
+\noindent
+{\em Action:} \\ Standard user response. Fix the parameter {\tt
+msbad}. Set equal to the value of the parameter {\tt mxshl}.
+
+\subsubsection*{Message 424: error - electrostatics incorrect for
+all-pairs}
+
+When using the all pairs option in conjunction with electrostatic
+forces, the electrostatics  must be handled with either the standard Coulomb sum, or with the distance dependent dielectric. \\
+
+\noindent
+{\em Action:} \\
+Rerun the simulation with the appropriate electrostatic option.
+
+\subsubsection*{Message 425: error - transfer buffer array too small in
+shlmerge}
+
+The buffer used to transfer data between nodes in the subroutine {\sc
+shlmerge} has been dimensioned too small.\\
+
+\noindent
+{\em Action:}\\ Standard user response. Fix the parameter {\tt mxbuff}.
+
+\subsubsection*{Message 426: error - neutral groups not permitted with
+all-pairs}
+
+\D{} will not permit simulations using both the neutral group
+and all pairs options together. \\
+
+\noindent
+{\em Action:} \\
+Switch off one of the conflicting options and rerun.
+
+\subsubsection*{Message 427: error - bond vector work arrays too small in invfrc}
+
+The work arrays in subroutine {\sc invfrc} have been exceeded.\\
+
+\noindent
+{\em Action:} \\
+Standard user response. Fix the parameter {\tt msbad}.
+
+\subsubsection*{Message 430: error - integration routine not available}
+
+A request for a nonexistent ensemble  has been made or a request with
+conflicting options that \D{} cannot deal with (e.g. a Evans
+thermostat  with
+rigid body  equations of motion).\\
+
+\noindent
+{\em Action:}\\
+Examine the CONTROL and FIELD files and remove inappropriate specifications. 
+
+\subsubsection*{Message 432: error - intlist failed to assign
+constraints }
+
+If the required simulation has constraint bonds  \D{} attempts
+to apportion the molecules to processors so that, if possible, there
+are no shared atoms between processors. If this is not possible, one
+or more molecules may be split between processors. This message
+indicates that the code has failed to carry out either of these
+successfully. \\
+
+\noindent
+{\em Action:} \\
+The error may arise from a compiler error. Try recompiling {\sc intlist}
+without the optimization flag turned on. If the problem persists it 
+should be reported to
+the authors, (after checking the input data for inconsistencies).
+
+\subsubsection*{Message 433: error - specify rcut before the Ewald sum
+precision}
+
+When specifying the desired precision for the Ewald sum  in the CONTROL
+file, it is first necessary to specify the real space cutoff {\tt
+rcut}.\\
+
+\noindent
+{\em Action:} \\ Place the {\bf cut} directive {\em before} the {\bf
+ewald precision} directive in the CONTROL file and rerun.
+
+\subsubsection*{Message 434: error - illegal entry into STRESS related
+routine} 
+
+The calculation of the stress tensor  in \D{} requires
+additional code that must be included at compile time through the use
+of the STRESS keyword. If this is not done, and \D{} is
+later required to calculate the stress tensor, this error will
+result.\\
+
+\noindent
+{\em Action:}\\
+The program must be recompiled with the STRESS keyword activated. This
+will ensure all the relevant code is in place. See section \ref{compile}.
+
+\subsubsection*{Message 435: error - specify rcut before the coulomb
+precision}
+
+When specifying the desired precision for the coulomb sum in the CONTROL
+file, it is first necessary to specify the real space cutoff {\tt
+rcut}.\\
+
+\noindent
+{\em Action:} \\ Place the {\bf cut} directive {\em before} the {\bf
+coulomb precision} directive in the CONTROL file and rerun.
+
+\subsubsection*{Message 436: error - unrecognised ensemble }
+
+An unknown ensemble option has been specified in the CONTROL file.\\
+
+\noindent
+{\em Action:} \\
+Locate {\bf ensemble} directive in the CONTROL file and amend
+appropriately.
+
+\subsubsection*{Message 438: error - PMF constraints failed to
+converge}
+
+The constraints in the potential of mean force algorithm have not
+converged in the permitted number of cycles. (The SHAKE
+algorithm  for
+PMF constraints is iterative.) Possible causes
+include: a bad starting configuration; too large a time step used;
+incorrect force field specification; too high a temperature;
+inconsistent constraints involving shared atoms etc. \\
+
+\noindent
+{\em Action:} 
+\\ Corrective action depends on
+the cause. It is unlikely that simply increasing the iteration number
+will cure the problem, but you can try: follow standard user response
+to increase the parameter {\tt mxshak}. But the trouble is much more
+likely to be cured by careful consideration of the physical system
+being simulated. For example, is the system stressed in some way? Too
+far from equilibrium?
+
+\subsubsection*{Message 440: error - undefined angular potential}
+
+A form of angular potential has been requested which
+\D{} does not recognise.  \\
+
+\noindent
+{\em Action:} \\ Locate the offending potential in the FIELD file and
+remove. Replace with one acceptable to \D{} if this is possible.
+Alternatively, you may consider defining the required
+potential in the code yourself. Amendments to subroutines {\sc sysdef}
+and {\sc angfrc} will be required.
+
+\subsubsection*{Message 442: error - undefined three body potential}
+
+A form of three body potential has been requested which
+\D{} does not recognise.  \\
+
+\noindent
+{\em Action:} \\ Locate the offending potential in the FIELD file and
+remove. Replace with one acceptable to \D{} if this is
+reasonable. Alternatively, you may consider defining the required
+potential in the code yourself. Amendments to subroutines {\sc sysdef}
+and {\sc thbfrc} will be required.
+
+\subsubsection*{Message 443: error - undefined four body potential}
+
+\D{} has been requested to process a four-body
+potential  it does not
+recognise. \\
+
+\noindent
+{\em Action:}\\
+Check the FIELD file and make sure the keyword is correctly defined.
+Make sure that subroutine {\sc fbpfrc} contains the code necessary to
+deal with the requested potential. Add the code required if
+necessary, by amending subroutines {\sc sysdef} and {\sc fbpfrc}.
+
+\subsubsection*{Message 444: error - undefined bond potential}
+
+\D{} has been requested to process a bond potential  it does not
+recognise. \\
+
+\noindent
+{\em Action:} \\
+Check the FIELD file and make sure the keyword is correctly defined.
+Make sure that subroutine {\sc bndfrc} contains the code necessary to
+deal with the requested potential. Add the code required if
+necessary, by amending subroutines {\sc sysdef} and {\sc bndfrc}.
+
+\subsubsection*{Message 445: error - undefined many body potential}
+
+\D{} has been requested to process a many body potential it does not
+recognise. \\
+
+\noindent
+{\em Action:} \\
+Check the FIELD file and make sure the keyword is correctly defined.
+Make sure the code version you are using contains the code necessary to
+deal with the requested potential. Add the code required if
+necessary.
+
+\subsubsection*{Message 446: error - undefined electrostatic key in 
+dihfrc}
+
+The subroutine {\sc dihfrc} has detected a request for an unknown kind
+of electrostatic model. \\
+
+\noindent
+{\em Action:} \\ The probable source of the error is an improperly
+described force field. Check the CONTROL file and FIELD files for
+incompatible requirements.\\
+
+\subsubsection*{Message 447: error - 1-4 separation exceeds cutoff range}
+
+In the subroutine {\sc dihfrc} the distance between the 1-4 atoms in
+the potential is larger than the cutoff that is applied to the 1-4
+potential, meaning the potential will not be computed, though it may
+be an essential component of the dihedral force and not necessarily a
+vanishing force.
+\\
+
+\noindent
+{\em Action:} \\ The probable source of the error is an improperly
+described force field. Effectively the 1-4 distance is not being
+restrained sufficently. Check the 1-4 potential parameters and the
+valence angles that help define the dihedral geometry. If these are
+correct, then you may have to comment out this error condition in the
+{\sc dihfrc.f} subroutine, but beware that when the 1-4 atoms are too
+widely separated, the dihedral angle can become indeterminable.
+
+\subsubsection*{Message 448: error - undefined dihedral potential}
+
+A form of dihedral potential  has been requested which
+\D{} does not recognise.  \\
+
+\noindent
+{\em Action:} \\ 
+Locate the offending potential in the FIELD file and
+remove. Replace with one acceptable to \D{} if this is
+reasonable. Alternatively, you may consider defining the required
+potential in the code yourself. Amendments to subroutines {\sc sysdef}
+and {\sc dihfrc} (and its variants) will be required.
+
+\subsubsection*{Message 449: error - undefined inversion potential}
+
+A form of inversion potential  has been encountered which
+\D{} does not recognise.  \\
+
+\noindent
+{\em Action:}\\
+Locate the offending potential in the FIELD file and
+remove. Replace with one acceptable to \D{} if this is
+reasonable. Alternatively, you may consider defining the required
+potential in the code yourself. Amendments to subroutines {\sc sysdef}
+and {\sc invfrc} will be required.
+
+\subsubsection*{Message 450: error - undefined tethering potential}
+
+A form of tethering potential  has been requested which
+\D{} does not recognise.  \\
+
+\noindent
+{\em Action:} \\ 
+Locate the offending potential in the FIELD file and
+remove. Replace with one acceptable to \D{} if this is
+reasonable. Alternatively, you may consider defining the required
+potential in the code yourself. Amendments to subroutines {\sc sysdef}
+and {\sc tethfrc} will be required.
+
+\subsubsection*{Message 451: error - three body potential cutoff undefined}
+
+The cutoff radius for a three body potential  has not been defined in
+the FIELD file.\\
+
+\noindent
+{\em Action:}\\
+Locate the offending three body force potential in the FIELD file and add the
+required cutoff. Resubmit the job.\\
+
+\subsubsection*{Message 452: error - undefined pair potential}
+
+A form of pair potential has been requested which
+\D{} does not recognise.  \\
+
+\noindent
+{\em Action:} \\ 
+Locate the offending potential in the FIELD file and
+remove. Replace with one acceptable to \D{} if this is
+reasonable. Alternatively, you may consider defining the required
+potential in the code yourself. Amendments to subroutines {\sc sysdef}
+and {\sc forgen} will be required.
+
+\subsubsection*{Message 453: error - four body potential cutoff undefined}
+
+The cutoff radius for a four-body  potential has not been defined in
+the FIELD file.\\
+
+\noindent
+{\em Action:}\\
+Locate the offending four body force potential in the FIELD file and add the
+required cutoff. Resubmit the job.\\
+
+\subsubsection*{Message 454: error - undefined external field}
+
+A form of external field potential has been requested which
+\D{} does not recognise.  \\
+
+\noindent
+{\em Action:} \\ Locate the offending potential in the FIELD file and
+remove. Replace with one acceptable to \D{} if this is
+reasonable. Alternatively, you may consider defining the required
+potential in the code yourself. Amendments to subroutines {\sc sysdef}
+and {\sc extnfld} will be required.
+
+\subsubsection*{Message 456: error - core and shell in same rigid unit}
+
+It is not sensible to fix both the core and the shell of a polarisable
+atom in the same molecular unit. Consequently \D{} will
+abandon the job if this is found to be the case.\\
+
+\noindent
+{\em Action:} \\ Locate the offending core-shell unit (there may be
+more than one in your FIELD file) and release the shell (preferably)
+from the rigid body  specification.
+
+\subsubsection*{Message 458: error - too many PMF constraints - param.
+mspmf too small}
+
+The number of constraints in the potential of mean force is too large.
+The dimensions of the appropriate arrays in \D{} must be increased. \\
+
+\noindent
+{\em Action:}\\ Standard user response. Fix the parameter {\tt mspmf}.
+
+\subsubsection*{Message 460: error - too many PMF sites - parameter
+mxspmf too small}
+
+The number of sites defined in the potential of mean force is too large.
+The dimensions of the appropriate arrays in \D{} must be increased. \\
+
+\noindent
+{\em Action:}\\ Standard user response. Fix the parameter {\tt mxspmf}.
+
+\subsubsection*{Message 461: error - undefined metal potential}
+
+The user has requested a metal potential \D{} does not recognise.\\
+
+\noindent
+{\em Action:} \\
+Locate the metal potential specification in the FIELD file and replace
+with a recognised potential.\\
+
+\subsubsection*{Message 462: error - PMF UNIT  record expected}
+
+A {\bf pmf unit} directive was expected as the next record in the FIELD file but was not
+found.\\
+
+\noindent
+{\em Action:} \\
+Locate the {\bf pmf} directive in the FIELD file and examine the
+following entries. Insert the missing {\bf pmf unit} directive and
+resubmit.
+
+\subsubsection*{Message 463: error - unidentified atom in metal potential list}
+
+\D{} checks all the metal potentials specified in the FIELD file
+and terminates the program if it can't identify any one of them from
+the atom types specified earlier in the file. \\ 
+
+\noindent
+{\em Action:} \\ 
+Correct the erroneous entry in the FIELD file and resubmit.
+
+\subsubsection*{Message 464: error - thermostat time constant must be $>$
+0.d0}
+
+A zero or negative value for the thermostat  time constant has been encountered
+in the CONTROL file.\\
+
+\noindent
+{\em Action:} \\
+Locate the {\bf ensemble} directive in the CONTROL file and assign a
+positive value to the time constant. 
+
+\subsubsection*{Message 465: error - calculated pair potential index too large}
+
+A zero or negative value for the thermostat  time constant has been encountered
+in the CONTROL file.\\
+
+\noindent
+{\em Action:} \\
+Locate the {\bf ensemble} directive in the CONTROL file and assign a
+positive value to the time constant. 
+
+\subsubsection*{Message 466: error - barostat time constant must be $>$
+0.d0}
+
+A zero or negative value for the barostat  time constant has been encountered
+in the CONTROL file.\\
+
+\noindent
+{\em Action:} \\
+Locate the {\bf ensemble} directive in the CONTROL file and assign a
+positive value to the time constant. 
+
+\subsubsection*{Message 468: error - r0 too large for snm potential
+with current cutoff}
+
+The specified location (r0) of the potential minimum for a shifted n-m
+potential exceeds the specified potential cutoff. A potential with the
+desired minimum cannot be created. \\
+
+\noindent
+{\em Action:} \\
+To obtain a potential with the desired minimum it is necessary to
+increase the van der Waals cutoff. Locate the {\bf rvdw} directive in
+the CONTROL file and reset to a magnitude greater than r0. Alternatively
+adjust the value of r0 in the FIELD file. Check that the FIELD file
+is correctly formatted.
+
+\subsubsection*{Message 470: error - n$<$m in definition of n-m potential}
+
+The specification of a n-m potential in the FIELD file implies that
+the exponent m is larger than exponent n. (Not all versions of \D{} are
+affected by this.)\\
+
+\noindent
+{\em Action:}\\
+Locate the n-m potential in the FIELD file and reverse the order of
+the exponents. Resubmit the job.
+
+\subsubsection*{Message 474: error - mxxdf too small in parlst subroutine}
+
+The parameter {\tt mxxdf} defining  working arrays in subroutine {\sc parlst}
+of \D{} has been found to be too small. \\
+
+\noindent
+{\em Action:}\\ 
+Standard user response. Fix the parameter {\tt mxxdf}.
+
+\subsubsection*{Message 475: error - mxxdf too small in parlst\_nsq subroutine}
+
+The parameter {\tt mxxdf} defining working arrays in subroutine {\sc
+parlst\_nsq} \D{} has been found to be too small. \\
+
+\noindent
+{\em Action:}\\ 
+Standard user response. Fix the parameter {\tt mxxdf}.
+
+\subsubsection*{Message 476: error - mxxdf too small in parneulst subroutine}
+
+The parameter {\tt mxxdf} defining working arrays in subroutine {\sc
+parneulst} is too small. \\
+
+\noindent
+{\em Action:}\\ Standard user response. Fix the parameter {\tt mxxdf}.
+
+\subsubsection*{Message 477: error - mxxdf too small in prneulst subroutine}
+
+The parameter {\tt mxxdf} defining working arrays in subroutine {\sc
+prneulst} is too small.\\
+
+\noindent
+{\em Action:}\\ Standard user response. Fix the parameter {\tt mxxdf}.
+
+\subsubsection*{Message 478: error - mxxdf too small in forcesneu subroutine}
+
+The parameter {\tt mxxdf} defining working arrays in subroutine {\sc
+forcesneu} is too small. \\
+
+\noindent
+{\em Action:}\\ Standard user response. Fix the parameter {\tt mxxdf}.
+
+\subsubsection*{Message 479: error - mxxdf too small in multipleneu subroutine}
+
+The parameter {\tt mxxdf} defining working arrays in subroutine {\sc
+multipleneu} is too small. \\
+
+\noindent
+{\em Action:}\\ Standard user response. Fix the parameter {\tt mxxdf}.
+
+\subsubsection*{Message 484: error - only one potential of mean force
+permitted}
+
+It is not permitted to define more than one potential of mean force in
+the FIELD file. \\
+
+\noindent
+{\em Action:} \\
+Check that the FIELD file contains only one PMF specification. If more
+than one is needed, \D{} cannot handle it.
+
+\subsubsection*{Message 486: error - HK real space screening function 
+cutoff violation}
+
+\D{} has detected an unacceptable degree of inaccuracy in the screening
+function near the radius of cutoff {\em in real space}, which implies
+the Hautman-Klein Ewald method will not be sufficiently accurate. \\
+
+\noindent
+{\em Action:} \\
+The user should respecify the HK control parameters given in the
+CONTROL file. Either the convergence parameter should be increased or
+the sum expanded to incorporate more images of the central
+cell. (Warning: increasing the convergence parameter may cause failure in
+the reciprocal space domain.) (See \ref{controlfile}).
+
+\subsubsection*{Message 487: error - HK recip space screening function 
+cutoff violation}
+
+\D{} has detected an unacceptable degree of inaccuracy in the screening
+function near the radius of cutoff {\em in reciprocal space}, which
+implies the Hautman-Klein Ewald method will not be sufficiently
+accurate. \\
+
+\noindent
+{\em Action:} \\ The user should respecify the HK control parameters
+given in the CONTROL file. Either the convergence parameter should be
+reduced or more k-vectors used. (Warning: reducing the convergence
+parameter may cause failure in the real space domain.) (See \ref{controlfile}).
+
+\subsubsection*{Message 488: error - HK lattice control parameter set too large}
+
+The Hautman-Klein Ewald method in \D{} permits the user to perform a
+real space sum over nearest-neighbour and next-nearest-neighbour cells
+(i.e. up to {\tt nlatt=2}). If the user specifies a larger sum than
+this, this error will result.\\
+
+\noindent
+{\em Action:} \\ The user should respecify the HK control parameters
+given in the CONTROL file and set {\tt nlatt} to a maximum of 2.
+(See \ref{controlfile}).
+
+\subsubsection*{Message 490: error - PMF parameter mxpmf too small in 
+passpmf}
+
+The bookkeeping arrays have been exceeded in {\sc passpmf}\\
+
+\noindent
+{\em Action:} \\
+Standard user response. Fix the parameter {\tt mxpmf}. Set equal to
+{\tt mxatms}.
+
+\subsubsection*{Message 492: error - parameter mxcons $<$ number of PMF
+constraints} 
+The parameter {\tt mxcons} is too small for the number of PMF constraints in the system.\\
+
+\noindent
+{\em Action:} \\
+Standard user response. Fix the value of {\tt mxcons}.
+
+\subsubsection*{Message 494: error in csend: pvmfinitsend}
+The PVM routine {\sc pvmfinitsend} has returned an error. It is invoked by the
+routine {\sc csend}.
+\\
+
+\noindent
+{\em Action:}\\ 
+Check your system implementation of PVM.
+
+\subsubsection*{Message 496: error in csend: pvmfpack}
+The PVM routine {\sc pvmfpack} has returned an error. It is invoked by the
+routine {\sc csend}.
+\\
+
+\noindent
+{\em Action:}\\ 
+Check your system implementation of PVM.
+
+\subsubsection*{Message 498: error in csend: pvmfsend}
+The PVM routine {\sc pvmfsend} has returned an error. It is invoked by the
+routine {\sc csend}.
+\\
+
+\noindent
+{\em Action:}\\ 
+Check your system implementation of PVM.
+
+\subsubsection*{Message 500: error in crecv: pvmfrecv}
+The PVM routine {\sc pvmfrecv} has returned an error. It is invoked by the
+routine {\sc crecv}.
+\\
+
+\noindent
+{\em Action:}\\ 
+Check your system implementation of PVM.
+
+\subsubsection*{Message 502: error in crecv: pvmfunpack}
+The PVM routine {\sc pvmfunpack} has returned an error. It is invoked by the
+routine {\sc crecv}.
+\\
+
+\noindent
+{\em Action:}\\ 
+Check your system implementation of PVM.
+
+\subsubsection*{Message 504: error - cutoff too large for TABLE file}
+The requested cutoff exceeds the information in the TABLE file.
+\\
+
+\noindent
+{\em Action:}\\ 
+Reduce the value of the vdw cutoff ({\tt rvdw}) in the CONTROL file 
+or reconstruct the TABLE file.
+
+\subsubsection*{Message 506: error - work arrays too small for quaternion integration}
+
+The working arrays associated with quaternions are too small for the
+size of system being simulated. They must be redimensioned.\\
+
+\noindent
+{\em Action:}\\
+Standard user response. Fix the parameter {\tt msgrp}.
+
+\subsubsection*{Message 508: error - rigid bodies not permitted with RESPA algorithm}
+
+The RESPA algorithm implemented in \D{} is for atomic systems only.
+Rigid bodies  or constraints cannot be treated.\\
+
+\noindent
+{\em Action:}\\
+There is no cure for this. The code simply does not have this
+capability. Consider writing it for yourself!
+
+\subsubsection*{Message 510: error - structure optimiser not permitted
+with RESPA}
+
+The RESPA algorithm in \D{} has not been implemented to work with the
+structure optimizer. You have asked for a forbidden operation.\\
+
+\noindent
+{\em Action:}\\
+There is no fix for this. In any case it does not make sense to use
+the RESPA algorithm for this purpose.
+
+\subsubsection*{Message 513: error - SPME not available for given
+boundary conditions}
+
+The SPME algorithm in \D{} does not work for aperiodic (IMCON=0) or slab
+(IMCON=6) boundary conditions.
+
+\noindent
+{\em Action:}\\
+If the system must have aperiodic or slab boundaries, nothing can be
+done. In the latter case however, it may be acceptable to represent
+the same system with slabs replicated in the z direction, thus
+permitting a periodic simulation.
+
+\subsubsection*{Message 514: error - SPME routines have not been
+compiled in} 
+
+The inclusion of the SPME algorithm in \D{} is optional at the compile
+stage. If the executable does not contain the SPME routines, but the
+method is requested by the user, this error results.\\
+
+\noindent
+{\em Action:}\\
+\D{} must be recompiled with the SPME flags set. Beware that your system
+has the necessary fast Fourier transform routines to permit this.
+
+\subsubsection*{Message 516: error - repeat of impact option specified}
+
+More than one impact option has been specified in the CONTROL
+file. Only one is allowed.\\
+
+\noindent
+{\em Action:}\\
+Remove the offending impact directive from the CONTROL file and rerun.
+
+\subsubsection*{Message 518: error - cannot use pimd with the shell model}
+
+The shell model and path integral MD are incompatible in \DD{}.\\
+
+\noindent
+{\em Action:}\\
+The user must revert to a rigid ion model to use PIMD.
+
+\subsubsection*{Message 519: error - pimd array allocation failure in forces}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 520: error - cannot use pimd with constraint bonds}
+
+Constraint bonds and path integral MD are incompatible in \DD{}.\\
+
+\noindent
+{\em Action:}\\
+The user must replace the constrained bonds with flexible bonds.
+
+\subsubsection*{Message 522: error - cannot use pimd with rigid molecules}
+
+Rigid molecules (or rigid molecular parts) are incompatible with path
+integral MD in \DD{}. \\
+
+\noindent
+{\em Action:}\\
+The user must revert to fully flexible models to use PIMD.
+
+\subsubsection*{Message 523: error - pimd THEOLD file incompatible at restart}
+
+The file THEOLD, which contains the final thermostats from a previous run, 
+does not match the requirements of the restarted simulation. \\
+
+\noindent
+{\em Action:}\\ Check that the THEOLD file is available to the
+program and that it is the correct one for the simulated system.
+Replace if necesssary.
+
+\subsubsection*{Message 524: error - cannot use pimd with neutral groups}
+
+The PIMD feature of \DD{} does not permit the use of neutral groups. \\
+
+\noindent
+{\em Action:}\\ The user must remove the neutral groups from the
+simulation and adopt an alternative method for handling the system
+electrostatics.
+
+\subsubsection*{Message 525: error - cannot use pimd with metadynamics}
+
+\DD{} does not currently support the use of path integral MD with metadynamics. \\
+
+\noindent
+{\em Action:}\\
+There is currently no remedy for this problem.
+
+\subsubsection*{Message 526: error - cannot use pimd with solvation functions}
+
+\DD{} does not currently support the use of path integral MD with the program's solvation features\\
+
+\noindent
+{\em Action:}\\
+There is currently no remedy for this problem.
+
+\subsubsection*{Message 527: error - cannot use pimd in free energy calculations}
+
+\DD{} does not currently support the use of path integral MD with the free energy features\\
+
+\noindent
+{\em Action:}\\
+There is currently no remedy for this problem.
+
+\subsubsection*{Message 528: error - pimd array deallocation failure in forces}
+
+The program has failed to release the memory allocated to redundant arrays.\\
+
+\noindent
+{\em Action:}\\
+This is an unlikely error and implies a system fault. Consult your system manager.
+
+\subsubsection*{Message 529: error - cannot use pimd with frozen atoms}
+
+The concept of frozen atoms is incompatible with path integral MD. \\
+
+\noindent
+{\em Action:}\\
+\DD{} does not currently allow for this possibility, so forget it.
+
+\subsubsection*{Message 530: error - read\_thermostats allocation failure}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 531: error - read\_thermostats deallocation failure}
+
+The program has failed to release the memory allocated to redundant arrays.\\
+
+\noindent
+{\em Action:}\\
+This is an unlikely error and implies a system fault. Consult your system manager.
+
+\subsubsection*{Message 532: error - write\_thermostats allocation failure}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 533: error - write\_thermostats deallocation failure}
+
+The program has failed to release the memory allocated to redundant arrays.\\
+
+\noindent
+{\em Action:}\\
+This is an unlikely error and implies a system fault. Consult your system manager.
+
+\subsubsection*{Message 534: error - alloc\_pimd\_arrays allocation failure}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 535: error - alloc\_pimd\_arrays deallocation failure}
+
+The program has failed to release the memory allocated to redundant arrays.\\
+
+\noindent
+{\em Action:}\\
+This is an unlikely error and implies a system fault. Consult your system manager.
+
+\subsubsection*{Message 536: error - thermo\_chain\_vv array allocation failure}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 537: error - thermo\_chain\_vv array deallocation failure}
+
+The program has failed to release the memory allocated to redundant arrays.\\
+
+\noindent
+{\em Action:}\\
+This is an unlikely error and implies a system fault. Consult your system manager.
+
+\subsubsection*{Message 538: error - thermo\_chain\_sy array allocation failure}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 539: error - thermo\_chain\_sy array deallocation failure}
+
+The program has failed to release the memory allocated to redundant arrays.\\
+
+\noindent
+{\em Action:}\\
+This is an unlikely error and implies a system fault. Consult your system manager.
+
+\subsubsection*{Message 540: error - alloc\_sol\_arrays array allocation failure}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 541: error - alloc\_free\_arrays array allocation failure}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 542: error - alloc\_exi\_arrays array allocation failure}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 601: error - Ewald SPME incompatible with solvation}
+
+The options in \D{} that use the energy decomposition/solvation facility do not
+permit the use of the SPME option. It is possible however to use the standard
+Ewald method.\\
+
+\noindent
+{\em Action:}\\
+Change the SPME directive in the CONTROL file to ewald and rerun.
+
+\subsubsection*{Message 602: error - Ewald HK incompatible with solvation}
+
+The options in \D{} that use the energy decomposition/solvation facility do not
+permit the use of the Hautman-Klein Ewald option. It is possible however to
+use the standard Ewald method.\\
+
+\noindent
+{\em Action:}\\
+Change the HKE directive in the CONTROL file to ewald. Make sure the system
+model includes a large vacuum gap between material slabs  to offset the
+effects of the periodic boundary.
+
+\subsubsection*{Message 1000: error - failed allocation of
+configuration arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1010: error - failed allocation of angle
+arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1011: error - failed allocation of dihedral
+arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1012: error - failed allocation of exclude
+arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1013: error - failed allocation of rigid body
+arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1014: error - failed allocation of vdw arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1015: error - failed allocation of lr correction 
+arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1020: error - failed allocation of angle work
+arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1030: error - failed allocation of bond arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1040: error - failed allocation of bond work
+arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1050: error - failed allocation of dihedral
+arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1060: error - failed allocation of dihedral
+work arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1070: error - failed allocation of constraint
+arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1090: error - failed allocation of site arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1100: error - failed allocation of core\_shell
+arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1115: error - failed allocation of hyperdynamics
+work arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1010: error - failed allocation of angle
+arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1120: error - failed allocation of inversion
+arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1130: error - failed allocation of inversion
+work arrays'}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1140: error - failed allocation of four-body
+arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1150: error - failed allocation of four-body
+work arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1170: error - failed allocation of three-body
+arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1180: error - failed allocation of three-body
+work arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1200: error - failed allocation of external
+field arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1210: error - failed allocation of pmf arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1220: error - failed allocation of pmf\_lf or
+pmf\_vv work arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1230: error - failed allocation of pmf\_shake
+work arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1240: error - failed allocation of ewald
+arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1250: error - failed allocation of excluded
+atom arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1260: error - failed allocation of tethering
+arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1270: error - failed allocation of tethering
+work arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1280: error - failed allocation of metal
+arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1290: error - failed allocation of work arrays
+in nvt\_h0.f}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1300: error - failed allocation of dens0 array
+in npt\_b0.f}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1310: error - failed allocation of work arrays
+in npt\_b0.f}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1320: error - failed allocation of dens0 array
+in npt\_h0.f}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1330: error - failed allocation of work arrays
+in npt\_h0.f}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1340: error - failed allocation of dens0 array
+in nst\_b0.f}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1350: error - failed allocation of work arrays
+in nst\_b0.f}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1360: error - failed allocation of dens0 array
+in nst\_h0.f}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1370: error - failed allocation of work arrays
+in nst\_h0.f}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1380: error - failed allocation of work arrays
+in nve\_1.f}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1390: error - failed allocation of work arrays
+in nvt\_e1.f}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1400: error - failed allocation of work arrays
+in nvt\_b1.f}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1410: error - failed allocation of work arrays
+in nvt\_h1.f}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1420: error - failed allocation of work arrays
+in npt\_b1.f}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1430: error - failed allocation of density
+array in npt\_b1.f}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1440: error - failed allocation of work arrays
+in npt\_h1.f}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1450: error - failed allocation of density
+array in npt\_h1.f}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1460: error - failed allocation of work arrays
+in nst\_b1.f}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1470: error - failed allocation of density
+array in nst\_b1.f}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1480: error - failed allocation of work arrays
+in nst\_h1.f}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1490: error - failed allocation of density
+array in nst\_h1.f}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1500: error - failed allocation of work arrays
+in nveq\_1.f}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1510: error - failed allocation of work arrays
+in nvtq\_b1.f}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1520: error - failed allocation of work arrays
+in nvtq\_h1.f}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1530: error - failed allocation of work arrays
+in nptq\_b1.f}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1540: error - failed allocation of density
+array in nptq\_b1.f}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1550: error - failed allocation of work arrays
+in nptq\_h1.f}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1560: error - failed allocation of density
+array in nptq\_h1.f}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1570: error - failed allocation of work arrays
+in nstq\_b1.f}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1580: error - failed allocation of density
+array in nstq\_b1.f}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1590: error - failed allocation of work arrays
+in nstq\_h1.f}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1600: error - failed allocation of density
+array in nstq\_h1.f}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1610: error - failed allocation of work arrays
+in qshake.f}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1615: error - failed allocation of work arrays
+in qrattle\_q.f}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1620: error - failed allocation of work arrays
+in nveq\_2.f}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1625: error - failed allocation of work arrays
+in qrattle\_v.f}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1630: error - failed allocation of work arrays
+in nvtq\_b2.f}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1640: error - failed allocation of work arrays
+in nvtq\_h2.f}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1650: error - failed allocation of work arrays
+in nptq\_b2.f}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1660: error - failed allocation of density
+array in nptq\_b2.f}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1670: error - failed allocation of work arrays
+in nptq\_h2.f}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1680: error - failed allocation of density
+array in nptq\_h2.f}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1690: error - failed allocation of work arrays
+in nstq\_b2.f}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1700: error - failed allocation of density
+array in nstq\_b2.f}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1710: error - failed allocation of work arrays
+in nstq\_h2.f}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1720: error - failed allocation of density
+array in nstq\_h2.f}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1730: error - failed allocation of HK Ewald
+arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1740: error - failed allocation of property
+arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1750: error - failed allocation of spme arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1760: error - failed allocation of ewald\_spme.f
+work arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1770: error - failed allocation of quench.f
+work arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1780: error - failed allocation of quatqnch.f
+work arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1790: error - failed allocation of quatbook.f
+work arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1800: error - failed allocation of intlist.f
+work arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1810: error - failed allocation of forces.f
+work arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1820: error - failed allocation of forcesneu.f
+work arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1830: error - failed allocation of neutlst.f
+work arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1840: error - failed allocation of multiple.f
+work arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1850: error - failed allocation of
+multipleneu.f work arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1860: error - failed allocation of
+multiple\_nsq.f work arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1870: error - failed allocation of parlst\_nsq.f
+work arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1880: error - failed allocation of parlst.f
+work arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1890: error - failed allocation of parlink.f
+work arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1900: error - failed allocation of parlinkneu.f
+work arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1910: error - failed allocation of parneulst.f
+work arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1920: error - failed allocation of zero\_kelvin.f
+work arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1925: error - failed allocation of strucopt.f
+work arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1930: error - failed allocation of vertest.f
+work arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1940: error - failed allocation of pair arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1945: error - failed allocation of tersoff
+arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1950: error - shell relaxation cycle limit
+exceeded}
+
+There has been a convergence failure during the execution of relaxed
+shell polarisation model. Probable cause: the system is unstable
+e.g. in an abnormally high energy configuration.
+\\
+\noindent
+{\em Action:} \\ Increasing the maximum number of cycles permitted in
+the shell relaxation set by variable {\tt mxpass} in the dlpoly.f root
+program may help, but it is unlikely. A better option is to relax the
+structure somehow first e.g. using the {\bf zero} option in the
+CONTROL file.
+\\
+
+\subsubsection*{Message 1951: error - no shell dynamics algorithm specified}
+
+The user has failed to specify which of the available shell dynamics
+algorithm is to be used in the simulation. Options include adiabtic
+shells and relaxed shells.
+\\
+\noindent
+{\em Action:} \\ 
+Locate the definition of the core-shell units in the FIELD file and
+check that all necessary integer keys have been supplied. Consult the
+user manual if in doubt.
+\\
+
+\subsubsection*{Message 1953: error - tersoff radius of cutoff not
+defined}
+
+The Tersoff potential requires the user to specify a short ranged
+cutoff as part of the potential description. This is distinct from the
+normal cutoff used by the Van der Waals interactions.
+\\
+\noindent
+{\em Action:} \\
+Check the Tersoff potential description in the FIELD file. Make sure
+it is fully complete.
+\\
+
+\subsubsection*{Message 1955: error - failed allocation of tersoff
+work arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.\\
+
+\subsubsection*{Message 1960: error - conflicting shell option in
+FIELD file}
+
+The relaxed shell and adiabatic shell polarisation options in \D{} are
+mutually exclusive. The user has request both options in the same simulation.
+\\
+\noindent
+{\em Action:} \\
+Locate the occurrences of the {\bf shell} directives in the FIELD file
+and ensure they specify the same shell model.
+\\
+
+\subsubsection*{Message 1970: error - failed allocation of shell\_relax
+work arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.\\
+
+\subsubsection*{Message 1972: error - unknown tersoff potential
+defined in FIELD file}
+
+\D{} has failed to recognise the Tersoff
+potentials  specified by the user in the FIELD
+file. \\
+
+\noindent
+{\em Action:} \\
+Locate the Tersoff potential specification in the FIELD fiel and
+ensure it is correctly defined. \\
+
+\subsubsection*{Message 1974: error - incorrect period boundary in
+tersoff.f}
+
+The implementation of the Tersoff potential in \D{} is based on the link
+cell algorithm, which is suitable for rectangular or triclinic MD
+cells only. It is not suitable for any other shape of MD cell.
+\\
+\noindent
+{\em Action:} \\
+The user must reconstruct the system according to one of the permitted
+periodic boundaries.
+\\
+
+\subsubsection*{Message 1976: error - too many link cells required in
+tersoff.f}
+
+The number of link cells required by the Tersoff routines exceeds the
+amount allowed for by \D{}. This can happen if the system is simulated
+under NPT or NST conditions and the system volume increases dramatically.
+\\
+\noindent
+{\em Action:} \\ The problem may cure itself on restart, provided the
+restart configuration has already expande significantly. Otherwise the
+user must locate and adjust the {\tt mxcell} according to the standard
+response procedure.
+\\
+
+\subsubsection*{Message 1978: error - undefined potential in
+tersoff.f}
+
+A form of Tersoff potential has been requested which
+\D{} does not recognise.  \\
+
+\noindent
+{\em Action:} \\ Locate the offending potential in the FIELD file and
+remove. Replace with one acceptable to \D{} if this is
+reasonable. Alternatively, you may consider defining the required
+potential in the code yourself. Amendments to subroutines {\sc sysdef}
+and {\sc tersoff} will be required.
+\\
+
+\subsubsection*{Message 1980: error - failed allocation of nvevv\_1.f
+work arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 1990: error - failed allocation of nvtvv\_b1.f
+work arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 2000: error - failed allocation of nvtvv\_e1.f
+work arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 2010: error - failed allocation of nvtvv\_h1.f
+work arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 2020: error - failed allocation of nptvv\_b1.f
+dens0 array}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 2030: error - failed allocation of nptvv\_b1.f
+work arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 2040: error - failed allocation of nptvv\_h1.f
+dens0 array}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 2050: error - failed allocation of nptvv\_h1.f
+work arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 2060: error - failed allocation of nstvv\_b1.f
+dens0 array}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 2070: error - failed allocation of nstvv\_b1.f
+work arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 2080: error - failed allocation of nstvv\_h1.f
+dens0 array}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 2090: error - failed allocation of nstvv\_b1.f
+work arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 2100: error - failed allocation of nveqvv\_1.f
+work arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 2110: error - failed allocation of nveqvv\_2.f
+work arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 2120: error - failed allocation of nvtqvv\_b1.f
+work arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 2130: error - failed allocation of nvtqvv\_b2.f
+work arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 2140: error - failed allocation of nvtqvv\_h1.f
+work arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 2150: error - failed allocation of nvtqvv\_h2.f
+work arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 2160: error - failed allocation of nptqvv\_b1.f
+dens0 array}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 2170: error - failed allocation of nptqvv\_b1.f
+work arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 2180: error - failed allocation of nptqvv\_b2.f
+dens0 array}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 2190: error - failed allocation of nptqvv\_b2.f
+work arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 2200: error - failed allocation of nptqvv\_h1.f
+dens0 array}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 2210: error - failed allocation of nptqvv\_h1.f
+work arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 2220: error - failed allocation of nptqvv\_h2.f
+dens0 array}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 2230: error - failed allocation of nptqvv\_h2.f
+work arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 2240: error - failed allocation of nstqvv\_b1.f
+dens0 array}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 2250: error - failed allocation of nstqvv\_b1.f
+work arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 2260: error - failed allocation of nstqvv\_b2.f
+dens0 array}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 2270: error - failed allocation of nstqvv\_b2.f
+work arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 2280: error - failed allocation of nstqvv\_h1.f
+dens0 array}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 2290: error - failed allocation of nstqvv\_h1.f
+work arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 2300: error - failed allocation of nstqvv\_h2.f
+dens0 array}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 2310: error - failed allocation of nstqvv\_h2.f
+work arrays}
+
+This is a memory allocation error. Probable cause: excessive size of
+simulated system. \\
+
+\noindent
+{\em Action:}\\
+If the simulated system cannot be replaced by a smaller one, the user
+must consider using more processors or a machine with larger memory
+per processor.
+
+\subsubsection*{Message 2320: error - NEB convergence failure}
+
+The nudged elastic band calculation in the temperature accelerated
+dynamics or bias potential dynamics has failed to converge. \\
+
+\noindent
+{\em Action:}\\ The best approach is to halt the TAD or BPD simulation
+and focus on the NEB calculation in isolation. First try to reproduce
+the error by a straightforward NEB calculation using the same start
+and end points for the chain. Adjusting the convergence criteria may
+offer a way forward. Try minimising the start and end points
+independently to a higher precision. It is possible that the start and
+end points are too far apart, so that one or more intermedate states
+have been missed. This leads to multiple maxima on the reaction path,
+which may be the problem. In which case examine the operational
+choices made in running the TAD or BPD simulation and see if changing
+them will reduce the danger of this happening.
+
+\subsubsection*{Message 2330: error - too many basin files found - 
+increase mxbsn}
+
+A TAD or BPD run has generated more than 100 basin files, which is the
+internal operational limit.\\
+
+\noindent
+{\em Action:}\\ Reset the {\em mxbsn} parameter, which is defined at
+the top of the hyper\_dynamics\_module.f file, to a larger number and
+recompile.
+
+\subsubsection*{Message 2340: error - TAD diffs arrays exceeded -
+increase mxdiffs}
+
+A TAD or BPD run has generated more than 300 recorded differences
+between the reference structure and all subsequent new basins
+found. Effectively this means it has recorded more than 300 atomic
+jumps, which is the internal operational limit.\\
+
+\noindent
+{\em Action:}\\ Reset the {\em mxdiffs} parameter, which is defined at
+the top of the hyper\_dynamics\_module.f file, to a larger number and
+recompile.
+
+\subsubsection*{Message 2350: error - kinks found in NEB chain 
+during optimisation}
+
+During a TAD or BPD run the nudged elastic band calculation is unable to
+converge because kinking of the chain has occurred. \\
+
+\noindent {\em Action:}\\ Tricky. This implies there is something extreme
+about the system potential energy surface, such as it having an excessive
+number of undulations, or perhaps the simulation has start and end states are
+too far apart. This may be fixed by trying different operational parameters,
+such as using a different number of beads in the NEB chain, or perhaps the
+simulation is being run at too high a temperature. Some experimentation is
+required, but it may be possible that the system just isn't suitable for
+investigation by TAD or BPD.
+
+\subsubsection*{Message 2355: error - cannot run both TAD and BPD together}
+
+The TAD and BPD options are not meant to run concurrently. Choose one or the
+other! \\
+
+\noindent
+{\em Action:}\\ Remove either the TAD or BPD option from the CONTROL file.
+
+\subsubsection*{Message 2500: error in number of collective variables -
+ncolvar too small?}
+
+The number of order parameters in a metadynamics simulation  has not been
+properly specified.
+
+\noindent
+{\em Action:}\\ Check input data in CONTROL file and correct accordingly.
+
+\subsubsection*{Message 2501: Wang-Landau style recursion not yet 
+implemented for ncolvar $> 1$}
+
+The Wang-Landau recursion option in metadynamics is currently limted to one
+order parameter only.
+
+\noindent
+{\em Action:}\\ Select another Gaussian convergence option in the CONTROL file.
+
+\subsubsection*{Message 2502: Unrecognised Gaussian height scheme}
+
+An invalid option has been selected for the metadynamics Gaussian convergence
+scheme, which is rstricted to values 0,1 and 2,
+
+\noindent
+{\em Action:}\\ Reset the {\bf hkey} option to an acceptable value in the CONTROL
+file. 
+      
+\subsubsection*{Message 2503: Error maxhis exceeded in metadynamics}
+
+The internal storage of Gaussian data in metadynamics has been exceeded.
+
+\noindent
+{\em Action:}\\ This can be recovered if a greater number of processing nodes
+is used at restart, but ideally, a less ambitious Gaussian deposition rate
+should be considered.
+
+\subsubsection*{Message 2504: Error allocating comms buffer in 
+compute\_bias\_potential}
+
+Unlikely array allocation error, which should not occur under normal use.
+
+\noindent
+{\em Action:}\\ The user is probably making excessive demands of
+memory. Reconsider the problem size in relation to compute resource.
+          
+\subsubsection*{Message 2505: Error allocating driven array}
+          
+Unlikely array allocation error, which should not occur under normal use.
+
+\noindent
+{\em Action:}\\ The user is probably making excessive demands of
+memory. Reconsider the problem size in relation to compute resource.
+          
+\subsubsection*{Message 2508: Comms error in metadynamics setup}
+
+This is probably a programming error and should not occur.
+
+\noindent
+{\em Action:}\\ Identify and fix the bug if you can. Otherwise locate
+the authors and ask for a fix.
+          
+\subsubsection*{Message 2509: Cannot bias local and global PE in same run}
+
+The metadynamics option does not allow the use of both global and local
+potential energy order parameters at the same time.
+
+\noindent
+{\em Action:}\\ Decide which of these options you really need and reset the
+directives in the CONTROL file.
+
+\subsubsection*{Message 2510: Error allocating local force arrays}
+          
+Unlikely array allocation error, which should not occur under normal use.
+
+\noindent
+{\em Action:}\\ The user is probably making excessive demands of
+memory. Reconsider the problem size in relation to compute resource.
+          
+\subsubsection*{Message 2511: Error allocating collective variables arrays}
+
+Unlikely array allocation error, which should not occur under normal use.
+
+\noindent
+{\em Action:}\\ The user is probably making excessive demands of
+memory. Reconsider the problem size in relation to compute resource.
+          
+\subsubsection*{Message 2512: Error allocating Wang-Landau bins}
+
+Unlikely array allocation error, which should not occur under normal use.
+
+\noindent
+{\em Action:}\\ The user is probably making excessive demands of
+memory. Reconsider the problem size in relation to compute resource.
+          
+\subsubsection*{Message 2515: Error allocating Steinhardt parameter arrays}
+
+Unlikely array allocation error, which should not occur under normal use.
+
+\noindent
+{\em Action:}\\ The user is probably making excessive demands of
+memory. Reconsider the problem size in relation to compute resource.
+          
+\subsubsection*{Message 2516: Could not open STEINHARDT}
+
+The STEINHARDT data (input) file cannot be opened.
+
+\noindent
+{\em Action:}\\ The file is probably not available, or is unreadable. Restore
+the file as required and rerun.
+          
+\subsubsection*{Message 2517: Error allocating q4site}
+
+Unlikely array allocation error, which should not occur under normal use.
+
+\noindent
+{\em Action:}\\ The user is probably making excessive demands of
+memory. Reconsider the problem size in relation to compute resource.
+          
+\subsubsection*{Message 2518: Error allocating q6site}
+
+Unlikely array allocation error, which should not occur under normal use.
+
+\noindent
+{\em Action:}\\ The user is probably making excessive demands of
+memory. Reconsider the problem size in relation to compute resource.
+          
+\subsubsection*{Message 2519: Error deallocating buff}
+
+Unlikely array deallocation error, which should not occur under normal use.
+
+\noindent
+{\em Action:}\\ Possible system error. Raise issue with system manager.
+          
+\subsubsection*{Message 2521: Error reading line \_ of STEINHARDT}
+
+The nominated line of the STEINHARDT file cannot be read.
+
+\noindent
+{\em Action:}\\ Probably missing or corrupted data line in file. Locate and correct.
+          
+\subsubsection*{Message 2522: Error allocating Steinhardt parameter arrays}
+
+Unlikely array allocation error, which should not occur under normal use.
+
+\noindent
+{\em Action:}\\ The user is probably making excessive demands of
+memory. Reconsider the problem size in relation to compute resource.
+          
+\subsubsection*{Message 2523: Could not open ZETA}
+          
+The ZETA data (input) file cannot be opened.
+
+\noindent
+{\em Action:}\\ The file is probably not available, or is unreadable. Restore
+the file as required and rerun.
+          
+\subsubsection*{Message 2524: Error allocating zetasite}
+
+Unlikely array allocation error, which should not occur under normal use.
+
+\noindent
+{\em Action:}\\ The user is probably making excessive demands of
+memory. Reconsider the problem size in relation to compute resource.
+          
+\subsubsection*{Message 2525: Error allocating full neighbour list}
+
+Unlikely array allocation error, which should not occur under normal use.
+
+\noindent
+{\em Action:}\\ The user is probably making excessive demands of
+memory. Reconsider the problem size in relation to compute resource.
+          
+\subsubsection*{Message 2527: Number of collective variables incorrect
+for specified order parameters}
+
+The internal check of the requested number of order parameters in a
+metadynamics simulation has found an inconsistency.
+
+\noindent
+{\em Action:}\\ Check the total number of collective variables (ncolvar) 
+matches total number specified by nq4, nq6, ntet and potential energy
+parameters.
+
+\subsubsection*{Message 2529: Error reading line \_ of ZETA}
+
+There has been an error reading the nominated line of the ZETA file.
+
+\noindent
+{\em Action:}\\ Probably a missing or corrupted data line. Locate and fix.
+          
+\subsubsection*{Message 2531: Comms error on reading METADYNAMICS}
+          
+This is probably a programming error and should not occur.
+
+\noindent
+{\em Action:}\\ Identify and fix the bug if you can. Otherwise locate
+the authors and ask for a fix.
+
+\subsubsection*{Message 2532: Error in fc function - out of range}
+
+The switching function has been incorrectly defined in a hyperdynamics
+simulation. 
+
+\noindent
+{\em Action:}\\ Check the value reported and make the necessary correction in
+the STEINHARDT or ZETA file concerned.
+          
+\subsubsection*{Message 2533: Error allocating solvation arrays for 
+metadynamics}
+
+Unlikely array allocation error, which should not occur under normal use.
+
+\noindent
+{\em Action:}\\ The user is probably making excessive demands of
+memory. Reconsider the problem size in relation to compute resource.
+          
+\subsubsection*{Message 2534: Error allocating comms buffer arrays}
+
+Unlikely array allocation error, which should not occur under normal use.
+
+\noindent
+{\em Action:}\\ The user is probably making excessive demands of
+memory. Reconsider the problem size in relation to compute resource.
+          
+\subsubsection*{Message 2535: Solvation list overrun}
+
+The arrays tabulating the coordination list for either Steinhardt or
+tetrahedral order parameters have been exceeded.
+
+\noindent
+{\em Action:}\\ Locate the specification of the variable {\em maxneigh} in the
+metafreeze\_module.f file (there are 3 occurrences) and reset to a larger
+number.
+
+\subsubsection*{Message 2536: Error deallocating solvation arrays for 
+metadynamics}
+
+Unlikely array deallocation error, which should not occur under normal use.
+
+\noindent
+{\em Action:}\\ Possible system error. Raise issue with system manager.
+          
+\subsubsection*{Message 2537: Error deallocating comms buffer arrays}
+
+Unlikely array deallocation error, which should not occur under normal use.
+
+\noindent
+{\em Action:}\\ Possible system error. Raise issue with system manager.
+          
+\subsubsection*{Message 2538: Error allocating solvation arrays for 
+metadynamics}
+
+Unlikely array allocation error, which should not occur under normal use.
+
+\noindent
+{\em Action:}\\ The user is probably making excessive demands of
+memory. Reconsider the problem size in relation to compute resource.
+          
+\subsubsection*{Message 2540: Error allocating force prefactor arrays}
+
+Unlikely array allocation error, which should not occur under normal use.
+
+\noindent
+{\em Action:}\\ The user is probably making excessive demands of
+memory. Reconsider the problem size in relation to compute resource.
+          
+\subsubsection*{Message 2541: Memory allocation error in compute\_tet\_nlist}
+
+Unlikely array allocation error, which should not occur under normal use.
+
+\noindent
+{\em Action:}\\ The user is probably making excessive demands of
+memory. Reconsider the problem size in relation to compute resource.
+          
+\subsubsection*{Message 2542: Error in metafreeze\_module.f90 mxninc too small}
+          
+The internal estimate of the array allocation variable {\em mxninc} is too
+small for the purpose.
+
+\noindent
+{\em Action:}\\ Locate where variable is defined in metafreeze\_module.f and
+reset to a larger number.
+
+\subsubsection*{Message 2543: nnn too small in compute\_tet\_nlist}
+          
+The internal estimate of the array allocation variable {\em nnn} is too
+small for the purpose.
+
+\noindent
+{\em Action:}\\ Locate where variable is defined in metafreeze\_module.f and
+reset to a larger number.
+
+\subsubsection*{Message 2544: mxflist too small in metafreeze\_module}
+
+The internal estimate of the array allocation variable {\em mxflist} is too
+small for the purpose.
+
+\noindent
+{\em Action:}\\ Locate where variable is defined in metafreeze\_module.f and
+reset to a larger number.
+
+\subsubsection*{Message 2545: Memory deallocation error in compute\_tet\_nlist}
+
+Unlikely array deallocation error, which should not occur under normal use.
+
+\noindent
+{\em Action:}\\ Probable system error. Raise issue with system manager.
+          
+\subsubsection*{Message 2546: Memory allocation error in compute\_tet\_nlist}
+
+Unlikely array allocation error, which should not occur under normal use.
+
+\noindent
+{\em Action:}\\ The user is probably making excessive demands of
+memory. Reconsider the problem size in relation to compute resource.
+          
+\subsubsection*{Message 2547: Memory deallocation error in compute\_tet\_nlist}
+
+Unlikely array deallocation error, which should not occur under normal use.
+
+\noindent
+{\em Action:}\\ Probable system error. Raise issue with system manager.
+          
+\subsubsection*{Message 2548: Memory allocation error in compute\_tet\_nlist}
+
+Unlikely array allocation error, which should not occur under normal use.
+
+\noindent
+{\em Action:}\\ The user is probably making excessive demands of
+memory. Reconsider the problem size in relation to compute resource.

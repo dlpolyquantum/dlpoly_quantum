@@ -1,0 +1,97 @@
+
+\section{A Guide to Preparing Input Files}
+
+The CONFIG file and the FIELD file can be quite large and unwieldy
+particularly if a polymer or biological molecule is involved in the
+simulation. This section outlines the paths to follow when trying to
+construct files for such systems. The description of the \D{} force
+field in chapter \ref{field} is essential reading. The various utility
+routines mentioned in this section are described in greater detail in
+chapter \ref{utility}. Many of these have been incorporated into the
+\D{} Graphical User Interface\index{Graphical User Interface}
+\cite{smith-gui} and may be convienently used from there.
+
+\subsection {Inorganic Materials}
+
+The utility {\sc genlat} can be used to construct the CONFIG file for
+relatively simple lattice structures. Input is interactive. The FIELD
+file for such systems are normally small and can be constructed by
+hand. The utility {\sc genlat.to} constructs the CONFIG file for
+truncated-octahedral boundary conditions. Otherwise the input of force
+field data for crystalline systems is particularly simple, if no
+angular forces are required (notable exceptions to this are zeolites
+and silicate glasses - see below). Such systems require only the
+specification of the atomic types and the necessary pair forces. The
+reader is referred to the description of the \D{} FIELD file
+for further details (section \ref{fieldfile}).
+
+\D{} allows the simulation of zeolites and silicate (or
+other) glasses. Both these materials require the use of angular forces
+to describe the local structure correctly. In both cases the angular
+terms are included as {\em three body terms}, the forms of which are
+described in chapter \ref{field}. These terms are entered into the FIELD file
+with the pair potentials. Note that you cannot use truncated
+octahedral or rhombic dodecahedral boundary conditions\index{boundary
+conditions} in conjunction with three body\index{potential!three-body}
+forces, due to the use of the link-cell algorithm for evaluating the forces.
+
+An alternative way of handling zeolites is to treat the zeolite
+framework as a kind of macromolecule (see below). 
+Specifying all this is tedious and is best done
+computationally: what is required is to determine the nearest image
+neighbours of all atoms and assign appropriate bond and valence angle
+potentials. (This may require the definition of new bond forces in
+subroutine {\sc bndfrc}, but this is easy.) What must be avoided at
+all costs is specifying the angle potentials {\em without} specifying
+bond potentials\index{potential!bond}. In this case \D{} will
+automatically cancel the non-bonded\index{potential!nonbonded} forces
+between atoms linked via valence angles\index{potential!valence angle}
+and the system will collapse. The advantage of this method is that the
+calculation is likely to be faster using
+three-body\index{potential!three-body} forces. This method is not
+recommended for amorphous systems.
+
+\subsection{Macromolecules}
+
+Simulations of proteins are best tackled using the package DLPROTEIN
+\cite{dlprotein}\index{DLPROTEIN} which is an adaptation of DL\_POLY
+specific to protein modelling. However you may simulate proteins and
+other macromolecules with \D{} if you wish. This is described below.
+
+If you select a {\em protein} structure from a SEQNET file (e.g.  from
+the Brookhaven database), use the utility {\sc proseq} to generate the
+CONFIG file. This will then function as input for \D{}. Some caution is
+required here however, as the protein structure may not be fully
+determined and atoms may be missing from the CONFIG file.
+
+There are further (somewhat limited) tools for processing proteins in
+the {\em MACROMOL} subdirectory of the \D{} {\em utility} directory.
+These utilities will allow you build a biological system and
+create the necessary FIELD file from the
+GROMOS\index{force field!GROMOS}\index{GROMOS} \cite{gunsteren-87a} or
+AMBER\index{force field!AMBER}\index{AMBER} \cite{weiner-86a} force
+fields.
+
+\subsection{Adding Solvent to a Structure}
+
+The utility {\sc wateradd} adds water from an equilibrated
+configuration of 256 SPC water molecules at 300 K to fill out the MD
+cell. The utility {\sc solvadd} fills out the MD box with single-site
+solvent molecules from a f.c.c lattice. The FIELD files will then need
+to be edited to account for the solvent molecules added to the file.
+
+\subsection{Analysing Results}
+
+\D{} is not designed to calculate every conceivable property you
+might wish from a simulation. Apart from some obvious thermodynamic
+quantities and radial distribution functions, it does not calculate
+anything beyond the atomic trajectories on-line. You must therefore be
+prepared to post-process the HISTORY file if you want other
+information. There are some utilities in the \D{} package to help
+with this, but the list is far from exhaustive. In time, we hope
+to have many more. Users are invited to submit code to the \D{} {\em
+public} library to help with this.
+
+Users should be aware that many of these utilities are incorporated
+into the DL\_POLY Graphical User Interface\index{Graphical User
+Interface} \cite{smith-gui}.

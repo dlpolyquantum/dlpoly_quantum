@@ -1,0 +1,589 @@
+
+\section{The OUTPUT Files}
+\label{outputfiles}
+
+\D{} produces up to eight output files: HISTORY, OUTPUT, REVCON, REVIVE,
+RDFDAT, ZDNDAT, STATIS and CFGMIN. These respectively contain: a dump file of
+atomic coordinates, velocities and forces; a summary of the
+simulation; the restart configuration; statistics accumulators; radial
+distribution data, Z-density data, a statistical history, and the
+configuration with the lowest configurational energy. Some of these
+files are optional and appear only when certain options are used.
+
+{\bf Note:} In addition to the files described in this chapter, users
+of the hyperdynamics features of \D{} should see Chapter
+\ref{hyperdynamics}, where additional files specific to that purpose
+are described. Similarly, the output files specific to the solvation
+features of \D{} are described in Chapter \ref{solvation}. The output
+files specific to the path integral (PIMD) option are described in
+Chapter \ref{pimd}.
+
+\subsection{The HISTORY File}
+\label{historyfile}
+\index{HISTORY file}
+
+The HISTORY file is the dump file of atomic coordinates, velocities
+and forces. Its principal use is for off-line analysis. The file is
+written by the subroutines {\sc traject} or {\sc traject\_u}. The
+control variables for this file are {\tt ltraj, nstraj, istraj} and
+{\tt keytrj} which are created internally, based on information read
+from the {\bf traj} directive in the CONTROL file (see above). The
+HISTORY file will be created only if the directive {\bf traj} appears
+in the CONTROL file.  Note that the HISTORY file can be written in
+either a formatted or unformatted version. We describe each of these
+separately below. If you want your HISTORY data to have maximum numerical
+precision, you should use the unformatted version.
+
+The HISTORY file can become {\em very} large, especially if it is
+formatted. For serious simulation work it is recommended that the file
+be written to a scratch disk capable of accommodating a large data
+file.  Alternatively the file may be written as unformatted (see below),
+which has the additional advantage of speed. However, writing an
+unformatted file has the disadvantage that the file may not be
+readable except by the machine on which it was created. This is
+particularly important if graphical processing of the data is
+required.
+
+\subsubsection{The Formatted HISTORY File}
+\index{HISTORY file! formatted}
+
+The formatted HISTORY file is written by the subroutine {\sc traject}
+and  has the following structure.
+\begin{tabbing}
+X\=XXXXXXXX\=XXXXXXXXXXXXXXXX\=\kill
+{\bf record 1} (a80)\\
+\> {\tt header} \> a80 \> file header \\
+{\bf record 2} (3i10)\\
+\> {\tt keytrj} \> integer \> trajectory key (see table \ref{KEYTRJ})\\
+\> {\tt imcon} \> integer \> periodic boundary key (see table \ref{IMCON})\\
+\> {\tt natms} \> integer \> number of atoms in simulation cell\\
+\end{tabbing}
+
+For timesteps greater than {\tt nstraj} the HISTORY file is appended at
+intervals specified by the {\bf traj} directive in the CONTROL file,
+with the following information for each configuration:
+
+\begin{tabbing}
+X\=XXXXXXXXXXXXX\=XXXXXXXXXXXXXX\=\kill
+{\bf record i} (a8,4i10,f12.6)\\
+\> {\tt timestep} \> a8 \> the character string ``timestep''\\
+\> {\tt nstep} \>  integer \> the current time-step\\
+\> {\tt natms} \> integer \> number of atoms in configuration\\
+\> {\tt keytrj} \> integer \> trajectory key (again) \\
+\> {\tt imcon} \> integer \> periodic boundary key (again) \\
+\> {\tt tstep} \> real \> integration timestep \\
+{\bf record ii} (3g12.4) for {\tt imcon} $>$ 0\\
+\> {\tt cell(1)} \> real \> x component of $a$ cell vector\\
+\> {\tt cell(2)} \> real \> y component of $a$ cell vector\\
+\> {\tt cell(3)} \> real \> z component of $a$ cell vector\\
+{\bf record iii} (3g12.4) for {\tt imcon} $>$ 0\\
+\> {\tt cell(4)} \> real \> x component of $b$ cell vector\\
+\> {\tt cell(5)} \> real \> y component of $b$ cell vector\\
+\> {\tt cell(6)} \> real \> z component of $b$ cell vector\\
+{\bf record iv}  (3g12.4) for {\tt imcon} $>$ 0\\
+\> {\tt cell(7)} \> real \> x component of $c$ cell vector\\
+\> {\tt cell(8)} \> real \> y component of $c$ cell vector\\
+\> {\tt cell(9)} \> real \> z component of $c$ cell vector\\
+\end{tabbing}
+This is followed by the configuration for the current timestep. i.e.
+for each atom in the system the following data are included:
+\begin{tabbing}
+X\=XXXXXXXX\=XXXXXXXXXXXXXXXX\=\kill
+{\bf record a} (a8,i10,2f12.6) \\
+\> {\tt atmnam} \> a8 \> atomic label\\
+\> {\tt iatm} \> i10 \>  atom index\\
+\> {\tt weight} \> f12.6 \> atomic mass (a.m.u.)\\
+\> {\tt  charge} \> f12.6 \> atomic charge (e) \\
+{\bf record b} (3e12.4)\\
+\> {\tt xxx} \> real \> x coordinate\\
+\> {\tt yyy} \> real \> y coordinate\\
+\> {\tt zzz} \> real \> z coordinate\\
+{\bf record c} (3e12.4) only for {\tt keytrj} $>$ 0\\
+\> {\tt vxx} \> real \> x component of velocity\\
+\> {\tt vyy} \> real \> y component of velocity\\
+\> {\tt vzz} \> real \> z component of velocity\\
+{\bf record d} (3e12.4) only for {\tt keytrj} $>$ 1\\
+\> {\tt fxx} \> real \> x component of force\\
+\> {\tt fyy} \> real \> y component of force\\
+\> {\tt fzz} \> real \> z component of force\\
+\end{tabbing}
+Thus the data for each atom is a minimum of two records and a maximum
+of 4.
+
+\subsubsection{The Unformatted HISTORY File}
+\index{HISTORY file! unformatted}
+
+The unformatted HISTORY file is written by the subroutine {\sc
+traject\_u} and has the following structure:
+
+\begin{tabbing}
+X\=XXXXXXXXXXXXXXXX\=\kill
+{\bf record 1}\\
+\> {\tt header} \> configuration name (character*80)\\
+{\bf record 2}\\
+\> {\tt natms} \> number of atoms in the configuration (real*8)\\
+{\bf record 3}\\
+\> {\tt atname(1,...,natms)} \> atom names or symbols (character*8)\\
+{\bf record 4}\\
+\> {\tt weight(1,...,natms)} \> atomic masses (real*8)\\
+{\bf record 5}\\
+\> {\tt charge(1,...,natms)} \> atomic charges (real*8)\\
+\end{tabbing}
+
+For time-steps greater than {\tt nstraj}, the HISTORY file is appended, at
+intervals specified by the {\bf traj} directive in the CONTROL file,
+with the following information:
+
+\begin{tabbing}
+X\=XXXXXXXXXXXXXXXX\=\kill
+{\bf record i}\\
+\> {\tt nstep} \> the current time-step (real*8)\\
+\> {\tt natms} \> number of atoms in configuration (real*8)\\
+\> {\tt keytrj} \> trajectory key (real*8)\\
+\> {\tt imcon} \> image convention key (real*8)\\
+\> {\tt tstep} \> integration timestep (real*8) \\
+{\bf record ii} for {\tt imcon} $>$ 0\\
+\> {\tt cell(1,...,9)} \> $a,~b$ and $c$  cell vectors (real*8)\\
+{\bf record iii}\\
+\> {\tt xxx(1,...,natms)} \> atomic x-coordinates (real*8)\\
+{\bf record iv}\\
+\> {\tt yyy(1,...,natms)} \> atomic y-coordinates (real*8)\\
+{\bf record v}\\
+\> {\tt zzz(1,...,natms)} \> atomic z-coordinates (real*8)\\
+{\bf record vi} only for {\tt keytrj}$>0$\\
+\> {\tt vxx(1,...,natms)} \> atomic velocities x-component (real*8)\\
+{\bf record vii} only for {\tt keytrj}$>0$\\
+\> {\tt vyy(1,...,natms)} \> atomic velocities y-component (real*8)\\
+{\bf record viii} only for {\tt keytrj}$>0$\\
+\> {\tt vzz(1,...,natms)} \> atomic velocities z-component (real*8)\\
+{\bf record ix} only for {\tt keytrj}$>1$\\
+\> {\tt fxx(1,...,natms)} \> atomic forces x-component (real*8)\\
+{\bf record x} only for {\tt keytrj}$>1$\\
+\> {\tt fyy(1,...,natms)} \> atomic forces y-component (real*8)\\
+{\bf record xi} only for {\tt keytrj}$>1$\\
+\> {\tt fzz(1,...,natms)} \> atomic forces z-component (real*8)\\
+\end{tabbing}
+Note the implied conversion of integer variables to real on record i.
+
+\subsection{The OUTPUT File}
+\label{outputfile}
+\index{OUTPUT file}
+
+The job output consists of 7 sections: Header; Simulation control
+specifications; Force field specification; Summary of the initial
+configuration; Simulation progress; Summary of statistical data;
+Sample of the final configuration; and Radial distribution functions.
+These sections are written by different subroutines at various stages
+of a job. Creation of the OUTPUT file {\em always} results from
+running \D{}. It is meant to be a human readable file, destined
+for hardcopy output.
+
+\subsubsection{Header}
+
+Gives the \D{} version number, the number of processors used and a
+title for the job as given in the header line of the input file
+CONTROL.  This part of the file is written from the subroutines
+{\sc dlpoly} and  {\sc simdef}
+
+\subsubsection{Simulation Control Specifications}
+
+Echoes the input from the CONTROL file. Some variables may be reset if
+illegal values were specified in the CONTROL file.  This part of
+the file is written from the subroutine {\sc simdef}.
+
+\subsubsection{Force Field Specification}
+
+Echoes the FIELD file. A warning line will be printed if the system is
+not electrically neutral. This warning will appear immediately before
+the non-bonded short-range potential specifications.  This part of the
+file is written from the subroutine {\sc sysdef}. 
+
+\subsubsection{Summary of the Initial Configuration}
+
+ This part of the file is written from the subroutine {\sc sysgen}. It
+states the periodic boundary specification, the cell vectors and
+volume (if appropriate) and the initial configuration of (a maximum
+of) 20 atoms in the system. The configuration information given is
+based on the value of {\tt levcfg} in the CONFIG file. If {\tt levcfg}
+is 0 (or 1) positions (and velocities) of the 20 atoms are listed. If
+{\tt levcfg} is 2 forces are also written out.
+
+For periodic systems this is followed by the long range corrections to
+the energy and pressure.
+
+\subsubsection{Simulation Progress}
+
+ This part of the file is written by the \D{} root segment {\sc dlpoly}.
+The header line is printed at the top of each page as: 
+
+{\scriptsize\begin{verbatim}
+
+--------------------------------------------------------------------------------------------------
+
+    step   eng_tot  temp_tot   eng_cfg   eng_vdw   eng_cou   eng_bnd   eng_ang   eng_dih   eng_tet
+ time       eng_pv  temp_rot   vir_cfg   vir_vdw   vir_cou   vir_bnd   vir_ang   vir_con   vir_tet
+ cpu time   volume  temp_shl   eng_shl   vir_shl     alpha      beta   gamma   vir_pmf     press
+
+--------------------------------------------------------------------------------------------------
+\end{verbatim}}
+
+The labels refer to :
+\begin{tabbing}
+X\=XXXXXXXXXX\=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\=\kill
+{\bf line 1}\\
+\>step \> MD step number\\
+\> {\tt eng\_tot} \> total internal energy of the system\\
+\> {\tt temp\_tot} \> system temperature\\
+\> {\tt eng\_cfg} \> configurational energy of the system\\
+\> {\tt eng\_vdw} \> configurational energy due to short-range
+potentials\\
+\> {\tt eng\_cou} \> configurational energy due to electrostatic
+potential\index{potential!electrostatic} \\
+\> {\tt eng\_bnd} \> configurational energy due to chemical bond\index{potential!bond}
+potentials\\
+\> {\tt eng\_ang} \> configurational energy due to valence angle\index{potential!valence angle}
+and three-body\index{potential!three-body} potentials\\
+\> {\tt eng\_dih} \> configurational energy due to dihedral\index{potential!dihedral}
+inversion and four-body\index{potential!four-body} potentials\\
+\> {\tt eng\_tet} \> configurational energy due to tethering
+potentials\index{potential!tethered}\\
+{\bf line 2}\\
+\> {\tt time} \> elapsed simulation time (fs,ps,ns) since the beginning
+of the job\\
+\> {\tt eng\_pv} \> enthalpy of system\\
+\> {\tt temp\_rot} \> rotational temperature\\
+\> {\tt vir\_cfg} \> total configurational contribution to the
+virial\\
+\> {\tt vir\_vdw} \> short range potential contribution to the
+virial\\
+\> {\tt vir\_cou} \> electrostatic potential\index{potential!electrostatic} contribution to the
+virial\\
+\> {\tt vir\_bnd} \> chemical bond contribution to the virial\\
+\> {\tt vir\_ang} \> angular and three body\index{potential!three-body} potentials contribution to
+the virial\\
+\> {\tt vir\_con} \> constraint bond\index{constraints!bond} contribution to the virial\\
+\> {\tt vir\_tet} \> tethering potential\index{potential!tethered} contribution to the virial\\
+\end{tabbing}
+
+{\bf Note:} The total internal energy of the system (variable {\tt
+tot\_energy}) includes all contributions to the energy (including
+system extensions due to thermostats etc.) It is nominally the {\em
+conserved variable} of the system, and is not to be confused with
+conventional system energy, which is a sum of the kinetic and
+configuration energies.
+
+In cases where the PIMD option is active, and additional data line
+appears :
+\begin{tabbing}
+X\=XXXXXXXXXX\=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\=\kill
+{\bf line 4}\\
+\> {\tt eng\_qpi} \> energy of the quantum system (standard energy estimator)\\
+\> {\tt eng\_qvr} \> energy of the quantum system (virial energy estimator)\\
+\> {\tt eng\_rng} \> energy contribution due to the quantum rings\\
+\> {\tt vir\_rng} \> virial contribution due to the quantum rings\\
+\> {\tt qms\_rgr} \> mean-square radius of gyration of the quantum rings\\
+\> {\tt qms\_bnd } \> mean-square bondlength of the quantum rings\\
+\> {\tt eng\_the } \> total energy of the quantum ring thermostats\\
+\end{tabbing}
+
+The interval for printing out these data is determined by the
+directive {\bf print} in the CONTROL file.  At each time-step that
+printout is requested the instantaneous values of the above
+statistical variables are given in the appropriate columns.
+Immediately below these three lines of output the rolling averages of
+the same variables are also given. The maximum number of
+time-steps\index{algorithm!multiple timestep} used to calculate the
+rolling averages is determined by the parameter {\tt mxstak} defined
+in the {\sc setup\_module./f} file.
+The working number of time-steps for rolling averages
+is controlled by the directive {\bf stack} in file CONTROL (see
+above).  The default value is {\tt mxstak}.
+
+\paragraph*{Energy Units:}
+
+The energy unit for the data appearing in the OUTPUT is defined by the
+{\bf units} directive appearing in the CONTROL file. 
+
+\paragraph*{Pressure units:}
+
+The unit of pressure\index{units!pressure} is {\em k~atm},
+irrespective of what energy unit is chosen.
+
+\subsubsection{Summary of Statistical Data}
+
+This portion of the OUTPUT file is written from the subroutine {\sc
+result}.  The number of time-steps used in the collection of
+statistics is given.  Then the averages over the production portion of
+the run are given for the variables described in the previous section.
+The root mean square variation in these variables follow on the next
+two lines. The energy\index{units!DL\_POLY} and pressure
+units\index{units!pressure} are as for the preceeding section.
+
+Also provided in this section is an estimate of the diffusion
+coefficient for the different species in the simulation, which is
+determined from a {\em single time origin} and is therefore very
+approximate. Accurate determinations of the diffusion coefficients can
+be obtained using the {\sc msd} utility program, which processes the
+HISTORY file (see chapter \ref{utility}).
+
+If an NPT or N$\mat{\sigma}$T simulation is performed the OUTPUT file
+also provides the mean stress (pressure) tensor and mean simulation
+cell vectors.
+
+Since version 1.10 of \D{} this section also includes a record of the
+even gaussian moments of the momentum (up to moment 10) expressed the
+ratio of the simulated and theoretical values (see equation
+\ref{nmom}). These are intended to show the degree to which the
+simulation distribution function is properly represented as a Gaussian
+function i.e. that it complies with Boltzmann's distribution. It is
+importnat to note however, that the underlying theory of this is valid
+only for atoms undergoing unrestricted motion; atoms that are linked
+by constraint bonds or are embedded in rigid bodies will not behave in
+the right way for this test to be valid.
+
+\subsubsection{Sample of Final Configuration}
+
+The positions, velocities and forces of the 20 atoms used for the
+sample of the initial configuration (see above) are given. This is
+written by the subroutine {\sc result}.
+ 
+\subsubsection{Radial Distribution Functions}
+
+If both calculation and printing of radial distribution functions have
+been requested (by selecting directives {\bf rdf} and {\bf print rdf}
+in the CONTROL file) radial distribution functions are printed out. 
+This is written from the subroutine {\sc
+rdf1}. First the number of time-steps used for the collection of the
+histograms is stated.  Then each function is given in turn. For each
+function a header line states the atom types (`a' and `b') represented
+by the function. Then $r,~g(r)$ and $n(r)$ are given in tabular form.
+Output is given from 2 entries before the first non-zero entry in the
+$g(r)$ histogram.  $n(r)$ is the average number of atoms of type `b'
+within a sphere of radius $r$ around an atom of type `a'.
+Note that a readable version of these data is provided by the 
+RDFDAT file (below). 
+
+\subsubsection{ Z Density Profile}
+If both calculation and printing of Z density profiles has been
+requested (by selecting directives {\bf zden} and {\bf print rdf} in
+the CONTROL file Z density profiles are printed out as the last part
+of the OUTPUT file.  This is written by the subroutine {\sc zden1}.
+First the number of time-steps used for the collection of the
+histograms is stated.  Then each function is given in turn. For each
+function a header line states the atom type represented by the
+function.  Then $z,~\rho(z)$ and $n(z)$ are given in tabular form.
+Output is given from $Z = [-L/2,L/2]$ where L is the length of the MD
+cell in the Z direction and $\rho(z)$ is the mean number density.
+$n(z)$ is the running integral from $-L/2$ to $z$ of $({\rm
+xy~cell~area})\rho(s) ds$.
+Note that a readable version of these data is provided by the 
+ZDNDAT file (below). 
+
+\subsection{The REVCON File}
+\label{revconfile}
+\index{REVCON file}
+
+This file is formatted and written by the subroutine {\sc revive}.
+REVCON is the restart configuration file.  The file is written every
+{\tt ndump} time steps in case of a system crash during execution and
+at the termination of the job. A successful run of \D{} will always
+produce a REVCON file, but a failed job may not produce the file if an
+insufficient number of timesteps have elapsed. {\tt ndump} is a
+parameter defined in the {\sc setup\_module.f} file found in the {\em
+source} directory of \D{}.  Changing {\tt
+ndump} necessitates recompiling \D{}.  
+
+REVCON is identical in format to the CONFIG input file (see section
+\ref{configfile}).
+
+REVCON should be renamed CONFIG to continue a simulation from one job
+to the next.  This is done for you by the {\sl copy} macro supplied in
+the {\em execute} directory of \D{}.
+
+\subsection{The CFGMIN File}
+\label{cfgminfile}
+\index{CFGMIN file}
+
+The CFGMIN file only appears if the user has selected the programmed
+minimisation option (directive {\bf minim} in the CONTROL file). Its
+contents have the same format as the CONFIG file (see section
+\ref{configfile}), but contains only atomic position data and will
+never contain either velocity or force data (i.e. parameter {\tt
+levcfg} is always zero).  In addition, two extra numbers appear on the
+end of the second line of the file:
+\begin{enumerate}
+\item an integer indicating the number of minimisation cycles required
+to obtain the structure (format I10);
+\item the configuration energy of the final structure expressed in 
+DL\_POLY units \ref{units} (format F20).
+\end{enumerate}
+
+\subsection{The REVIVE File}
+\label{revivefile}
+\index{REVIVE file}
+
+This file is unformatted and written by the subroutine {\sc revive}.
+It contains the accumulated statistical data. It is updated whenever
+the file REVCON is updated (see previous section). REVIVE should be
+renamed REVOLD to continue a simulation from one job to
+the next.  This is done by the {\sl copy} macro supplied in the
+{\em execute} directory of \D{}. In addition, to continue a 
+simulation from a previous job the {\bf restart} keyword must be
+included in the CONTROL file.
+
+The format of the REVIVE file is identical to the REVOLD file
+described in section \ref{revoldfile}.
+
+\subsection{The RDFDAT File}
+\label{rdffile}
+\index{RDFDAT file}
+
+This is a formatted file containing {em Radial Distribution Function}
+(RDF) data. Its contents are as follows:
+
+\begin{tabbing}
+X\=XXXXXXXX\=XXXXXXXXXXXX\=XXXXXXXXXX\=\kill
+{\bf record 1}\\
+\> {\tt cfgname} \> character (A80)\> configuration name\\
+{\bf record 2}\\
+\> {\tt ntpvdw} \> integer (i10) \> number of RDFs in file\\
+\> {\tt mxrdf} \> integer (i10) \> number of data points in each RDF\\
+\end{tabbing}
+
+There follow the data for each individual RDF i.e. {\em ntpvdw}
+times. The data supplied are as follows:
+
+\begin{tabbing}
+X\=XXXXXXXX\=XXXXXXXXXXXX\=XXXXXXXXXX\=\kill
+{\bf first record}\\
+\> {\tt atname 1} \> character (A8)\> first atom name\\
+\> {\tt atname 2} \> character (A8)\> second atom name\\
+{\bf following records} ({\em mxrdf} records)\\
+\> {\tt radius} \> real (e14) \> interatomic distance (A)\\
+\> {\tt g(r)} \> real (e14) \> RDF at given radius.\\
+\end{tabbing}
+Note the RDFDAT file is optional and appears when the {\bf print rdf}
+option is specified in the CONTROL file.
+
+\subsection{The ZDNDAT File}
+\label{zdnfile}
+\index{ZDNDAT file}
+
+This is a formatted file containing the Z-density data. Its contents
+are as follows:
+
+\begin{tabbing}
+X\=XXXXXXXX\=XXXXXXXXXXXX\=XXXXXXXXXX\=\kill
+{\bf record 1}\\
+\> {\tt cfgname} \> character (A80)\> configuration name\\
+{\bf record 2}\\
+\> {\tt mxrdf} \> integer (i10) \> number of data points in the
+Z-density function\\
+{\bf following records} ({\em mxrdf} records)\\
+\> {\tt z} \> real (e14) \> distance in z direction (A)\\
+\> $\rho(z)$ \> real (e14) \> Z-density at given height {\tt z}\\
+\end{tabbing}
+
+Note the ZDNDAT file is optional and appears when the {\bf print rdf}
+option is specified in the CONTROL file.
+
+\subsection{The STATIS File}
+\label{statisfile}
+\index{STATIS file}
+
+The file is formatted, with integers as ``i10'' and reals as
+``e14.6''.  It is written by the subroutine {\sc static}. It consists
+of two header records followed by many data records of statistical
+data.
+\begin{tabbing}
+X\=XXXXXXXX\=XXXXXXXXXXXX\=XXXXXXXXXX\=\kill
+{\bf record 1}\\
+\> {\tt cfgname} \> character \> configuration name\\
+{\bf record 2}\\
+\> {\tt string} \> character \> energy units\\
+\end{tabbing}
+
+{\bf Data records}\\ Subsequent lines contain the instantaneous values
+of statistical variables dumped from the array {\tt stpval}. A
+specified number of
+entries of {\tt stpval} are written in the format ``(1p,5e14.6)''. 
+The number of array elements required (determined by the parameter
+{\tt mxnstk} in
+the {\sc dl\_params.inc} file) is
+\begin{eqnarray}
+{\tt mxnstk} \ge& 27  + {\tt ntpatm} (\rm
+number~of~unique~atomic~sites) \nonumber\\
+                & +  9 (\rm if~stress~tensor~calculated) \nonumber\\
+                & +  9 (\rm if~constant~pressure~simulation~requested)
+\nonumber
+\end{eqnarray}
+The STATIS file is appended at intervals determined by the
+{\bf stats} directive in the CONTROL file. The energy
+unit is as specified in the CONTROL file with the the {\bf units}
+directive, and are compatible with the data appearing in the OUTPUT
+file.  The contents of the appended information is:
+\begin{tabbing}
+X\=XXXXXXXXXXXX\=XXXXXXXXXXXX\=XXXXXXXXXXXX\=\kill
+{\bf record i}\\
+\> {\tt nstep} \> integer \> current MD time-step\\
+\> {\tt  time }\>  real  \> elapsed simulation time = {\tt
+nstep}$\times \Delta t$\\
+\> {\tt nument} \> integer \> number of array elements to follow\\
+{\bf record ii} {\tt stpval}(1) -- {\tt stpval}(5)\\
+\> {\tt engcns} \> real \> total extended system energy \\
+\> \> \> (i.e. the conserved quantity)\\
+\> {\tt temp} \> real \> system temperature\\
+\> {\tt engcfg} \> real \> configurational energy\\
+\> {\tt engsrp} \> real \> VdW/metal/Tersoff energy\\
+\> {\tt engcpe} \> real \> electrostatic energy\\
+{\bf record iii}  {\tt stpval}(6) -- {\tt stpval}(10)\\
+\> {\tt engbnd} \> real \> chemical bond energy\\
+\> {\tt engang} \> real \> valence angle/3-body potential energy\\
+\> {\tt engdih} \> real \> dihedral/inversion/four body energy\\
+\>{\tt engtet} \> real \> tethering energy\\
+\>{\tt enthal} \> real \> enthalpy (total energy + PV)\\
+{\bf record iv} {\tt stpval}(11) -- {\tt stpval}(15)\\
+\> {\tt tmprot} \> real \> rotational temperature\\
+\> {\tt vir} \> real \> total virial\\
+\> {\tt virsrp} \> real \> VdW/metal/Tersoff virial\\
+\> {\tt vircpe} \> real \> electrostatic virial\\
+\> {\tt virbnd} \> real \> bond virial\\
+{\bf record v} {\tt stpval}(16) -{\tt stpval}(20)\\
+\> {\tt virang} \> real \> valence angle/3-body virial\\
+\> {\tt vircon} \> real \> constraint virial\\
+\> {\tt virtet} \> real \> tethering virial\\
+\> {\tt volume} \> real \> volume\\
+\> {\tt tmpshl} \> real \> core-shell temperature\\
+{\bf record vi} {\tt stpval}(21) -{\tt stpval}(25)\\
+\> {\tt engshl} \> real \> core-shell potential energy\\
+\> {\tt virshl} \> real \> core-shell virial\\
+\> {\tt alpha } \> real \> MD cell angle $\alpha$\\
+\> {\tt beta } \> real \> MD cell angle $\beta$\\
+\> {\tt gamma } \> real \> MD cell angle $\gamma$\\
+{\bf record vii} {\tt stpval}(26) -{\tt stpval}(27)\\
+\> {\tt virpmf} \> real \> Potential of Mean Force virial\\
+\> {\tt press} \> real \> pressure\\
+{\bf the next {\tt ntpatm} entries}\\
+\> {\tt amsd(1)} \> real \> mean squared displacement of first atom
+types\\
+\> {\tt amsd(2)} \> real \> mean squared displacement of second atom
+types\\
+\> {\tt ...} \> ... \> ... \\
+\> {\tt amsd(ntpatm)} \> real \> mean squared displacement of last
+atom types\\
+{\bf the next 9 entries - {\em if} the stress tensor is calculated}\\
+\> {\tt stress(1)} \> real \> xx component of stress tensor\\
+\> {\tt stress(2)} \> real \> xy component of stress tensor\\
+\> {\tt stress(3)} \> real \> xz component of stress tensor\\
+\> {\tt stress(4)} \> real \> yx component of stress tensor\\
+\> {\tt ...} \> real \> ... \\
+\> {\tt stress(9)} \> real \> zz component of stress tensor\\
+{\bf the next 9 entries - {\em if} a NPT simulation is undertaken}\\
+\> {\tt cell(1)} \> real \> x component of $a$ cell vector\\
+\> {\tt cell(2)} \> real \> y component of $a$ cell vector\\
+\> {\tt cell(3)} \> real \> z component of $a$ cell vector\\
+\> {\tt cell(4)} \> real \> x component of $b$ cell vector\\
+\> {\tt ...} \> real \> ... \\
+\> {\tt cell(9)} \> real \> z component of $c$ cell vector\\
+\end{tabbing}
+
