@@ -1,4 +1,5 @@
-DL_POLY-Quantum-v1.0
+## DL_POLY-Quantum-v1.0
+
 DL_POLY Quantum v1.0 is a general purpose open-source software package developed by Mohammad R. Momeni and Farnaz A. Shakib for molecular simulations in condensed phases.
 
 DL_POLY Quantum v1.0 is a modified version of DL_POLY Classic v1.10 originally developed in the Daresbury Laboratory.
