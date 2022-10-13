@@ -1,7 +1,5 @@
       module angles_module
 
-c Testing if the commit goes through Dil
-
 c***********************************************************************
 c     
 c     dl_poly module for defining valence angle potentials
@@ -282,7 +280,7 @@ c***********************************************************************
       real(8), allocatable :: xdab(:),ydab(:),zdab(:)
       real(8), allocatable :: xdbc(:),ydbc(:),zdbc(:)
 
-      real(8)  :: dtheta,xdeg
+      real(8)  :: xdeg,ddt,ddt2,ddt3,ddt4,cang,qang,pang,sang
       
       safe=.true.
       
@@ -543,39 +541,52 @@ c     Method Development and Materials Simulation Laboratory
         else if(keya.eq.13)then
 c       enegry unit in mdyn and angle in degree
          xdeg = 180.d0/pi 
+         cang = -0.014d0
+         qang =  0.000056d0
+         pang = -0.0000007d0
+         sang =  0.000000022d0
 c     MM3 angle bend potential
-         dtheta = (theta-prmang(kk,2))
+         ddt = (theta-prmang(kk,2))*xdeg
+         ddt2 = ddt*ddt
+         ddt3 = ddt2*ddt
+         ddt4 = ddt2*ddt2
 
-        pterm=71.94d0*prmang(kk,1)*dtheta**2*(1.d0-0.014d0*(xdeg*dtheta)
-     x         +5.6e-5*(xdeg*dtheta)**2-7.0e-7*(xdeg*dtheta)**3
-     x         +2.2e-8*(xdeg*theta)**4)
+         pterm=0.02191418d0*prmang(kk,1)*ddt2 
+     x         *(1.0d0+cang*ddt+qang*ddt2+pang*ddt3+sang*ddt4)
 
-         gamma=71.94d0*prmang(kk,1)*dtheta*(2.d0-0.042d0*(xdeg*dtheta)
-     x         +2.24e-4*(xdeg*dtheta)**2-3.5e-6*(xdeg*dtheta)**3
-     x         +1.32e-7*(xdeg*theta)**4)/sint
+         gamma=0.02191418d0*prmang(kk,1)*ddt*xdeg  
+     x         *(2.0d0+3.d0*cang*ddt+4.0d0*qang*ddt2
+     x         +5.0d0*pang*ddt3+6.0d0*sang*ddt4)/sint
 
-          vterm=0.d0
+c        pterm=71.94d0*prmang(kk,1)*(dtheta)**2 * (1.d0-0.014d0 
+c     x         * (xdeg*dtheta) + 5.6e-5*(xdeg*dtheta)**2 
+c     x         - 7.0e-7*(xdeg*dtheta)**3 + 9.0e-10*(xdeg*theta)**4)
+
+c         gamma=71.94d0*prmang(kk,1)*(dtheta)*(2.d0 
+c     x         - 0.042d0*(xdeg*dtheta) + 2.24e-4*(xdeg*dtheta)**2 
+c     x         - 3.5e-6*(xdeg*dtheta)**3 + 5.4e-9*(xdeg*theta)**4)/sint
+
           gamsa=0.d0
           gamsc=0.d0
-
+          vterm=0.d0
 
         else if(keya.eq.14)then
       
 c     cosine periodic (S13-Smit2017_SI) angle potential
 
-         pterm=prmang(kk,1)*(1.d0-prmang(kk,2)*(-1)**prmang(kk,3)
-     x         *cos(prmang(kk,3)*theta))
+          pterm=prmang(kk,1)*(1.d0-cos(4.d0*theta))
 
-        gamma=prmang(kk,1)*prmang(kk,3)*prmang(kk,2)*(-1)**prmang(kk,3)
-     x         *sin(prmang(kk,3)*theta)/sint
+          gamma=prmang(kk,1)*4.d0*sin(4.d0*theta)/sint
 
-c          pterm=prmang(kk,1)*(1.d0-cos(4.d0*theta))
+c         pterm=prmang(kk,1)*(1.d0 - prmang(kk,2)*(-1)**prmang(kk,3)
+c     x         *cos(prmang(kk,3)*theta))
 
-c          gamma=prmang(kk,1)*4.d0*sin(4.d0*theta)/sint
+c        gamma=prmang(kk,1)*prmang(kk,3)*prmang(kk,2)*(-1)**prmang(kk,3)
+c     x         *sin(prmang(kk,3)*theta)/sint
 
-          vterm=0.d0
           gamsa=0.d0
           gamsc=0.d0
+          vterm=0.d0
 c *******************************************************************     
 
         else

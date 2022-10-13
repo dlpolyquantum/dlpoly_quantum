@@ -1335,9 +1335,11 @@ c*********************************************************************
       return
       end function intstr3
       
-      subroutine traject
-     x  (ltraj,idnode,imcon,istraj,keytrj,natms,nstraj,nstep,tstep)
 
+      subroutine traject
+     x      (ltraj,idnode,imcon,istraj,keytrj,natms,
+     x      nstraj,nstep,tstep,lpimd)
+          
 c***********************************************************************
 c     
 c     dl_poly subroutine for writing history file at selected
@@ -1353,13 +1355,18 @@ c***********************************************************************
 
       implicit none
       
-      logical newjob,ltraj
+      logical newjob,ltraj,lpimd
       integer idnode,imcon,istraj,keytrj,natms,nstraj,nstep,i
       real(8) tstep
+      
+      integer :: natmc
+      integer,parameter :: nhistc = 22
 
       save newjob
       data newjob/.true./
       
+      natmc = natms/nbeads
+
       if(ltraj.and.idnode.eq.0)then
         
 c     open the history file if new job or file closed
@@ -1369,6 +1376,8 @@ c     open the history file if new job or file closed
           newjob = .false.
 
           open(nhist,file='HISTORY',position='append')
+c    if(lpimd == .true.) then write CENTROID position of HISTORYc file
+          if(lpimd)open(nhistc,file='HISTORYc',position='append')
 
         endif
         
@@ -1376,7 +1385,12 @@ c     open the history file if new job or file closed
           
           write(nhist,'(80a1)') cfgname
           write(nhist,'(3i10)') keytrj,imcon,natms
-          
+
+          if(lpimd)then
+            write(nhistc,'(80a1)') cfgname
+            write(nhistc,'(3i10)') keytrj,imcon,natmc
+          endif
+
         endif
         
         if(mod(nstep-nstraj,istraj).eq.0)then
@@ -1385,7 +1399,7 @@ c     open the history file if new job or file closed
      x         nstep,natms,keytrj,imcon,tstep
 
           if(imcon.gt.0) write(nhist,'(3g12.4)') cell
-
+ 
           do i = 1,natms
 
             write(nhist,'(a8,i10,2f12.6)')
@@ -1400,6 +1414,31 @@ c     open the history file if new job or file closed
 
           enddo
 
+          if(lpimd)then
+            write(nhistc,'(a8,4i10,f12.6)') 'timestep',
+     x         nstep,natmc,keytrj,imcon,tstep
+ 
+            if(imcon.gt.0) write(nhistc,'(3g12.4)') cell
+          
+            do i = 1,natmc
+              write(nhistc,'(a8,i10,2f12.6)')
+     x          atmnam(i),i,weight(i),chge(i)
+              write(nhistc,'(1p,3e12.4)')sum(xxx(i:natms:natmc))/nbeads,
+     x                 sum(yyy(i:natms:natmc))/nbeads,
+     x                 sum(zzz(i:natms:natmc))/nbeads
+              if(keytrj.ge.1)then
+              write(nhistc,'(1p,3e12.4)')sum(vxx(i:natms:natmc))/nbeads,
+     x                 sum(vyy(i:natms:natmc))/nbeads,
+     x                 sum(vzz(i:natms:natmc))/nbeads
+              endif
+              if(keytrj.ge.2)then
+              write(nhistc,'(1p,3e12.4)')sum(fxx(i:natms:natmc))/nbeads,
+     x                 sum(fyy(i:natms:natmc))/nbeads,
+     x                 sum(fzz(i:natms:natmc))/nbeads
+              endif
+            enddo
+          endif
+
         endif
 
 c     close history file at regular intervals
@@ -1407,6 +1446,7 @@ c     close history file at regular intervals
         if(.not.newjob.and.mod(nstep,ndump).eq.0)then
           
           close (nhist)
+          if(lpimd)close (nhistc)
           newjob = .true.
           
         endif

@@ -955,7 +955,7 @@ c     write trajectory data
           
           call traject
      x      (ltraj,idnode,imcon,istraj,keytrj,natms*nbeads,
-     x      nstraj,nstep,tstep)
+     x      nstraj,nstep,tstep,lpimd)
           
         endif
         

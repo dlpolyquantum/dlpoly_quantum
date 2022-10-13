@@ -84,7 +84,7 @@ check:
 #=====================================================================
 # Clean up the source directory
 clean:
-	rm -f $(OBJ_MOD) $(OBJ_PAR) $(OBJ_SRC) *.mod
+	rm -f $(OBJ_MOD) $(OBJ_PAR) $(OBJ_SRC) *.mod $(EXE)
 
 #=====================================================================
 # Declare dependencies

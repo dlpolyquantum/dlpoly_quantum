@@ -156,6 +156,17 @@ c***********************************************************************
         elseif(keyword(1:4).eq.'tab ') then
           keypot=0
           numpar=0
+c *******************************************************************   
+c     Dil Limbu
+c     Method Development and Materials Simulation Laboratory
+        elseif(keyword(1:4).eq.'dbuc') then
+          keypot=11
+          numpar=3
+
+        elseif(keyword(1:4).eq.'tbuc') then
+          keypot=12
+          numpar=3
+c *******************************************************************   
         else
           if(idnode.eq.0) write(nrite,*) message
           call error(idnode,452)
@@ -215,6 +226,14 @@ c     convert energies to internal unit
           
           parpot(3)=parpot(3)*engunit
           parpot(5)=parpot(5)*engunit
+          
+        else if(keypot.eq.11) then
+          
+          parpot(3)=parpot(3)*engunit
+          
+        else if(keypot.eq.12) then
+          
+          parpot(3)=parpot(3)*engunit
           
         endif
 
@@ -304,6 +323,7 @@ c***********************************************************************
       real(8) ccc,ddd,eee,sig,rho,rrc,aa1,aa2,aa3,ee1,ee2,ee3
       real(8) rsq,ex1,ex2,ex3
 
+      real(8) :: expmerge, expcut, rrr_o
 c     define grid resolution for potential arrays
       
       dlrpot=rcut/dble(mxgrid-4)
@@ -377,6 +397,66 @@ c       buckingham exp - 6 potential
             
           enddo
           
+c *******************************************************************      
+c     Dil Limbu
+c     Method Development and Materials Simulation Laboratory
+        else if(ltpvdw(ivdw).eq. 11)then
+          
+c       buckingham exp - 6 potential
+      
+          aaa=prmvdw(ivdw,1)
+          rho=prmvdw(ivdw,2)
+          ccc=prmvdw(ivdw,3)
+
+          do i=1,mxgrid
+            
+            rrr=dble(i)*dlrpot
+            vvv(i,ivdw)=aaa*exp(-rrr/rho)-(ccc/rrr**6)/(1.0
+     x            +6.d0*(3.d0*rho/rrr)**14)
+            ggg(i,ivdw)=rrr*aaa*exp(-rrr/rho)/rho - 
+     x            6.d0*ccc*rrr**8*((rrr**14)-8.d0*(3.d0*rho)**14)/
+     x            (((rrr**14) + 6.d0*(3.d0*rho)**14)**2)
+            
+          enddo
+
+c *******************************************************************      
+c     Dil Limbu
+c     Method Development and Materials Simulation Laboratory
+
+        else if(ltpvdw(ivdw).eq. 12)then
+
+c       tinker implemeted buckingham exp - 6 potential with LJ in low region
+c     switch from exponential to R^12 at very short range
+c
+c      expcut = 2.0d0
+c      expcut2 = expcut * expcut
+c      expmerge = (abuck*exp(-bbuck/expcut) - cbuck*(expcut**6))
+c     &                               / (expcut**12)
+ 
+          aaa=prmvdw(ivdw,1)
+          rho=prmvdw(ivdw,2)
+          ccc=prmvdw(ivdw,3)
+
+          rrr_o = 12.0d0 * rho
+          expcut = 2.0d0
+
+         expmerge=(aaa*exp(-6.d0)-ccc*(expcut/rrr_o)**6)/(expcut**12)
+
+          do i=1,mxgrid
+            
+            rrr=dble(i)*dlrpot
+
+            if((rrr_o/rrr) .le. expcut)then
+              vvv(i,ivdw)=aaa*exp(-rrr/rho)-ccc/rrr**6
+              ggg(i,ivdw)=rrr*aaa*exp(-rrr/rho)/rho-6.d0*ccc/rrr**6
+            else
+              vvv(i,ivdw)=expmerge*(rrr_o/rrr)**12
+              ggg(i,ivdw)=12.d0*expmerge*(rrr_o/rrr)**12
+            endif
+            
+          enddo
+          
+c *******************************************************************      
         else if(ltpvdw(ivdw).eq.5)then
           
 c       born-huggins-meyer exp - 6 - 8 potential
