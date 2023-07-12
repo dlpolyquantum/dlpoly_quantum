@@ -77,7 +77,10 @@ c     allocate arrays
       
       fail(:)=0
       
-      if(nbeads.gt.1)then
+c      if(nbeads.gt.1)then
+c     PIMD nbead = 1 testing
+c     TESTED BY DIL LIMBU        
+      if(nbeads.ge.1)then
         allocate (zmass(1:mspimd),       stat=fail(1))
         allocate (rzmass(1:mspimd),      stat=fail(2))
         allocate (etx(1:nchain,1:mspimd),stat=fail(3))
@@ -120,7 +123,10 @@ c**********************************************************************
       fail(:)=0
       safe=.true.
       
-      if(nbeads.gt.1)then
+c      if(nbeads.gt.1)then
+c     PIMD nbead = 1 testing
+c     TESTED BY DIL LIMBU        
+      if(nbeads.ge.1)then
         deallocate(zmass,rzmass,etx,ety,etz,pcx,pcy,pcz,stat=fail(1))
         deallocate(uxx,uyy,uzz,pxx,pyy,pzz,wxx,wyy,wzz,stat=fail(2))
       endif
@@ -997,10 +1003,14 @@ c**********************************************************************
         uyy((i-iatm0)*nbeads+1)=yyy(i)
         uzz((i-iatm0)*nbeads+1)=zzz(i)
         
+c     PIMD nbead = 1 testing
+c     TESTED BY DIL LIMBU        
+       if(nbeads.gt.1)then
         uxx((i-iatm0+1)*nbeads)=xxx((nbeads-1)*natms+i)-xxx(i)
         uyy((i-iatm0+1)*nbeads)=yyy((nbeads-1)*natms+i)-yyy(i)
         uzz((i-iatm0+1)*nbeads)=zzz((nbeads-1)*natms+i)-zzz(i)
-        
+       endif 
+
       enddo
       
       do k=2,nbeads-1
@@ -1045,11 +1055,15 @@ c**********************************************************************
         pxx((i-iatm0)*nbeads+1)=vxx(i)
         pyy((i-iatm0)*nbeads+1)=vyy(i)
         pzz((i-iatm0)*nbeads+1)=vzz(i)
-        
+
+c     PIMD nbead = 1 testing
+c     TESTED BY DIL LIMBU        
+       if(nbeads.gt.1)then
         pxx((i-iatm0+1)*nbeads)=vxx((nbeads-1)*natms+i)-vxx(i)
         pyy((i-iatm0+1)*nbeads)=vyy((nbeads-1)*natms+i)-vyy(i)
         pzz((i-iatm0+1)*nbeads)=vzz((nbeads-1)*natms+i)-vzz(i)
-          
+       endif  
+
       enddo
       
       do k=2,nbeads-1
@@ -1176,13 +1190,17 @@ c**********************************************************************
         yyy(i)=uyy((i-iatm0)*nbeads+1)
         zzz(i)=uzz((i-iatm0)*nbeads+1)
         
+c     PIMD nbead = 1 testing
+c     TESTED BY DIL LIMBU        
+       if(nbeads.gt.1)then
         xxx((nbeads-1)*natms+i)=uxx((i-iatm0+1)*nbeads)
      x    +uxx((i-iatm0)*nbeads+1)
         yyy((nbeads-1)*natms+i)=uyy((i-iatm0+1)*nbeads)
      x    +uyy((i-iatm0)*nbeads+1)
         zzz((nbeads-1)*natms+i)=uzz((i-iatm0+1)*nbeads)
      x    +uzz((i-iatm0)*nbeads+1)
-        
+       endif    
+
       enddo
       
       do k=nbeads-1,2,-1
@@ -1256,13 +1274,17 @@ c**********************************************************************
         vyy(i)=pyy((i-iatm0)*nbeads+1)
         vzz(i)=pzz((i-iatm0)*nbeads+1)
 
+c     PIMD nbead = 1 testing
+c     TESTED BY DIL LIMBU        
+       if(nbeads.gt.1)then
         vxx((nbeads-1)*natms+i)=pxx((i-iatm0+1)*nbeads)
      x    +pxx((i-iatm0)*nbeads+1)
         vyy((nbeads-1)*natms+i)=pyy((i-iatm0+1)*nbeads)
      x    +pyy((i-iatm0)*nbeads+1)
         vzz((nbeads-1)*natms+i)=pzz((i-iatm0+1)*nbeads)
      x    +pzz((i-iatm0)*nbeads+1)
-        
+       endif
+
       enddo
       
       do k=nbeads-1,2,-1

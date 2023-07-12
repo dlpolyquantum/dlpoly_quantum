@@ -275,6 +275,87 @@ c     hexagonal prism boundary conditions
       return
       end subroutine images
 
+      subroutine imagesrev
+     x  (imcon,cell,xxb,yyb,zzb,xxc,yyc,zzc)
+      
+c***********************************************************************
+c     
+c     dl_poly subroutine for calculating the minimum image
+c     of bead atoms back from a specified MD cell to supercell
+c     for HISTORYc in PIMD
+c
+c     for
+c     imcon=1 standard cubic boundaries apply
+c     imcon=3 parallelepiped boundaries apply
+c     
+c     note: in all cases the centre of the beads averages
+c     
+c     Dil Limbu
+c     Method Development and Materials Simulation Laboratory
+c***********************************************************************
+      
+      use error_module
+      
+      implicit none
+
+      integer imcon,i
+      real(8) cell,rcell,xxb,yyb,zzb
+      real(8) aaa,bbb,ccc,det
+      real(8) ssx,ssy,ssz,ddd,xss,yss,zss
+      real(8) xxc,yyc,zzc
+
+      dimension xxb(nbeads),yyb(nbeads),zzb(nbeads)
+      dimension cell(9),rcell(9)
+
+
+      xxc=sum(xxb(1:nbeads))/nbeads
+      yyc=sum(yyb(1:nbeads))/nbeads
+      zzc=sum(zzb(1:nbeads))/nbeads
+
+      if(imcon.eq.1)then
+
+c     standard cubic boundary conditions
+        
+        aaa=1.d0/cell(1)
+
+c       do i=1,nbeads
+        xxb(:)=xxb(:)-cell(1)*nint(aaa*(xxb(:)-xxc))
+        yyb(:)=yyb(:)-cell(1)*nint(aaa*(yyb(:)-yyc))
+        zzb(:)=zzb(:)-cell(1)*nint(aaa*(zzb(:)-zzc))
+c       enddo
+
+      else if(imcon.eq.3)then
+
+c     parallelepiped boundary conditions
+        
+        call invert(cell,rcell,det)
+        
+        do i=1,nbeads
+          
+          ssx=(rcell(1)*xxb(i)+rcell(4)*yyb(i)+rcell(7)*zzb(i))
+          ssy=(rcell(2)*xxb(i)+rcell(5)*yyb(i)+rcell(8)*zzb(i))
+          ssz=(rcell(3)*xxb(i)+rcell(6)*yyb(i)+rcell(9)*zzb(i))
+          
+          xss=ssx-nint(ssx-xxc*rcell(1))
+          yss=ssy-nint(ssy-yyc*rcell(5))
+          zss=ssz-nint(ssz-zzc*rcell(9))
+          
+          xxb(i)=(cell(1)*xss+cell(4)*yss+cell(7)*zss)
+          yyb(i)=(cell(2)*xss+cell(5)*yss+cell(8)*zss)
+          zzb(i)=(cell(3)*xss+cell(6)*yss+cell(9)*zss)
+          
+        enddo
+
+      endif
+
+      xxc=sum(xxb(1:nbeads))/nbeads
+      yyc=sum(yyb(1:nbeads))/nbeads
+      zzc=sum(zzb(1:nbeads))/nbeads
+
+      return
+      end subroutine imagesrev
+
+
       subroutine config_write(fname,levcfg,imcon,natms,engcfg)
       
 c***********************************************************************
@@ -1359,6 +1440,7 @@ c***********************************************************************
       integer idnode,imcon,istraj,keytrj,natms,nstraj,nstep,i
       real(8) tstep
       
+      real(8) xxc,yyc,zzc
       integer :: natmc
       integer,parameter :: nhistc = 22
 
@@ -1421,11 +1503,14 @@ c    if(lpimd == .true.) then write CENTROID position of HISTORYc file
             if(imcon.gt.0) write(nhistc,'(3g12.4)') cell
           
             do i = 1,natmc
+
+               call imagesrev
+     x         (imcon,cell,xxx(i:natms:natmc),yyy(i:natms:natmc),
+     x          zzz(i:natms:natmc),xxc,yyc,zzc)
+
               write(nhistc,'(a8,i10,2f12.6)')
      x          atmnam(i),i,weight(i),chge(i)
-              write(nhistc,'(1p,3e12.4)')sum(xxx(i:natms:natmc))/nbeads,
-     x                 sum(yyy(i:natms:natmc))/nbeads,
-     x                 sum(zzz(i:natms:natmc))/nbeads
+              write(nhistc,'(1p,3e12.4)')xxc,yyc,zzc
               if(keytrj.ge.1)then
               write(nhistc,'(1p,3e12.4)')sum(vxx(i:natms:natmc))/nbeads,
      x                 sum(vyy(i:natms:natmc))/nbeads,

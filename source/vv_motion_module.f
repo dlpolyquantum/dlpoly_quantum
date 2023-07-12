@@ -1390,10 +1390,10 @@ c     deallocate working arrays
       end subroutine nvtvv_h1
 
       subroutine nvtvv_nhc
-     x      (safe,lmsite,isw,idnode,mxnode,natms,imcon,
-     x      nchain,nrespa,ntpmls,         
+     x      (safe,lshmov,lmsite,isw,idnode,mxnode,natms,imcon,nscons,
+     x      ntcons,nchain,nrespa,ntpmls,         
      x      ntshl,keyshl,tstep,taut,sigma,sigma_nhc,g_qt4f,chit,
-     x      consv,conint,engke,vircon,chit_shl,sigma_shl)
+     x      consv,conint,engke,tolnce,vircon,chit_shl,sigma_shl)
 
 c***********************************************************************
 c     
@@ -1414,16 +1414,21 @@ c***********************************************************************
 
       integer, parameter :: nnn=4
       
-      logical safe,lmsite
-      integer isw,idnode,mxnode,natms,imcon
+      logical safe,lmsite,lshmov
+      integer isw,idnode,mxnode,natms,imcon,nscons,ntcons
       integer i,j,k,iatm0,iatm1
       integer nchain,nrespa,ntpmls
-      real(8) tstep,taut,sigma,chit,consv,conint,engke,vircon
+      real(8) tstep,taut,sigma,chit,consv,conint,engke,tolnce,vircon
       real(8) hstep,qmass_t,heta_nhc,hpeta_nhc
       real(8) heta_1,heta_rest,hpeta_1,hpeta_rest
       real(8) sigma_nhc,qmass_part,g_qt4f
       integer fail(nnn)
       real(8) strkin(9)
+
+      real(8), allocatable :: xxt(:),yyt(:),zzt(:)
+      real(8), allocatable :: txx(:),tyy(:),tzz(:)
+      real(8), allocatable :: dxx(:),dyy(:),dzz(:)
+      real(8), allocatable :: dxt(:),dyt(:),dzt(:)
 
 c     metadynamics shell thermostat variables
 
@@ -1438,6 +1443,29 @@ c     metadynamics shell thermostat variables
 c     end metadynamics shell thermostat variables
       
       safe=.true.
+
+c cccccccc shake/rattle testing cccccccc
+
+c     allocate working arrays
+
+      if(ntcons.gt.0)then
+
+        do i=1,nnn
+          fail(i)=0
+        enddo
+        
+        allocate(xxt(mxatms),yyt(mxatms),zzt(mxatms),stat=fail(1))
+        allocate(txx(mxatms),tyy(mxatms),tzz(mxatms),stat=fail(2))
+        allocate(dxx(mxcons),dyy(mxcons),dzz(mxcons),stat=fail(3))
+        allocate(dxt(mxcons),dyt(mxcons),dzt(mxcons),stat=fail(4))
+        
+        do i=1,nnn
+          if(fail(i).gt.0)call error(idnode,2010)
+        enddo
+
+      endif
+
+c cccccccccccccccccccccccccccccccccccccc
 
 c     inertia parameter for Nose-Hoover Chain thermostat
       
@@ -1460,6 +1488,33 @@ c     block indices
 c     use same relaxation time for global and core-shell?
         qmass_shl=2.d0*sigma_shl*taut**2
       endif
+
+c cccccccc shake/rattle testing cccccccc
+
+c     construct current bond vectors
+
+      do k=1,nscons
+
+c     indices of atoms in bond
+
+        i=listcon(k,2)
+        j=listcon(k,3)
+
+c     calculate current bond vector
+
+        dxx(k)=xxx(i)-xxx(j)
+        dyy(k)=yyy(i)-yyy(j)
+        dzz(k)=zzz(i)-zzz(j)
+
+      enddo
+
+c     periodic boundary condition for bond vectors
+
+      if(ntcons.gt.0)
+     x  call images(imcon,0,1,nscons,cell,dxx,dyy,dzz)
+
+c cccccccccccccccccccccccccccccccccccccc
+
 
 c     first stage of velocity verlet algorithm
       
@@ -1519,6 +1574,26 @@ c     a number of processors
         if(mxnode.gt.1)
      x    call merge(idnode,mxnode,natms,mxbuff,xxx,yyy,zzz,buffer)
 
+c cccccccc shake/rattle testing cccccccc
+
+c     apply shake corrections to bond constraints
+        
+        if(ntcons.gt.0)then
+          
+          if(mxnode.gt.1)
+     x      call merge(idnode,mxnode,natms,mxbuff,vxx,vyy,vzz,buffer)
+
+          safe=.false.
+          call rdrattle_r
+     x      (safe,lshmov,idnode,imcon,mxnode,natms,nscons,
+     x      tolnce,tstep,vircon,dxx,dyy,dzz,dxt,dyt,dzt,
+     x      txx,tyy,tzz,xxt,yyt,zzt,strcns)
+          if(.not.safe)return
+
+        endif
+
+c cccccccccccccccccccccccccccccccccccccc
+
 c     second stage of velocity verlet algorithm
         
       else
@@ -1541,6 +1616,27 @@ c     update velocities
           
         enddo
         
+c cccccccc shake/rattle testing cccccccc
+
+      if(ntcons.gt.0)then
+
+c     merge velocity data
+          
+          if(mxnode.gt.1)
+     x      call merge(idnode,mxnode,natms,mxbuff,vxx,vyy,vzz,buffer)
+
+c     correct constraint bond velocities using rattle
+          
+          safe=.false.
+          call rdrattle_v
+     x      (safe,idnode,mxnode,natms,nscons,tolnce,tstep,
+     x      dxx,dyy,dzz,txx,tyy,tzz,xxt,yyt,zzt)
+          if(.not.safe)return
+          
+        endif
+
+c cccccccccccccccccccccccccccccccccccccc
+
 c     integrate and apply nvt thermostat
         
         call nhc_part
@@ -1614,6 +1710,19 @@ c     periodic boundary condition
         
       endif
       
+c cccccccc shake/rattle testing cccccccc
+
+c     deallocate working arrays
+
+      if(ntcons.gt.0)then
+
+        deallocate(xxt,yyt,zzt,txx,tyy,tzz,stat=fail(1))
+        deallocate(dxx,dyy,dzz,dxt,dyt,dzt,stat=fail(2))
+
+      endif
+
+c cccccccccccccccccccccccccccccccccccccc
+
       return
       end subroutine nvtvv_nhc
 

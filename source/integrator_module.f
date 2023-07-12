@@ -459,11 +459,17 @@ c     Potential of mean force in NVE
 
 c     Nose-Hoover Chain thermostat in NVT ensemble
         
-          call nvtvv_nhc
-     x      (safe,lmsite,isw,idnode,mxnode,natms,imcon,
-     x      nchain,nrespa,ntpmls,     
+c          call nvtvv_nhc
+c     x      (safe,lmsite,isw,idnode,mxnode,natms,imcon,
+c     x      nchain,nrespa,ntpmls,         
+c     x      ntshl,keyshl,tstep,taut,sigma,sigma_nhc,g_qt4f,chit,
+c     x      consv,conint,engke,vircon,chit_shl,sigma_shl)
+
+           call nvtvv_nhc
+     x      (safe,lshmov,lmsite,isw,idnode,mxnode,natms,imcon,nscons,
+     x      ntcons,nchain,nrespa,ntpmls,         
      x      ntshl,keyshl,tstep,taut,sigma,sigma_nhc,g_qt4f,chit,
-     x      consv,conint,engke,vircon,chit_shl,sigma_shl)
+     x      consv,conint,engke,tolnce,vircon,chit_shl,sigma_shl)
 
         elseif(keyens.eq.10) then
 
