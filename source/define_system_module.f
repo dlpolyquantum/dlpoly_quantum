@@ -530,6 +530,12 @@ c     read path integral option
             nchain=intstr(directive,lenrec,idum)
             taut=dblstr(directive,lenrec,idum)
             nchain=max(nchain,1)
+          elseif(findstring('nm',directive,idum))then
+            keyens=43
+            nbeads=intstr(directive,lenrec,idum)
+            nchain=intstr(directive,lenrec,idum)
+            taut=dblstr(directive,lenrec,idum)
+            nchain=max(nchain,1)
           else
 c     default is nvt
             keyens=40
@@ -558,6 +564,13 @@ c     default is nvt
             elseif(keyens.eq.42)then
               write(nrite,
      x          "(1x,'Canonical Ensemble with Nose-Hoover Chains')")
+              write(nrite,"(1x,'Number of Nose-Hoover chains :',i5)")
+     x          nchain
+              write(nrite,"(1x,'Thermostat relaxation time (ps):',
+     x          1p,e12.4)")taut
+            elseif(keyens.eq.43)then
+              write(nrite,
+     x          "(1x,'Canonical Ensemble in normal modes with NHC')")
               write(nrite,"(1x,'Number of Nose-Hoover chains :',i5)")
      x          nchain
               write(nrite,"(1x,'Thermostat relaxation time (ps):',
@@ -2832,7 +2845,16 @@ c     print out sample of initial configuration
         endif
         
       enddo
-      
+
+c     write out normal mode frequencies for testing - Nathan London
+      if(keyens.ge.43)then
+        if(idnode.eq.0)write(nrite,
+     x    "(/,/,1x,'normal mode frequencies',/)")
+        do i=1,nbeads
+          if(idnode.eq.0)write(nrite,
+     x      "(1e12.4)")nmfreq(i)
+        enddo
+      endif 
       return
       end subroutine systemp
       

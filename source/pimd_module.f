@@ -21,7 +21,7 @@ c
 c**********************************************************************
       
       use setup_module,  only : mspimd,nrite,boltz,hbar,mxbuff,ntherm,
-     x                          npuni,nbeads,nchain
+     x                          npuni,nbeads,nchain,pi
       use config_module, only : cell,rcell,weight,xxx,yyy,zzz,buffer,
      x                          vxx,vyy,vzz,fxx,fyy,fzz
       use utility_module, only : invert,puni,gauss
@@ -43,13 +43,15 @@ c**********************************************************************
       real(8), allocatable, save :: wxx(:),wyy(:),wzz(:)
       real(8), allocatable, save :: etx(:,:),ety(:,:),etz(:,:)
       real(8), allocatable, save :: pcx(:,:),pcy(:,:),pcz(:,:)
-      
+      real(8), allocatable, save :: nmfreq(:)
+
       public alloc_pimd_arrays,dealloc_pimd_arrays
       public quantum_energy,ring_forces,stage_mass
       public read_thermostats,write_thermostats
       public stage_coords,stage_momenta,stage_forces
       public unstage_coords,unstage_momenta,unstage_forces
       public read_rnd_cfg,save_rnd_cfg
+      public normal_mode_mass
       
       contains
       
@@ -152,18 +154,23 @@ c**********************************************************************
       implicit none
       
       integer, intent(in) :: idnode,mxnode,natms,keyres,keyens
-      integer i,j,k,iatm0,iatm1
+      integer i,j,k,iatm0,iatm1,fail
       real(8), intent(in) :: temp,sigma
       real(8) engke,tmpscl,tmpold
       real(8) strkin(9),uuu(102)
-      
+      real(8) freq
+
       iatm0=nbeads*((idnode*natms)/mxnode)
       iatm1=nbeads*(((idnode+1)*natms)/mxnode)
       
 c     initialise pimd masses
-      
-      call stage_mass(idnode,mxnode,natms)
-      
+     
+      if(keyens.le.42) then 
+        call stage_mass(idnode,mxnode,natms)
+      else
+        call normal_mode_mass(idnode,mxnode,natms)
+      endif
+
 c     initialise staged coordinates
       
       call stage_coords(idnode,mxnode,natms)
@@ -273,7 +280,22 @@ c     calculate kinetic tensor and energy
       
       if(mxnode.gt.1)call gdsum(strkin,9,buffer)
       engke=0.5d0*(strkin(1)+strkin(5)+strkin(9))
-      
+     
+c     get normal mode frequencies
+      if(keyens.ge.43)then
+        fail=0
+        allocate(nmfreq(nbeads),stat=fail)
+        freq = sqrt(dble(nbeads))*boltz*temp/hbar
+
+        nmfreq(1) = 0.d0
+
+        do i=2,nbeads
+
+          nmfreq(i) = 2.d0*freq*sin((i-1)*pi/nbeads)
+        
+        enddo
+      endif
+
       return      
       end subroutine pimd_init
       
@@ -1617,5 +1639,49 @@ c     ensure remaining beads make an unbroken ring
       enddo
       
       end subroutine ring_gather
+      
+      subroutine normal_mode_mass(idnode,mxnode,natms)
+      
+c**********************************************************************
+c     
+c     Routine to set masses in correct order for PIMD with normal
+c     modes
+c     
+c     Nathan London 2023 
+c    
+c**********************************************************************
+      
+      implicit none
+      
+      integer, intent(in) :: idnode,mxnode,natms
+      integer i,k,iatm0,iatm1
+
+      iatm0=(idnode*natms)/mxnode+1
+      iatm1=((idnode+1)*natms)/mxnode
+
+
+      do k=1,nbeads
+        
+        do i=iatm0,iatm1
+
+c     assigning reverse mass of zero to M-sites
+
+          if(weight((k-1)*natms+i).lt.1.d-6)then
+            
+            zmass((i-iatm0)*nbeads+k)=0.d0
+            rzmass((i-iatm0)*nbeads+k)=0.d0
+            
+          else
+          
+            zmass((i-iatm0)*nbeads+k)=weight((k-1)*natms+i)
+            rzmass((i-iatm0)*nbeads+k)=1.d0/weight((k-1)*natms+i)
+
+          endif
+
+        enddo
+        
+      enddo
+      
+      end subroutine normal_mode_mass
       
       end module pimd_module
