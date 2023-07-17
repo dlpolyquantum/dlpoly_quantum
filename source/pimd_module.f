@@ -1683,5 +1683,7 @@ c     assigning reverse mass of zero to M-sites
       enddo
       
       end subroutine normal_mode_mass
-      
+     
+c
+c test 
       end module pimd_module
