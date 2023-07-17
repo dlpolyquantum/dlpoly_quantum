@@ -52,6 +52,9 @@ c**********************************************************************
       public unstage_coords,unstage_momenta,unstage_forces
       public read_rnd_cfg,save_rnd_cfg
       public normal_mode_mass
+      public coord2norm,momenta2norm,force2norm
+      public norm2coord,norm2momenta,norm2force
+      public ring,freerp
       
       contains
       
@@ -165,15 +168,19 @@ c**********************************************************************
       
 c     initialise pimd masses
      
-      if(keyens.le.42) then 
-        call stage_mass(idnode,mxnode,natms)
-      else
-        call normal_mode_mass(idnode,mxnode,natms)
-      endif
+        if(keyens.le.42) then 
+          call stage_mass(idnode,mxnode,natms)
+        else
+          call normal_mode_mass(idnode,mxnode,natms)
+        endif
 
 c     initialise staged coordinates
       
-      call stage_coords(idnode,mxnode,natms)
+        if(keyens.le.42) then 
+          call stage_coords(idnode,mxnode,natms)
+        else
+          call coord2norm(idnode,mxnode,natms)
+        endif
       
       if(keyres.eq.0)then
         
@@ -200,21 +207,32 @@ c     set starting momenta
         
 c     initialise staged momenta
         
-        call stage_momenta(idnode,mxnode,natms)
-        
+        if(keyens.le.42) then 
+          call stage_momenta(idnode,mxnode,natms)
+        else
+          call momenta2norm(idnode,mxnode,natms)
+        endif
 c     reset centre of mass momentum and system temperature
         
         call reset_pimd_momenta(idnode,mxnode,natms,sigma)
 
 c     restore unstaged velocities
 
-        call unstage_momenta(idnode,mxnode,natms)
+        if(keyens.le.42) then 
+          call unstage_momenta(idnode,mxnode,natms)
+        else
+          call norm2momenta(idnode,mxnode,natms)
+        endif
         
       else
         
 c     restore staged momenta for restart
         
-        call stage_momenta(idnode,mxnode,natms)
+        if(keyens.le.42) then 
+          call stage_momenta(idnode,mxnode,natms)
+        else
+          call momenta2norm(idnode,mxnode,natms)
+        endif
         
 c     read pimd thermostats
 
@@ -256,7 +274,11 @@ c     rescale momenta and thermostats for keyres=2
         
 c     restore unstaged velocities
 
-        call unstage_momenta(idnode,mxnode,natms)
+        if(keyens.le.42) then 
+          call unstage_momenta(idnode,mxnode,natms)
+        else
+          call norm2momenta(idnode,mxnode,natms)
+        endif
         
       endif
         
@@ -1683,7 +1705,543 @@ c     assigning reverse mass of zero to M-sites
       enddo
       
       end subroutine normal_mode_mass
-     
+      
+      subroutine coord2norm(idnode,mxnode,natms)
+      
+c**********************************************************************
+c     
+c     dl_poly quantum routine for transforming of coordinates in normal
+c     mode for path integral molecular dynamics
+c     
+c     copyright - 
+c     authors   - Dil Limbu and Nathan London 2023
+c     
+c**********************************************************************
+      
+      implicit none
+
+      integer, intent(in) :: idnode,mxnode,natms
+      integer i,k,iatm0,iatm1
+
+      real(8) :: xtmp(nbeads),ytmp(nbeads),ztmp(nbeads)
+
+      iatm0=(idnode*natms)/mxnode+1
+      iatm1=((idnode+1)*natms)/mxnode
+      
+      call ring_gather(idnode,mxnode,natms)
+      
+      do i=iatm0,iatm1
+        
+        do k=1,nbeads
+        
+          xtmp(k)=xxx((k-1)*natms+i)
+          ytmp(k)=yyy((k-1)*natms+i)
+          ztmp(k)=zzz((k-1)*natms+i)
+        
+        enddo
+
+        call realfft(xtmp,nbeads,1)
+        call realfft(ytmp,nbeads,1)
+        call realfft(ztmp,nbeads,1)
+
+        do k=1,nbeads
+        
+          uxx((i-iatm0)*nbeads+k)=xtmp(k)
+          uyy((i-iatm0)*nbeads+k)=ytmp(k)
+          uzz((i-iatm0)*nbeads+k)=ztmp(k)
+
+        enddo
+
+      enddo
+      
+      end subroutine coord2norm
+      
+      subroutine momenta2norm(idnode,mxnode,natms)
+      
+c**********************************************************************
+c     
+c     dl_poly quantum routine for transforming of momenta in normal
+c     mode for path integral molecular dynamics
+c     
+c     copyright - 
+c     authors   - Dil Limbu and Nathan London 2023
+c     
+c**********************************************************************
+      
+      implicit none
+
+      integer, intent(in) :: idnode,mxnode,natms
+      integer i,k,iatm0,iatm1
+
+      real(8) :: xtmp(nbeads),ytmp(nbeads),ztmp(nbeads)
+
+      iatm0=(idnode*natms)/mxnode+1
+      iatm1=((idnode+1)*natms)/mxnode
+      
+      do i=iatm0,iatm1
+        
+        do k=1,nbeads
+        
+          xtmp(k)=vxx((k-1)*natms+i)
+          ytmp(k)=vyy((k-1)*natms+i)
+          ztmp(k)=vzz((k-1)*natms+i)
+        
+        enddo
+
+        call realfft(xtmp,nbeads,1)
+        call realfft(ytmp,nbeads,1)
+        call realfft(ztmp,nbeads,1)
+
+        do k=1,nbeads
+        
+          pxx((i-iatm0)*nbeads+k)=xtmp(k)
+          pyy((i-iatm0)*nbeads+k)=ytmp(k)
+          pzz((i-iatm0)*nbeads+k)=ztmp(k)
+
+        enddo
+
+      enddo
+      
+      do i=1,nbeads*(iatm1-iatm0+1)
+      
+        pxx(i)=zmass(i)*pxx(i)
+        pyy(i)=zmass(i)*pyy(i)
+        pzz(i)=zmass(i)*pzz(i)
+      
+      enddo
+
+      end subroutine momenta2norm
+      
+      subroutine force2norm(lmsite,idnode,mxnode,natms,nbeads,
+     x           ntpmls,g_qt4f)
+      
+c**********************************************************************
+c     
+c     dl_poly quantum routine for transforming of force in normal
+c     mode for path integral molecular dynamics
+c     
+c     copyright - 
+c     authors   - Dil Limbu and Nathan London 2023
+c     
+c**********************************************************************
+      
+      implicit none
+      
+      logical             :: lmsite
+      integer, intent(in) :: idnode,mxnode,natms,nbeads
+      integer, intent(in) :: ntpmls
+      real(8), intent(in) :: g_qt4f
+      integer             :: i,k,iatm0,iatm1
+      real(8) :: xtmp(nbeads),ytmp(nbeads),ztmp(nbeads)
+      
+      iatm0=(idnode*natms)/mxnode+1
+      iatm1=((idnode+1)*natms)/mxnode
+      
+c *******************************************************************      
+c     M.R.Momeni & F.A.Shakib
+c     Method Development and Materials Simulation Laboratory
+
+c     Redistribute the M-site forces if water model qtip4p/f requested
+
+        if(lmsite)then
+
+          call qt4_force_redist(idnode,mxnode,nbeads,ntpmls,g_qt4f)
+
+        endif
+
+c *******************************************************************      
+
+      do i=iatm0,iatm1
+        
+        do k=1,nbeads
+        
+          xtmp(k)=fxx((k-1)*natms+i)
+          ytmp(k)=fyy((k-1)*natms+i)
+          ztmp(k)=fzz((k-1)*natms+i)
+        
+        enddo
+
+        call realfft(xtmp,nbeads,1)
+        call realfft(ytmp,nbeads,1)
+        call realfft(ztmp,nbeads,1)
+
+        do k=1,nbeads
+        
+          wxx((i-iatm0)*nbeads+k)=xtmp(k)
+          wyy((i-iatm0)*nbeads+k)=ytmp(k)
+          wzz((i-iatm0)*nbeads+k)=ztmp(k)
+
+        enddo
+
+      enddo
+
+      end subroutine force2norm
+
+      subroutine norm2coord(lmsite,idnode,mxnode,natms,imcon,nbeads,
+     x       ntpmls,g_qt4f)
+      
+c**********************************************************************
+c     
+c     dl_poly quantum routine for transforming coordinates from normal
+c     mode for path integral molecular dynamics
+c     
+c     copyright - 
+c     authors   - Dil Limbu and Nathan London 2023
+c     
+c**********************************************************************
+      
+      implicit none
+
+      logical             :: lmsite
+      integer, intent(in) :: idnode,mxnode,natms
+      integer, intent(in) :: imcon,nbeads,ntpmls
+      real(8), intent(in) :: g_qt4f
+      integer             :: i,k,iatm0,iatm1
+
+      real(8) :: xtmp(nbeads),ytmp(nbeads),ztmp(nbeads)
+
+      iatm0=(idnode*natms)/mxnode+1
+      iatm1=((idnode+1)*natms)/mxnode
+      
+      do i=iatm0,iatm1
+        
+        do k=1,nbeads
+        
+          xtmp(k)=uxx((i-iatm0)*nbeads+k)
+          ytmp(k)=uyy((i-iatm0)*nbeads+k)
+          ztmp(k)=uzz((i-iatm0)*nbeads+k)
+        
+        enddo
+
+        call realfft(xtmp,nbeads,-1)
+        call realfft(ytmp,nbeads,-1)
+        call realfft(ztmp,nbeads,-1)
+
+        do k=1,nbeads
+        
+          xxx((k-1)*natms+i)=xtmp(k)
+          yyy((k-1)*natms+i)=ytmp(k)
+          zzz((k-1)*natms+i)=ztmp(k)
+
+        enddo
+
+      enddo
+
+c *******************************************************************
+c     M.R.Momeni & F.A.Shakib
+c     Method Development and Materials Simulation Laboratory
+
+c     update the position of M-site if water model qtip4p/f requested
+
+        if(lmsite)then
+
+          call qtip4pf(idnode,mxnode,imcon,nbeads,ntpmls,g_qt4f)
+
+        endif
+
+c *******************************************************************
+
+c     restore coordinate array replication
+
+      call pmerge(idnode,mxnode,natms,xxx,yyy,zzz)
+
+      call ring_gather(idnode,mxnode,natms)
+
+      end subroutine norm2coord
+      
+      subroutine norm2momenta(idnode,mxnode,natms)
+      
+c**********************************************************************
+c     
+c     dl_poly quantum routine for transforming of momenta from normal
+c     mode for path integral molecular dynamics
+c     
+c     copyright - 
+c     authors   - Dil Limbu and Nathan London 2023
+c     
+c**********************************************************************
+      
+      implicit none
+
+      integer, intent(in) :: idnode,mxnode,natms
+      integer i,k,iatm0,iatm1
+
+      real(8) :: xtmp(nbeads),ytmp(nbeads),ztmp(nbeads)
+
+      iatm0=(idnode*natms)/mxnode+1
+      iatm1=((idnode+1)*natms)/mxnode
+      
+      do i=1,nbeads*(iatm1-iatm0+1)
+        
+        pxx(i)=pxx(i)*rzmass(i)
+        pyy(i)=pyy(i)*rzmass(i)
+        pzz(i)=pzz(i)*rzmass(i)
+        
+      enddo
+
+      do i=iatm0,iatm1
+        
+        do k=1,nbeads
+        
+          xtmp(k)=pxx((i-iatm0)*nbeads+k)
+          ytmp(k)=pyy((i-iatm0)*nbeads+k)
+          ztmp(k)=pzz((i-iatm0)*nbeads+k)
+        
+        enddo
+
+        call realfft(xtmp,nbeads,-1)
+        call realfft(ytmp,nbeads,-1)
+        call realfft(ztmp,nbeads,-1)
+
+        do k=1,nbeads
+        
+          vxx((k-1)*natms+i)=xtmp(k)
+          vyy((k-1)*natms+i)=ytmp(k)
+          vzz((k-1)*natms+i)=ztmp(k)
+
+        enddo
+
+      enddo
+
+      do i=1,nbeads*(iatm1-iatm0+1)
+        
+        pxx(i)=pxx(i)*zmass(i)
+        pyy(i)=pyy(i)*zmass(i)
+        pzz(i)=pzz(i)*zmass(i)
+        
+      enddo
+c     restore velocity array replication
+      
+      call pmerge(idnode,mxnode,natms,vxx,vyy,vzz)
+
+      end subroutine norm2momenta
+
+      subroutine norm2force(idnode,mxnode,natms)
+      
+c**********************************************************************
+c     
+c     dl_poly quantum routine for transforming of force from normal
+c     mode for path integral molecular dynamics
+c     
+c     copyright - 
+c     authors   - Dil Limbu and Nathan London 2023
+c     
+c**********************************************************************
+      
+      implicit none
+
+      integer, intent(in) :: idnode,mxnode,natms
+      integer             :: i,k,iatm0,iatm1
+
+      real(8) :: xtmp(nbeads),ytmp(nbeads),ztmp(nbeads)
+
+      iatm0=(idnode*natms)/mxnode+1
+      iatm1=((idnode+1)*natms)/mxnode
+      
+      do i=iatm0,iatm1
+        
+        do k=1,nbeads
+        
+          xtmp(k)=wxx((i-iatm0)*nbeads+k)
+          ytmp(k)=wyy((i-iatm0)*nbeads+k)
+          ztmp(k)=wzz((i-iatm0)*nbeads+k)
+        
+        enddo
+
+        call realfft(xtmp,nbeads,-1)
+        call realfft(ytmp,nbeads,-1)
+        call realfft(ztmp,nbeads,-1)
+
+        do k=1,nbeads
+        
+          fxx((k-1)*natms+i)=xtmp(k)
+          fyy((k-1)*natms+i)=ytmp(k)
+          fzz((k-1)*natms+i)=ztmp(k)
+
+        enddo
+
+      enddo
+
+c     restore force array replication
+      
+      call pmerge(idnode,mxnode,natms,fxx,fyy,fzz)
+
+      end subroutine norm2force
+        
+      subroutine realfft(datax,n,mode)
+        
+c**********************************************************************
+c     
+c     compute the real fast Fourier transform of the given array of data
+c     Parameters:
+c     datax - The array of data to transform
+c     n - The length of the array of data (nbeads)
+c     Returns:
+c     datax - The transformed array of data
+c     
+c     FFT of m real arrays (if mode = 1) or complex Hermitian
+c     arrays in real storage (if mode = -1), using -lfftw3.
+c     
+c**********************************************************************
+      implicit none
+
+      integer,intent(in)     :: n,mode
+      real(8), intent(inout) :: datax(n)
+
+      integer,parameter :: nmax=1024
+      integer           :: plana,planb,np
+      real(8)           :: copy(nmax), factx
+
+      data np /0/
+      save copy,factx,plana,planb,np
+
+      if (n .ne. np) then
+         if (n .gt. nmax) stop 'realft 1'
+         factx = dsqrt(1.d0/n)
+         call dfftw_plan_r2r_1d(plana,n,copy,copy,0,64)
+         call dfftw_plan_r2r_1d(planb,n,copy,copy,1,64)
+         np = n
+      endif
+
+      copy(1:n) = datax
+
+      if (mode .eq. 1) then
+         call dfftw_execute(plana)
+      else if (mode .eq. -1) then
+         call dfftw_execute(planb)
+      else
+         stop 'realft 2'
+      endif
+
+      datax = factx*copy(1:n)
+
+      return
+      end subroutine realfft
+
+      subroutine ring(poly,tstep,temp)
+
+c**********************************************************************
+c     
+c     dl_poly quantum routine for 
+c     
+c     -----------------------------------------------------------------
+c     Monodromy matrix elements for free ring-polymer evolution.
+c     -----------------------------------------------------------------
+c     
+c     in normal mode for path integral molecular dynamics
+c     
+c     copyright - 
+c     authors   - Dil Limbu and Nathan London 2023
+c     
+c**********************************************************************
+      
+      implicit none
+
+      integer             :: k
+      real(8), intent(in) :: tstep,temp
+      real(8), intent(out):: poly(4,nbeads)
+      real(8)             :: betan,twown,pibyn,wk,wt,cwt,swt
+      real(8)             :: hbar
 c
-c test 
+      poly(1,1) = 1.d0
+      poly(2,1) = 0.d0
+      poly(3,1) = tstep
+      poly(4,1) = 1.d0
+c      poly(3,1) = dt/mp
+
+      if (nbeads .gt. 1) then
+         betan = 1.d0/(nbeads*boltz*temp)
+c         betan = 1.d0/(freq*hbar)
+         twown = 2.d0/(betan*hbar)
+         pibyn = pi/nbeads
+
+         do k = 1,nbeads/2
+            wk = twown*dsin(k*pibyn)
+            wt = wk*tstep
+c            wm = wk*mp
+            cwt = dcos(wt)
+            swt = dsin(wt)
+            poly(1,k+1) = cwt
+            poly(2,k+1) = -wk*swt
+            poly(3,k+1) = swt/wk
+            poly(4,k+1) = cwt
+c            poly(2,k+1) = -wm*swt
+c            poly(3,k+1) = swt/wm
+         enddo
+
+         do k = 1,(nbeads-1)/2
+            poly(1,nbeads-k+1) = poly(1,k+1)
+            poly(2,nbeads-k+1) = poly(2,k+1)
+            poly(3,nbeads-k+1) = poly(3,k+1)
+            poly(4,nbeads-k+1) = poly(4,k+1)
+         enddo
+      endif
+
+      end subroutine ring
+
+      subroutine freerp (p,q,mass,rmass,tstep,temp)
+
+c**********************************************************************
+c     
+c     dl_poly quantum routine for 
+c     Free harmonic ring-polymer evolution through a time interval tstep
+c     in normal mode for path integral molecular dynamics
+c
+c     Parameters:
+c       p - mementum of beads in an atom in normal mode
+c       q - position of beads in an atom in normal mode
+c       mass - mass of beads of an atom ( equal for nbeads)
+c
+c     Returns:
+c       p - the updated momentum of nbeads of an atom in normal mode
+c       q - the updated position of nbeads of an atom in normal mode
+c
+c     copyright - 
+c     authors   - Dil Limbu and Nathan London 2023
+c     
+c**********************************************************************
+
+      implicit none
+
+      integer                :: k,init
+      integer, parameter     :: nbmax=1024
+      real(8), intent(inout) :: p(nbeads),q(nbeads)
+      real(8), intent(in)    :: mass(nbeads),rmass(nbeads)
+      real(8)                :: tstep,temp
+      real(8) :: poly(4,nbmax)
+      real(8) :: pjknew
+
+      data init /0/
+      save init,poly
+
+      if (init .eq. 0) then
+        if (nbeads .gt. nbmax) stop 'freerp 1'
+        call ring(poly,tstep,temp)
+        init = 1
+      endif
+
+      if (nbeads .eq. 1) then
+
+        q(1) = q(1)+p(1)*poly(3,1)*rmass(1)
+
+      else
+
+c       tranform to normal mode if p/q are not in normal mode
+
+        do k=1,nbeads
+
+          pjknew = p(k)*poly(1,k)+q(k)*poly(2,k)*mass(k)
+          q(k) = p(k)*poly(3,k)*rmass(k)+q(k)*poly(4,k)
+          p(k) = pjknew
+
+        enddo
+
+c       tranform back to cartesian if p/q are in normal mode
+
+      endif
+
+      end subroutine freerp
+
+
+c**********************************************************************
       end module pimd_module

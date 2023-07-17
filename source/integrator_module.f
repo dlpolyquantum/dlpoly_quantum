@@ -727,6 +727,14 @@ c     nvt ensemble - nose-hoover chains
      x    (lmsite,isw,idnode,mxnode,natms,imcon,ntpmls,tstep,taut,
      x    g_qt4f,temp,engke,engthe)
         
+      else if(keyens.eq.43) then
+        
+c     nvt ensemble - nose-hoover chains - normal mode
+        
+        call pimd_nvt_nhc_nm
+     x    (lmsite,isw,idnode,mxnode,natms,imcon,ntpmls,tstep,taut,
+     x    g_qt4f,temp,engke,engthe)
+        
       else
         
 c     invalid option

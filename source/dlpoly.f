@@ -414,7 +414,7 @@ c     calculate initial conditions for velocity verlet
      x    rprim,rvdw,shlke,engcfg,temp,tstep,virang,virbnd,vircpe,
      x    virdih,virfbp,virfld,virinv,virlrc,virmet,virshl,virsrp,
      x    virtbp,virter,virtet,volm,engmet,virtot,engord,virord,
-     x    engrng,virrng,qmsbnd)
+     x    engrng,virrng,qmsbnd,keyens)
         
 c     bias potential dynamics option - reset forces
         
@@ -424,8 +424,10 @@ c     bias potential dynamics option - reset forces
       
 c     stage initial forces for pimd
       
-      if(lpimd)call stage_forces(lmsite,idnode,mxnode,natms,nbeads,
-     x              ntpmls,g_qt4f)
+      if(lpimd.and.(keyens.le.42))call stage_forces(lmsite,idnode,
+     x               mxnode,natms,nbeads, ntpmls,g_qt4f)
+      if(lpimd.and.(keyens.ge.43))call force2norm(lmsite,idnode,
+     x               mxnode,natms,nbeads,ntpmls,g_qt4f)
       
       if(ltad.or.(lbpd.and.keybpd.eq.2))then
         
@@ -670,7 +672,7 @@ c     scale t=0 tether reference positions (constant pressure only)
      x      engcfg,temp,tstep,virang,virbnd,vircpe,virdih,
      x      virfbp,virfld,virinv,virlrc,virmet,virshl,virsrp,
      x      virtbp,virter,virtet,volm,engmet,virtot,engord,virord,
-     x      engrng,virrng,qmsbnd)
+     x      engrng,virrng,qmsbnd,keyens)
           
         else
           
@@ -691,9 +693,11 @@ c     scale t=0 tether reference positions (constant pressure only)
         endif
         
 c     stage forces for pimd
+        if(lpimd.and.(keyens.le.42))call stage_forces(lmsite,idnode,
+     x               mxnode,natms,nbeads, ntpmls,g_qt4f)
+        if(lpimd.and.(keyens.ge.43))call force2norm(lmsite,idnode,
+     x               mxnode,natms,nbeads,ntpmls,g_qt4f)
         
-        if(lpimd)call stage_forces(lmsite,idnode,mxnode,natms,nbeads,
-     x                ntpmls,g_qt4f)
         
 c     bias potential dynamics option - reset forces
         

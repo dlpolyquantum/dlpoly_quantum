@@ -7,7 +7,7 @@
 
 BINROOT = ../execute
 CC  = gcc
-EX = DLPOLY1.X
+EX = DLPOLY1NM.X
 EXE = $(BINROOT)/$(EX)
 FC=mpif90
 SHELL=/bin/sh
@@ -62,7 +62,7 @@ debug:
 
 #=================== Dlpoly ==========================================
 dlpoly:
-	$(MAKE) LD="mpif90 -o" LDFLAGS="" \
+	$(MAKE) LD="mpif90 -o" LDFLAGS="-lfftw3" \
 	FC=mpif90 FFLAGS?="-c -O2" \
 	EX=$(EX) BINROOT=$(BINROOT) $(TYPE)
 

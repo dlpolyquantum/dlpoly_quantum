@@ -816,6 +816,8 @@ c***********************************************************************
       real(8) hnorm,grad0,grad1,ff1,sgn,engord,virord
       real(8) engrng,virrng,qmsbnd
       
+      integer keyens
+
       data mxpass/1000/
       
 c     control variables
@@ -867,7 +869,7 @@ c     calculate atomic forces
      x    rcuttb,engtbp,virtbp,rcutfb,engfbp,virfbp,rctter,engter,
      x    virter,engbnd,virbnd,engang,virang,engdih,virdih,enginv,
      x    virinv,engtet,virtet,engshl,shlke,virshl,engfld,virfld,
-     x    engcfg,fmax,temp,engord,virord,engrng,virrng,qmsbnd)
+     x    engcfg,fmax,temp,engord,virord,engrng,virrng,qmsbnd,keyens)
         
 c     frozen atoms option
         
@@ -1683,6 +1685,8 @@ c***********************************************************************
       real(8) shlke,virshl,engfld,virfld,engcfg,fmax,temp,tstep
       real(8) engord,virord,engrng,virrng,qmsbnd
       
+      integer keyens
+
       numrdf=0
       ltad=.true.
       nogofr=.false.
@@ -1751,7 +1755,7 @@ c     calculate atomic forces for one chain configuration
      x    rcuttb,engtbp,virtbp,rcutfb,engfbp,virfbp,rctter,engter,
      x    virter,engbnd,virbnd,engang,virang,engdih,virdih,enginv,
      x    virinv,engtet,virtet,engshl,shlke,virshl,engfld,virfld,
-     x    engcfg,fmax,temp,engord,virord,engrng,virrng,qmsbnd)
+     x    engcfg,fmax,temp,engord,virord,engrng,virrng,qmsbnd,keyens)
         
 c     store configuration energy of chain configuration
         
