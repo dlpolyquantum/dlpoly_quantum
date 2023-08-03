@@ -735,6 +735,22 @@ c     nvt ensemble - nose-hoover chains - normal mode
      x    (lmsite,isw,idnode,mxnode,natms,imcon,ntpmls,tstep,taut,
      x    g_qt4f,temp,engke,engthe)
         
+      else if(keyens.eq.44) then
+        
+c     nvt ensemble - PILE thermostat - normal mode
+        
+        call pimd_nvt_pile_nm
+     x    (lmsite,isw,idnode,mxnode,natms,imcon,ntpmls,tstep,taut,
+     x    g_qt4f,temp,engke,engthe,uuu)
+
+      else if(keyens.eq.45) then
+        
+c     nvt ensemble - piglet thermostat - normal mode
+        
+        call pimd_nvt_piglet
+     x    (lmsite,isw,idnode,mxnode,natms,imcon,ntpmls,tstep,taut,
+     x    g_qt4f,temp,engke,engthe,uuu)
+
       else
         
 c     invalid option

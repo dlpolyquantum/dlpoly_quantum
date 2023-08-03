@@ -90,6 +90,7 @@ c     declare required modules
       use vv_pimd_module
       use nhc_module
       use water_module
+      use pimd_piglet_module
       
       implicit none
       
@@ -212,7 +213,7 @@ c     input the control parameters defining the simulation
      x  nsolva,isolva,nofic,nbeads,nchain,nrespa,g_qt4f,alpha,
      x  delr,epsq,fmax,press,quattol,rcut,rprim,rvdw,taup,taut,temp,
      x  timcls,timjob,tolnce,tstep,rlxtol,opttol,zlen,ehit,xhit,yhit,
-     x  zhit,ebias,vmin,catchrad,sprneb,deltad,tlow,hyp_units,chi)
+     x  zhit,ebias,vmin,catchrad,sprneb,deltad,tlow,hyp_units,chi,nsp1)
 
 c *******************************************************************      
 c     M.R.Momeni & F.A.Shakib
@@ -227,6 +228,10 @@ c     allocate arrays related to qtip4p/f water model
       call alloc_water_arrays(idnode,mxnode)
  
 c *******************************************************************
+
+c     allocate arrays related to piglet thermostat
+
+      call alloc_piglet_arrays(idnode,mxnode)
 
 c     input the system force field
       

@@ -9,15 +9,18 @@ c
 c***********************************************************************
       
       use setup_module,   only : pi,boltz,hbar,mspimd,nrite
-      use config_module,  only : stress,buffer,xxx,yyy,zzz,vxx,vyy,vzz
+      use config_module,  only : stress,buffer,xxx,yyy,zzz,vxx,vyy,vzz,
+     x                           fxx,fyy,fzz
       use pimd_module,    only : zmass,rzmass,etx,ety,etz,pcx,pcy,pcz,
      x                           pxx,pyy,pzz,uxx,uyy,uzz,
      x                           wxx,wyy,wzz,nbeads,nchain,
      x                           unstage_coords,unstage_momenta,
      x                           norm2coord,norm2momenta,
-     x                           freerp
+     x                           coord2norm,momenta2norm,
+     x                           freerp,pileC1,pileC2,nmfreq
       use error_module,   only : error
       use utility_module, only : puni
+      use pimd_piglet_module, only : piglet_thermo_step
       
       public pimd_nvt,pimd_nvt_nhc,pimd_nvt_gth1,pimd_nvt_gth2
       
@@ -958,7 +961,6 @@ c**********************************************************************
       
       integer i,j,k,iatm0,iatm1
       real(8) ppp,qqq,qq1,qqk,hstep,qstep,strkin(9)
-
       real(8) :: mass(nbeads),rmass(nbeads)
 
 c     block indices
@@ -999,23 +1001,38 @@ c     integrate thermostats - 1/4 step
         
 c     integrate free ring polymer positions (full step) 
         
-        do i=1,(iatm1-iatm0)/nbeads
+        do i=1,iatm1-iatm0,nbeads
+          
+          j=i-1+nbeads
 
-          mass(1:nbeads)=zmass((i-1)*nbeads+1:i*nbeads)
-          rmass(1:nbeads)=rzmass((i-1)*nbeads+1:i*nbeads)
+          mass(1:nbeads)=zmass(i:j)
+          rmass(1:nbeads)=rzmass(i:j)
 
-          call freerp (pxx((i-1)*nbeads+1:i*nbeads),
-     x            uxx((i-1)*nbeads+1:i*nbeads),mass,rmass,tstep,temp)
-
-c          uxx(i)=uxx(i)+(tstep*rzmass(i))*pxx(i)
-c          uyy(i)=uyy(i)+(tstep*rzmass(i))*pyy(i)
-c          uzz(i)=uzz(i)+(tstep*rzmass(i))*pzz(i)
+          call freerp(pxx(i:j),uxx(i:j),mass,rmass,tstep,temp)
+          call freerp(pyy(i:j),uyy(i:j),mass,rmass,tstep,temp)
+          call freerp(pzz(i:j),uzz(i:j),mass,rmass,tstep,temp)
           
         enddo
         
+c        do i=1,(iatm1-iatm0)/nbeads
+
+c          mass(1:nbeads)=zmass((i-1)*nbeads+1:i*nbeads)
+c          rmass(1:nbeads)=rzmass((i-1)*nbeads+1:i*nbeads)
+
+c          call freerp (pxx((i-1)*nbeads+1:i*nbeads),
+c     x            uxx((i-1)*nbeads+1:i*nbeads),mass,rmass,tstep,temp)
+
+c          call freerp (pyy((i-1)*nbeads+1:i*nbeads),
+c     x            uyy((i-1)*nbeads+1:i*nbeads),mass,rmass,tstep,temp)
+
+c          call freerp (pzz((i-1)*nbeads+1:i*nbeads),
+c     x            uzz((i-1)*nbeads+1:i*nbeads),mass,rmass,tstep,temp)
+
+c        enddo
+        
 c     unstage coordinates
 
-      call norm2coord(lmsite,idnode,mxnode,natms,imcon,nbeads,
+        call norm2coord(lmsite,idnode,mxnode,natms,imcon,nbeads,
      x       ntpmls,g_qt4f)
 
 c        call unstage_coords(lmsite,idnode,mxnode,natms,imcon,nbeads,
@@ -1629,5 +1646,349 @@ c**********************************************************************
       enddo
 
       end subroutine thermostat_energy
+
+
+      subroutine pimd_nvt_pile_nm(lmsite,isw,idnode,mxnode,natms,imcon,
+     x  ntpmls,tstep,taut,g_qt4f,temp,engke,engthe,uuu)
+      
+c**********************************************************************
+c     
+c     dl_poly_quantum subroutine for integrating the equations of 
+c     motion for path intergral molecular dynamics - using normal mode 
+c     variables thermostated with PILE  and integrated 
+c     with the velocity verlet algorithm
+c     
+c     reference: Ceriotti,Parrinello, Markland and Manolopoulos
+c     j. chem. phys. 133, 124104 (2010)
+c     
+c     copyright - 
+c     authors   - Dil Limbu and Nathan London 2023
+c     
+c**********************************************************************
+      
+      implicit none
+
+      logical :: lmsite,noskip
+      integer, intent(in)  :: imcon,ntpmls
+      real(8), intent(in)  :: g_qt4f
+      integer, intent(in)  :: isw,idnode,mxnode,natms
+      real(8), intent(in)  :: tstep,taut,temp,uuu(102)
+      real(8), intent(out) :: engke,engthe
+      
+      integer :: init,nnn
+      integer :: i,j,k,iatm0,iatm1
+      real(8) :: pC2,qq1,qqk,hstep,strkin(9)
+      real(8) :: mass(nbeads),rmass(nbeads),gama(nbeads)
+
+      data init /0/
+      save init
+c     block indices
+      
+      iatm0=nbeads*((idnode*natms)/mxnode)
+      iatm1=nbeads*(((idnode+1)*natms)/mxnode)
+      
+c     mass parameters of thermostats
+      
+      qq1=boltz*temp*taut**2
+      qqk=hbar**2/(boltz*temp*dble(nbeads))
+      
+c     thermostat parameters
+c     initialize C1 and C2 vector for nbeads
+
+      if (init.eq.0) then
+
+        hstep=tstep/2.d0
+
+        do k=1,nbeads
+
+          gama(k)=2.d0*nmfreq(k)
+          if((nbeads.gt.1).and.(k.eq.1)) gama(1)=1.d0/taut
+          pileC1(k)=dexp(-hstep*gama(k))
+          pileC2(k)=dsqrt(1.d0-pileC1(k)*pileC1(k))
+
+c          write(6,*) 'c1,c2:', pileC1(k),pileC2(k)
+
+        enddo
+
+        init=1
+      endif
+
+c     verlet first part
+      
+      if(isw.eq.1)then
+        
+c     apply PILE thermostat to bead momenta - 1/2 step
+        
+        noskip=.true.
+
+        do i=1,iatm1-iatm0,nbeads
+
+          do k=1,nbeads
+
+            j=(i-1)+k
+            pC2=sqrt(zmass(j)*boltz*temp)*pileC2(k)
+
+            pxx(j)=pileC1(k)*pxx(j)+pC2*gssrnd(noskip,uuu)
+            pyy(j)=pileC1(k)*pyy(j)+pC2*gssrnd(noskip,uuu)
+            pzz(j)=pileC1(k)*pzz(j)+pC2*gssrnd(noskip,uuu)
+
+          enddo
+
+        enddo
+        
+c     integrate bead momenta - 1/2 step
+        
+        do i=1,iatm1-iatm0
+          
+          pxx(i)=pxx(i)+hstep*wxx(i)
+          pyy(i)=pyy(i)+hstep*wyy(i)
+          pzz(i)=pzz(i)+hstep*wzz(i)
+          
+        enddo
+        
+c     integrate free ring polymer positions (full step) 
+        
+        do i=1,iatm1-iatm0,nbeads
+          
+          j=i-1+nbeads
+
+          mass(1:nbeads)=zmass(i:j)
+          rmass(1:nbeads)=rzmass(i:j)
+
+          call freerp(pxx(i:j),uxx(i:j),mass,rmass,tstep,temp)
+          call freerp(pyy(i:j),uyy(i:j),mass,rmass,tstep,temp)
+          call freerp(pzz(i:j),uzz(i:j),mass,rmass,tstep,temp)
+          
+        enddo
+        
+c     unstage coordinates
+
+        call norm2coord(lmsite,idnode,mxnode,natms,imcon,nbeads,
+     x       ntpmls,g_qt4f)
+        
+c     verlet second part
+        
+      else
+        
+c     integrate bead momenta - 1/2 step
+        
+        do i=1,iatm1-iatm0
+          
+          pxx(i)=pxx(i)+hstep*wxx(i)
+          pyy(i)=pyy(i)+hstep*wyy(i)
+          pzz(i)=pzz(i)+hstep*wzz(i)
+          
+        enddo
+        
+c     apply PILE thermostat to bead momenta - 1/2 step
+        
+        noskip=.true.
+
+        do i=1,iatm1-iatm0,nbeads
+          
+          do k=1,nbeads
+
+            j=(i-1)+k
+            pC2=sqrt(zmass(j)*boltz*temp)*pileC2(k)
+
+            pxx(j)=pileC1(k)*pxx(j)+pC2*gssrnd(noskip,uuu)
+            pyy(j)=pileC1(k)*pyy(j)+pC2*gssrnd(noskip,uuu)
+            pzz(j)=pileC1(k)*pzz(j)+pC2*gssrnd(noskip,uuu)
+
+          enddo
+
+        enddo
+        
+c     calculate thermostat energy
+        
+c        call thermostat_energy
+c     x    (idnode,mxnode,natms,nbeads,nchain,qq1,qqk,temp,engthe)
+        
+c     unstage momenta (needed for REVCON file)
+        
+        call norm2momenta(idnode,mxnode,natms)
+        
+c     calculate  kinetic tensor and kinetic energy
+        
+        strkin(:)=0.d0
+        
+        do i=1,iatm1-iatm0
+          
+          strkin(1)=strkin(1)+pxx(i)*pxx(i)*rzmass(i)
+          strkin(2)=strkin(2)+pxx(i)*pyy(i)*rzmass(i)
+          strkin(3)=strkin(3)+pxx(i)*pzz(i)*rzmass(i)
+          strkin(5)=strkin(5)+pyy(i)*pyy(i)*rzmass(i)
+          strkin(6)=strkin(6)+pyy(i)*pzz(i)*rzmass(i)
+          strkin(9)=strkin(9)+pzz(i)*pzz(i)*rzmass(i)
+          
+        enddo
+        
+        strkin(4)=strkin(2)
+        strkin(7)=strkin(3)
+        strkin(8)=strkin(6)
+        
+        if(mxnode.gt.1)then
+          
+          buffer(1:9)=strkin(1:9)
+          buffer(10)=engthe
+          call gdsum(buffer(1),10,buffer(11))
+          strkin(1:9)=buffer(1:9)
+          engthe=buffer(10)
+          
+        endif
+        
+        engke=0.5d0*(strkin(1)+strkin(5)+strkin(9))
+        stress(:)=stress(:)+strkin(:)
+        
+      endif
+      
+      end subroutine pimd_nvt_pile_nm
+      
+      
+      subroutine pimd_nvt_piglet(lmsite,isw,idnode,mxnode,natms,imcon,
+     x  ntpmls,tstep,taut,g_qt4f,temp,engke,engthe,uuu)
+      
+c**********************************************************************
+c     
+c     dl_poly_quantum subroutine for integrating the equations of 
+c     motion for path intergral molecular dynamics - using normal mode 
+c     variables thermostated with PIGLET THERMOSTAT and integrated 
+c     with the velocity verlet algorithm
+c     
+c     reference:
+c     
+c     copyright - 
+c     authors   - Dil Limbu and Nathan London 2023
+c     
+c**********************************************************************
+      
+      implicit none
+
+      logical              :: lmsite
+      integer, intent(in)  :: imcon,ntpmls
+      real(8), intent(in)  :: g_qt4f
+      integer, intent(in)  :: isw,idnode,mxnode,natms
+      real(8), intent(in)  :: tstep,taut,temp,uuu(102)
+      real(8), intent(out) :: engke,engthe
+      
+      integer :: i,j,k,iatm0,iatm1
+      real(8) :: pC2,qq1,qqk,hstep,strkin(9)
+      real(8) :: mass(nbeads),rmass(nbeads),gama(nbeads)
+
+c     block indices
+      
+      iatm0=nbeads*((idnode*natms)/mxnode)
+      iatm1=nbeads*(((idnode+1)*natms)/mxnode)
+      
+      hstep=0.5d0*tstep
+
+c     mass parameters of thermostats
+      
+      qq1=boltz*temp*taut**2
+      qqk=hbar**2/(boltz*temp*dble(nbeads))
+      
+c     verlet first part
+      
+      if(isw.eq.1)then
+        
+c     apply piglet thermostat to bead momenta - 1/2 step
+        
+        call piglet_thermo_step(idnode,mxnode,natms,tstep,temp,uuu)
+        
+c     integrate bead momenta - 1/2 step
+        
+        do i=1,iatm1-iatm0
+          
+          pxx(i)=pxx(i)+hstep*wxx(i)
+          pyy(i)=pyy(i)+hstep*wyy(i)
+          pzz(i)=pzz(i)+hstep*wzz(i)
+          
+        enddo
+        
+c     integrate free ring polymer positions (full step) 
+        
+        do i=1,iatm1-iatm0,nbeads
+          
+          j=i-1+nbeads
+
+          mass(1:nbeads)=zmass(i:j)
+          rmass(1:nbeads)=rzmass(i:j)
+
+          call freerp(pxx(i:j),uxx(i:j),mass,rmass,tstep,temp)
+          call freerp(pyy(i:j),uyy(i:j),mass,rmass,tstep,temp)
+          call freerp(pzz(i:j),uzz(i:j),mass,rmass,tstep,temp)
+          
+        enddo
+        
+c     unstage coordinates
+
+        call norm2coord(lmsite,idnode,mxnode,natms,imcon,nbeads,
+     x       ntpmls,g_qt4f)
+        
+c     verlet second part
+        
+      else
+        
+c     integrate bead momenta - 1/2 step
+        
+        do i=1,iatm1-iatm0
+          
+          pxx(i)=pxx(i)+hstep*wxx(i)
+          pyy(i)=pyy(i)+hstep*wyy(i)
+          pzz(i)=pzz(i)+hstep*wzz(i)
+          
+        enddo
+        
+c     apply piglet thermostat to bead momenta - 1/2 step
+        
+        call piglet_thermo_step(idnode,mxnode,natms,tstep,temp,uuu)
+        
+c     calculate thermostat energy
+        
+c        call thermostat_energy
+c     x    (idnode,mxnode,natms,nbeads,nchain,qq1,qqk,temp,engthe)
+        
+c     unstage momenta (needed for REVCON file)
+        
+        call norm2momenta(idnode,mxnode,natms)
+        
+c     calculate  kinetic tensor and kinetic energy
+        
+        strkin(:)=0.d0
+        
+        do i=1,iatm1-iatm0
+          
+          strkin(1)=strkin(1)+pxx(i)*pxx(i)*rzmass(i)
+          strkin(2)=strkin(2)+pxx(i)*pyy(i)*rzmass(i)
+          strkin(3)=strkin(3)+pxx(i)*pzz(i)*rzmass(i)
+          strkin(5)=strkin(5)+pyy(i)*pyy(i)*rzmass(i)
+          strkin(6)=strkin(6)+pyy(i)*pzz(i)*rzmass(i)
+          strkin(9)=strkin(9)+pzz(i)*pzz(i)*rzmass(i)
+          
+        enddo
+        
+        strkin(4)=strkin(2)
+        strkin(7)=strkin(3)
+        strkin(8)=strkin(6)
+        
+        if(mxnode.gt.1)then
+          
+          buffer(1:9)=strkin(1:9)
+          buffer(10)=engthe
+          call gdsum(buffer(1),10,buffer(11))
+          strkin(1:9)=buffer(1:9)
+          engthe=buffer(10)
+          
+        endif
+        
+        engke=0.5d0*(strkin(1)+strkin(5)+strkin(9))
+        stress(:)=stress(:)+strkin(:)
+        
+      endif
+      
+      end subroutine pimd_nvt_piglet
+      
+      
+c**********************************************************************
             
       end module vv_pimd_module

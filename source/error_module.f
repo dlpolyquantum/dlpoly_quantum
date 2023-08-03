@@ -1438,6 +1438,24 @@ c***********************************************************************
      x        'error - too many void interactions are specified'
           endif
 
+        elseif(kode.gt.4000)then
+
+          if(kode.eq.4001)then
+            write(nrite,'(/,/,1x,a)')
+     x        'error - alloc_piglet_arrays allocation failure'
+          elseif(kode.eq.4002)then
+            write(nrite,'(/,/,1x,a)')
+     x        'error - alloc_piglet_arrays deallocation failure'
+          elseif(kode.eq.4003)then
+            write(nrite,'(/,/,1x,a)')
+     x        'error - GLE MATRIX file does not exits!! It should be 
+     x                 named as GLEMAT'
+          elseif(kode.eq.4004)then
+            write(nrite,'(/,/,1x,a)')
+     x        'error - simulated temperature and GLE MATRIX temperature
+     x           mismatched, check temperature!!!'
+          endif
+
 c     *****************important note********************
 c     error messages 2500 to 2550 reserved for metadynamics
 c     see subroutine mfrz_error in metafreeze_module

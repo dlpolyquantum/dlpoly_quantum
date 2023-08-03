@@ -59,7 +59,7 @@ c***********************************************************************
      x  nsolva,isolva,nofic,nbeads,nchain,nrespa,g_qt4f,alpha,
      x  delr,epsq,fmax,press,quattol,rcut,rprim,rvdw,taup,taut,temp,
      x  timcls,timjob,tolnce,tstep,rlxtol,opttol,zlen,ehit,xhit,yhit,
-     x  zhit,ebias,vmin,catchrad,sprneb,deltad,tlow,hyp_units,chi)
+     x  zhit,ebias,vmin,catchrad,sprneb,deltad,tlow,hyp_units,chi,nsp1)
       
 c***********************************************************************
 c     
@@ -97,6 +97,7 @@ c***********************************************************************
       real(8) catchrad,sprneb,deltad,tlow,xhit,yhit,zhit,ebias,vmin
       real(8) prntim,chi
       real(8) g_qt4f
+      integer nsp1
       
 CSGIC      real(8) dummy
 CCRAY      real(8) dummy
@@ -536,6 +537,15 @@ c     read path integral option
             nchain=intstr(directive,lenrec,idum)
             taut=dblstr(directive,lenrec,idum)
             nchain=max(nchain,1)
+          elseif(findstring('pile',directive,idum))then
+            keyens=44
+            nbeads=intstr(directive,lenrec,idum)
+            taut=dblstr(directive,lenrec,idum)
+          elseif(findstring('piglet',directive,idum))then
+            keyens=45
+            nbeads=intstr(directive,lenrec,idum)
+            nsp1=intstr(directive,lenrec,idum)
+            nsp1=nsp1+1
           else
 c     default is nvt
             keyens=40
@@ -575,6 +585,16 @@ c     default is nvt
      x          nchain
               write(nrite,"(1x,'Thermostat relaxation time (ps):',
      x          1p,e12.4)")taut
+            elseif(keyens.eq.44)then
+              write(nrite,
+     x          "(1x,'Canonical Ensemble in normal modes with PILE')")
+              write(nrite,"(1x,'Thermostat relaxation time (ps):',
+     x          1p,e12.4)")taut
+            elseif(keyens.eq.45)then
+              write(nrite,
+     x          "(1x,'Canonical Ensemble in normal modes with PIGLET')")
+              write(nrite,"(1x,'Thermostat w/ extra no. of momenta of:',
+     x          1p,i5)")nsp1-1
             endif
           endif
           

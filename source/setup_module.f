@@ -1344,6 +1344,10 @@ c     open the simulation input file
               nbeads=intstr(record,lenrec,idum)
               nchain=intstr(record,lenrec,idum)
               nchain=max(nchain,1)
+            elseif(findstring('nm',record,idum))then
+              nbeads=intstr(record,lenrec,idum)
+              nchain=intstr(record,lenrec,idum)
+              nchain=max(nchain,1)
             else
               nbeads=intstr(record,lenrec,idum)
             endif

@@ -45,6 +45,12 @@ c**********************************************************************
       real(8), allocatable, save :: pcx(:,:),pcy(:,:),pcz(:,:)
       real(8), allocatable, save :: nmfreq(:)
 
+c     PILE C1/C2 parameters 
+      real(8), allocatable, save :: pileC1(:),pileC2(:)
+
+c     PIGLET parameters 
+      integer, save :: nsp1
+
       public alloc_pimd_arrays,dealloc_pimd_arrays
       public quantum_energy,ring_forces,stage_mass
       public read_thermostats,write_thermostats
@@ -74,7 +80,7 @@ c**********************************************************************
 
       logical safe
       integer, intent(in) :: idnode,mxnode
-      integer, dimension(1:13) :: fail
+      integer, dimension(1:14) :: fail
 
       safe=.true.
 
@@ -99,6 +105,7 @@ c     TESTED BY DIL LIMBU
         allocate (pyy(1:mspimd),pzz(1:mspimd),stat=fail(11))
         allocate (wxx(1:mspimd),wyy(1:mspimd),stat=fail(12))
         allocate (wzz(1:mspimd),stat=fail(13))
+        allocate (pileC1(1:nbeads),pileC2(1:nbeads),stat=fail(14))
       endif
       
       if(any(fail.gt.0))safe=.false.
@@ -123,7 +130,7 @@ c**********************************************************************
 
       logical safe
       integer, intent(in) :: idnode,mxnode
-      integer, dimension(1:2) :: fail
+      integer, dimension(1:3) :: fail
       
       fail(:)=0
       safe=.true.
@@ -134,6 +141,7 @@ c     TESTED BY DIL LIMBU
       if(nbeads.ge.1)then
         deallocate(zmass,rzmass,etx,ety,etz,pcx,pcy,pcz,stat=fail(1))
         deallocate(uxx,uyy,uzz,pxx,pyy,pzz,wxx,wyy,wzz,stat=fail(2))
+        deallocate(pileC1,pileC2,stat=fail(3))
       endif
       
       if(any(fail.gt.0))safe=.false.
@@ -1632,7 +1640,8 @@ c     ensure first bead is in periodic cell
         
 c     ensure remaining beads make an unbroken ring
 
-      nnn=0
+      nnn=natms
+c      nnn=0
       
       do k=2,nbeads
         
@@ -2141,8 +2150,7 @@ c**********************************************************************
       real(8), intent(in) :: tstep,temp
       real(8), intent(out):: poly(4,nbeads)
       real(8)             :: betan,twown,pibyn,wk,wt,cwt,swt
-      real(8)             :: hbar
-c
+
       poly(1,1) = 1.d0
       poly(2,1) = 0.d0
       poly(3,1) = tstep
@@ -2150,17 +2158,18 @@ c
 c      poly(3,1) = dt/mp
 
       if (nbeads .gt. 1) then
-         betan = 1.d0/(nbeads*boltz*temp)
+c         betan = 1.d0/(sqrt(dble(nbeads))*boltz*temp)
 c         betan = 1.d0/(freq*hbar)
-         twown = 2.d0/(betan*hbar)
-         pibyn = pi/nbeads
+c         twown = 2.d0/(betan*hbar)
+c         pibyn = pi/nbeads
 
          do k = 1,nbeads/2
-            wk = twown*dsin(k*pibyn)
+c            wk = twown*dsin(k*pibyn)
+            wk = nmfreq(k+1)
             wt = wk*tstep
 c            wm = wk*mp
-            cwt = dcos(wt)
-            swt = dsin(wt)
+            cwt = cos(wt)
+            swt = sin(wt)
             poly(1,k+1) = cwt
             poly(2,k+1) = -wk*swt
             poly(3,k+1) = swt/wk

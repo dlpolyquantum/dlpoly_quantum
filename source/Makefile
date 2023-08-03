@@ -31,6 +31,7 @@ OBJ_MOD = parse_module.o setup_module.o error_module.o \
 	nlist_builders_module.o forces_module.o \
 	lf_motion_module.o lf_rotation1_module.o \
 	lf_rotation2_module.o vv_motion_module.o \
+	pimd_piglet_module.o \
 	vv_rotation1_module.o vv_rotation2_module.o vv_pimd_module.o\
 	pmf_module.o integrator_module.o optimiser_module.o \
 	hyper_dynamics_module.o driver_module.o \
@@ -62,7 +63,7 @@ debug:
 
 #=================== Dlpoly ==========================================
 dlpoly:
-	$(MAKE) LD="mpif90 -o" LDFLAGS="-lfftw3" \
+	$(MAKE) LD="mpif90 -o" LDFLAGS="-lblas -llapack -lfftw3" \
 	FC=mpif90 FFLAGS?="-c -O2" \
 	EX=$(EX) BINROOT=$(BINROOT) $(TYPE)
 
