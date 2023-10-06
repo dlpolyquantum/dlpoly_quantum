@@ -1436,24 +1436,23 @@ c***********************************************************************
           elseif(kode.eq.3003)then
             write(nrite,'(/,/,1x,a)')
      x        'error - too many void interactions are specified'
-          endif
+c          endif
+c        elseif(kode.gt.4000)then
 
-        elseif(kode.gt.4000)then
-
-          if(kode.eq.4001)then
+          elseif(kode.eq.4001)then
             write(nrite,'(/,/,1x,a)')
      x        'error - alloc_piglet_arrays allocation failure'
           elseif(kode.eq.4002)then
             write(nrite,'(/,/,1x,a)')
      x        'error - alloc_piglet_arrays deallocation failure'
           elseif(kode.eq.4003)then
-            write(nrite,'(/,/,1x,a)')
-     x        'error - GLE MATRIX file does not exits!! It should be 
-     x                 named as GLEMAT'
+            write(nrite,'(/,/,1x,a,/,a)')
+     x        'error - GLE MATRIX file does not exits!! It should be',
+     x        '         named as GLEMAT'
           elseif(kode.eq.4004)then
-            write(nrite,'(/,/,1x,a)')
-     x        'error - simulated temperature and GLE MATRIX temperature
-     x           mismatched, check temperature!!!'
+            write(nrite,'(/,/,1x,a,/,a)')
+     x       'error - simulated temperature and GLE MATRIX temperature',
+     x       '         mismatched, check temperature!!!'
           endif
 
 c     *****************important note********************

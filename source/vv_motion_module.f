@@ -2583,7 +2583,8 @@ c***********************************************************************
       real(8) tstep,taut,taup,chit,consv,conint,engke,elrc
       real(8) hstep,sigma,qmass_t
       real(8) sigma_nhc,qmass_baro,qmass_part
-      real(8) volm_mass,sigma_volm,alpha_volm,v_epsilon,g_qt4f
+      real(8) volm_mass,sigma_volm,alpha_volm,g_qt4f
+c      real(8) v_epsilon
       real(8) press,volm,virtot,vircon,virlrc
       real(8) heta_nhc,hpeta_nhc,heta_1,heta_rest,hpeta_1,hpeta_rest
       real(8) hepsilon,hksi,hpksi
@@ -2610,6 +2611,8 @@ c     metadynamics shell thermostat variables
       real(8)      :: shlke
 
 c     end metadynamics shell thermostat variables
+
+      real(8) :: Pint
 
       data uni/1.d0,0.d0,0.d0,0.d0,1.d0,0.d0,0.d0,0.d0,1.d0/
       data newjob/.true./
@@ -2682,7 +2685,7 @@ c     first stage of velocity verlet algorithm
 c     integrate and apply nhc barostat
 
         call nhc_baro
-     x     (idnode,mxnode,natms,nchain,nrespa,engke,sigma,
+     x     (idnode,mxnode,natms,nchain,nrespa,sigma_nhc,
      x     hstep,volm_mass,qmass_baro,taup,v_epsilon)
 
 c     integrate and apply nvt thermostat
@@ -2708,7 +2711,7 @@ c     ====================================================
 c     update the momentum variable of the volume
 
         v_epsilon=v_epsilon+hstep*(1.d0/volm_mass)*
-     x     ((alpha_volm*2.0*engke)-virtot-vircon-(press*volm))   
+     x     ((alpha_volm*2.0*engke)-virtot-vircon-3.d0*(press*volm))   
 
 c     first integrate sinh(alpha*v_epsilon*tstep/4)
 
@@ -2763,13 +2766,24 @@ c     update the volume based on v_epsilon
 
         volm=volm*exp(3.d0*tstep*v_epsilon)
 
+        if(mxnode.gt.1)then
+          
+          buffer(1)=volm
+          call gdsum(buffer(1),1,buffer(2))
+          volm=buffer(1)
+          volm=volm/(mxnode)
+          
+        endif
+
 c     scale cell vectors - isotropic
 
           scale=(volm/volm0)**(1.d0/3.d0)
+c          scale=exp(tstep*v_epsilon)
           do i=1,9
             cell(i)=cell0(i)*scale
+c            cell(i)=cell(i)*scale
           enddo
-        
+
 c     merge position data
         
         if(mxnode.gt.1)
@@ -2799,11 +2813,14 @@ c     update velocities
      x    *fzz(i)*exp(-alpha_volm*v_epsilon*hstep*0.5d0)*sinh_v
 
         enddo
-        
+
+cccccc added here for testing scale2 ccc        
+c        engke=getkin(natms,idnode,mxnode)
+
 c     update the momentum variable of the volume
 
         v_epsilon=v_epsilon+hstep*(1.d0/volm_mass)*
-     x     ((alpha_volm*2.0*engke)-virtot-vircon-(press*volm))   
+     x     ((alpha_volm*2.0*engke)-virtot-vircon-3.d0*(press*volm))   
 
 c     integrate and apply nvt thermostat
         
@@ -2826,7 +2843,7 @@ c     ====================================================
 c     integrate and apply nhc barostat
 
         call nhc_baro
-     x     (idnode,mxnode,natms,nchain,nrespa,engke,sigma,
+     x     (idnode,mxnode,natms,nchain,nrespa,sigma_nhc,
      x     hstep,volm_mass,qmass_baro,taup,v_epsilon)
 
 c     merge velocity data
@@ -2836,10 +2853,12 @@ c     merge velocity data
 
 c     scale cell vectors - isotropic
 
-          scale=(volm/volm0)**(1.d0/3.d0)
-          do i=1,9
-            cell(i)=cell0(i)*scale
-          enddo
+c          scale=(volm/volm0)**(1.d0/3.d0)
+c          scale=exp(tstep*v_epsilon)
+c          do i=1,9
+c            cell(i)=cell0(i)*scale
+c            cell(i)=cell(i)*scale
+c          enddo
 
 c     conserved quantity less kinetic and potential energy terms
 

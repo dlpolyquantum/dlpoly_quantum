@@ -237,7 +237,7 @@ c           !convert to internal system units
 
 c           !convert to internal system units
             IF(read_err == 0)THEN
-c               c_mat=c_mat*boltz/dble(nbeads)
+c               c_mat=c_mat*boltz/nbeads
               CALL c_mat_to_sysunit(c_mat,read_unit)
             END IF
 

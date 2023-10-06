@@ -678,9 +678,9 @@ c     eliminate "flying ice cube" in long simulations (Berendsen)
       return
       end subroutine vv_integrate
 
-      subroutine pimd_integrate
-     x  (lmsite,isw,idnode,mxnode,imcon,ntpmls,natms,keyens,nstep,tstep,
-     x  taut,g_qt4f,temp,engke,engthe,chi,uuu,gaumom)
+c      subroutine pimd_integrate
+c     x  (lmsite,isw,idnode,mxnode,imcon,ntpmls,natms,keyens,nstep,tstep,
+c     x  taut,g_qt4f,temp,engke,engthe,chi,uuu,gaumom)
       
 c***********************************************************************
 c     
@@ -693,13 +693,45 @@ c     author    - w. smith september 2016
 c     
 c***********************************************************************
 
+c      implicit none
+
+c      logical lmsite
+c      integer isw,idnode,mxnode,imcon,ntpmls,natms,keyens,nstep
+c      real(8) tstep,engke,engthe,temp,taut,chi,g_qt4f
+c      real(8) uuu(102),gaumom(0:5)
+      
+       subroutine pimd_integrate
+     x      (lmsite,isw,idnode,mxnode,imcon,ntpmls,natms,keyens,nstep,
+     x      tstep,g_qt4f,temp,engke,engthe,chi,uuu,gaumom,
+     x      safe,nrespa,ntpatm,ntshl,keyshl,taut,taup,sigma,
+     x      sigma_nhc,sigma_volm,alpha_volm,virtot,vircon,virlrc,virrng,
+     x      press,volm,chit,consv,conint,elrc,chit_shl,sigma_shl)
+      
+c***********************************************************************
+c     
+c     dl_poly subroutine for selecting the integration algorithm
+c     to solve the equations of motion. based on the velocity
+c     verlet algorithm
+c     
+c     copyright - daresbury laboratory
+c     author    - w. smith february 2005
+c     
+c***********************************************************************
+
       implicit none
 
-      logical lmsite
-      integer isw,idnode,mxnode,imcon,ntpmls,natms,keyens,nstep
-      real(8) tstep,engke,engthe,temp,taut,chi,g_qt4f
-      real(8) uuu(102),gaumom(0:5)
-      
+      logical safe,safep,lcnb,lshmov,lnfic,lmsite
+      integer isw,idnode,mxnode,imcon,natms,ngrp,keyens,nscons
+      integer nchain,nrespa,ntpmls
+      integer ntcons,ntpatm,ntfree,nspmf,ntpmf,mode,nstep,nofic
+      integer ntshl,keyshl
+      real(8) tstep,engke,engrot,tolnce,vircon,vircom,virrng
+      real(8) virtot,temp,press,volm,sigma,taut,taup,chit,chip
+      real(8) consv,conint,elrc,virlrc,virpmf,chit_shl,sigma_shl
+      real(8) sigma_nhc,sigma_volm,alpha_volm,g_qt4f
+      real(8) gaumom(0:5)
+      real(8) :: uuu(102),chi,engthe
+
       
       engthe=0.d0
       
@@ -749,8 +781,32 @@ c     nvt ensemble - piglet thermostat - normal mode
         
         call pimd_nvt_piglet
      x    (lmsite,isw,idnode,mxnode,natms,imcon,ntpmls,tstep,taut,
-     x    g_qt4f,temp,engke,engthe,uuu)
+     x    g_qt4f,temp,engke,engthe,uuu,virtot,vircon,virrng)
 
+      else if(keyens.eq.51) then
+        
+c     npt ensemble - nhc barostat - normal mode
+        
+        call pimd_npt_nhc_nm
+     x    (safe,lmsite,isw,idnode,mxnode,natms,imcon,
+     x    nrespa,ntpmls,        
+     x    ntpatm,ntshl,keyshl,tstep,taut,taup,sigma,
+     x    sigma_nhc,sigma_volm,alpha_volm,virtot,vircon,virlrc,
+     x    g_qt4f,press,volm,chit,consv,
+     x    conint,engke,elrc,chit_shl,sigma_shl,temp,engthe)
+      
+      else if(keyens.eq.52) then
+        
+c     npt ensemble - nhc barostat - piglet thermostat - normal mode
+        
+        call pimd_npt_piglet_nm
+     x    (safe,lmsite,isw,idnode,mxnode,natms,imcon,
+     x    nrespa,ntpmls,        
+     x    ntpatm,ntshl,keyshl,tstep,taut,taup,sigma,
+     x    sigma_nhc,sigma_volm,alpha_volm,virtot,vircon,virlrc,
+     x    g_qt4f,press,volm,chit,consv,
+     x    conint,engke,elrc,chit_shl,sigma_shl,temp,engthe,uuu)
+      
       else
         
 c     invalid option

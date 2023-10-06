@@ -546,6 +546,27 @@ c     read path integral option
             nbeads=intstr(directive,lenrec,idum)
             nsp1=intstr(directive,lenrec,idum)
             nsp1=nsp1+1
+          elseif(findstring('npt',directive,idum))then
+            keyens=51
+            nbeads=intstr(directive,lenrec,idum)
+            nrespa=intstr(directive,lenrec,idum)
+            nchain=intstr(directive,lenrec,idum)
+            taut=dblstr(directive,lenrec,idum)
+            taup=dblstr(directive,lenrec,idum)
+            nrespa=max(nrespa,1)
+            nchain=max(nchain,1)
+            inhc=.true.         
+          elseif(findstring('npigle',directive,idum))then
+            keyens=52
+            nbeads=intstr(directive,lenrec,idum)
+            nrespa=intstr(directive,lenrec,idum)
+            nchain=intstr(directive,lenrec,idum)
+            taup=dblstr(directive,lenrec,idum)
+            nsp1=intstr(directive,lenrec,idum)
+            nsp1=nsp1+1
+            nrespa=max(nrespa,1)
+            nchain=max(nchain,1)
+            inhc=.true.         
           else
 c     default is nvt
             keyens=40
@@ -595,6 +616,22 @@ c     default is nvt
      x          "(1x,'Canonical Ensemble in normal modes with PIGLET')")
               write(nrite,"(1x,'Thermostat w/ extra no. of momenta of:',
      x          1p,i5)")nsp1-1
+            elseif(keyens.eq.51)then
+              write(nrite,
+     x        "(/,1x,'Canonical Ensemble in normal mode with NHC',
+     x          /,1x,'thermostat relaxation time',1p,e12.4,
+     x          /,1x,'barostat relaxation time',1p,e12.4,
+     x          /,1x,'number of RESPA steps             ',1p,i6,
+     x          /,1x,'number of chains     ',1p,i6)")
+     x                taut,taup,nrespa,nchain
+            elseif(keyens.eq.52)then
+              write(nrite,
+     x        "(/,1x,'Canonical Ensemble in normal mode NHC-PIGLET',
+     x          /,1x,'barostat relaxation time',1p,e12.4,
+     x          /,1x,'number of RESPA steps             ',1p,i6,
+     x          /,1x,'number of chains     ',1p,i6,
+     x          /,1x,'Thermostat w/ extra no. of momenta of ',1p,i5)")
+     x                taup,nrespa,nchain,nsp1-1
             endif
           endif
           

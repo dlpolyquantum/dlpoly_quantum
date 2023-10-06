@@ -57,7 +57,7 @@ c     author    - w.smith
 c     
 c*********************************************************************
       
-      use pimd_module, only : ring_forces
+      use pimd_module, only : ring_forces,ring_energy
       
       implicit none
       
@@ -571,9 +571,16 @@ c     calculate ring forces for pimd option
       
       if(lpimd)then
         
-        if(keyens.le.42) then 
-        call ring_forces
-     x    (idnode,mxnode,natms,temp,engrng,virrng,qmsbnd,stress)
+        if(keyens.le.42) then
+                
+          call ring_forces
+     x      (idnode,mxnode,natms,temp,engrng,virrng,qmsbnd,stress)
+
+        else
+
+          call ring_energy
+     x      (idnode,mxnode,natms,temp,engrng,virrng,qmsbnd,stress)
+
         endif
 
       endif

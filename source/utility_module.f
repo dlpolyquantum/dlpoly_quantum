@@ -1504,13 +1504,16 @@ c    if(lpimd == .true.) then write CENTROID position of HISTORYc file
           
             do i = 1,natmc
 
-               call imagesrev
-     x         (imcon,cell,xxx(i:natms:natmc),yyy(i:natms:natmc),
-     x          zzz(i:natms:natmc),xxc,yyc,zzc)
+c               call imagesrev
+c     x         (imcon,cell,xxx(i:natms:natmc),yyy(i:natms:natmc),
+c     x          zzz(i:natms:natmc),xxc,yyc,zzc)
 
               write(nhistc,'(a8,i10,2f12.6)')
      x          atmnam(i),i,weight(i),chge(i)
-              write(nhistc,'(1p,3e12.4)')xxc,yyc,zzc
+              write(nhistc,'(1p,3e12.4)')sum(xxx(i:natms:natmc))/nbeads,
+     x                 sum(yyy(i:natms:natmc))/nbeads,
+     x                 sum(zzz(i:natms:natmc))/nbeads
+c              write(nhistc,'(1p,3e12.4)')xxc,yyc,zzc
               if(keytrj.ge.1)then
               write(nhistc,'(1p,3e12.4)')sum(vxx(i:natms:natmc))/nbeads,
      x                 sum(vyy(i:natms:natmc))/nbeads,
