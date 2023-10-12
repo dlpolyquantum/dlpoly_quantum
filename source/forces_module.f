@@ -57,7 +57,7 @@ c     author    - w.smith
 c     
 c*********************************************************************
       
-      use pimd_module, only : ring_forces
+      use pimd_module, only : ring_forces,ring_energy
       
       implicit none
       
@@ -574,8 +574,11 @@ c     calculate ring forces for pimd option
         if(keyens.le.42) then 
         call ring_forces
      x    (idnode,mxnode,natms,temp,engrng,virrng,qmsbnd,stress)
+        else
+          call ring_energy
+     x      (idnode,mxnode,natms,temp,engrng,virrng,qmsbnd,stress)
         endif
-
+c        write(6,*)"engrng",engrng
       endif
       
 c     global summation of force arrays (basic replicated data strategy)
@@ -690,7 +693,8 @@ c     calculate bond forces
         
         engbnd=engbnd+engtmp*qfactor
         virbnd=virbnd+virtmp*qfactor
-        
+c        write(6,*) "engbnd",engbnd
+c        write(6,*) "virbnd",virbnd 
       endif
       
 c     calculate valence angle forces

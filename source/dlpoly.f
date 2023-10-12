@@ -90,7 +90,8 @@ c     declare required modules
       use vv_pimd_module
       use nhc_module
       use water_module
-      
+      use correlation_module
+
       implicit none
       
       character*1 hms,dec
@@ -102,7 +103,7 @@ c     declare required modules
       logical stropt,lzero,nolink,newgau,lminim,lminnow,lhit,lbpd
       logical prechk,tadall,lexcite,lsolva,lfree,lfrmas,lswitch
       logical lghost,llswitch,lnfic,nebgo,lpsoc,redirect,lpimd
-      logical inhc,lmsite
+      logical inhc,lmsite,lcorr
       
       integer npage,lines,idnode,mxnode,memr,intsta,istraj,nsbzdn
       integer keyens,keyfce,keyres,keytrj,kmax1,kmax2,kmax3,multt
@@ -114,7 +115,7 @@ c     declare required modules
       integer ntpter,keyshl,isw,keyver,keystr,keytol,numgau,khit
       integer nhit,keybpd,ntrack,nblock,blkout,numneb,nturn,mode
       integer natms2,ntghost,nsolva,isolva,nofic,iadd
-      integer nrespa,iqt4
+      integer nrespa,iqt4,keycorr,molcorr
 
       real(8) alpha,delr,epsq,fmax,press,quattol,rcut,rprim,rvdw,taup
       real(8) taut,temp,timcls,timjob,tolnce,tstep,tzero,dlrpot,drewd
@@ -205,14 +206,15 @@ c     input the control parameters defining the simulation
      x  (seek,lfcap,lgofr,lnsq,loptim,lzero,lminim,lpgr,ltraj,ltscal,
      x  lzeql,lzden,nolink,newgau,lhit,lbpd,ltad,lneb,prechk,tadall,
      x  lsolva,lfree,lfrmas,lexcite,lswitch,lghost,lnfic,nebgo,lpsoc,
-     x  lpimd,inhc,lmsite,idnode,minstp,intsta,istraj,keybpd,keyens,
-     x  keyfce,keyres,keyver,keytrj,kmax1,kmax2,kmax3,multt,nstack,
-     x  nstbgr,nsbzdn,nstbpo,nhko,nlatt,nstbts,nsteql,nstraj,nstrun,
-     x  nospl,keytol,numgau,khit,nhit,nblock,ntrack,blkout,numneb,mode,
-     x  nsolva,isolva,nofic,nbeads,nchain,nrespa,g_qt4f,alpha,
-     x  delr,epsq,fmax,press,quattol,rcut,rprim,rvdw,taup,taut,temp,
-     x  timcls,timjob,tolnce,tstep,rlxtol,opttol,zlen,ehit,xhit,yhit,
-     x  zhit,ebias,vmin,catchrad,sprneb,deltad,tlow,hyp_units,chi)
+     x  lpimd,inhc,lmsite,lcorr,idnode,minstp,intsta,istraj,keybpd,
+     x  keyens,keyfce,keyres,keyver,keytrj,keycorr,molcorr,kmax1,kmax2,
+     x  kmax3,multt,nstack,nstbgr,nsbzdn,nstbpo,nhko,nlatt,nstbts,
+     x  nsteql,nstraj,nstrun,nospl,keytol,numgau,khit,nhit,nblock,
+     x  ntrack,blkout,numneb,mode,nsolva,isolva,nofic,nbeads,nchain,
+     x  nrespa,g_qt4f,alpha,delr,epsq,fmax,press,quattol,rcut,rprim,
+     x  rvdw,taup,taut,temp,timcls,timjob,tolnce,tstep,rlxtol,opttol,
+     x  zlen,ehit,xhit,yhit,zhit,ebias,vmin,catchrad,sprneb,deltad,tlow,
+     x  hyp_units,chi)
 
 c *******************************************************************      
 c     M.R.Momeni & F.A.Shakib
@@ -303,7 +305,7 @@ c     set initial system temperature
      x  (lpimd,inhc,idnode,imcon,keyres,mxnode,natms2,nbeads,ngrp,
      x  nscons,ntcons,ntfree,ntshl,levcfg,keyshl,keyens,degfre,degshl,
      x  nchain,degrot,engke,tolnce,temp,sigma,sigma_nhc,sigma_volm,
-     x  alpha_volm,uuu)
+     x  alpha_volm,uuu,tstep)
       
 c     read thermodynamic and structural data from restart file
       
@@ -484,6 +486,11 @@ c     bypass the MD cycle for this option
         
       endif
       
+      if(lcorr)then
+        call corr_init(idnode,mxnode,natms,ntpmls,molcorr,keyens,
+     x    keycorr,nummols,numsit)
+      endif
+c      write(6,*) "inital correlation" 
 c***********************************************************************
 c     start of molecular dynamics calculations
 c***********************************************************************
@@ -832,24 +839,43 @@ c     apply temperature scaling
 c     reset atom velocities at intervals if required
         
         if(newgau)then
-          
-          if(mod(nstep,numgau).eq.0)call regauss
+          if(mod(nstep,numgau).eq.0)then
+            if(lpimd) then 
+              call gauss(natms*nbeads,vxx,vyy,vzz)
+              call momenta2norm(idnode,mxnode,natms)
+              call reset_pimd_momenta(idnode,mxnode,natms,sigma)
+            else
+            call regauss
      x      (idnode,imcon,mxnode,natms2*nbeads,ngrp,nscons,ntcons,
      x      ntshl,keyshl,sigma,temp,tolnce)
-          
+            endif
+          endif
         endif
         
 c     calculate quantum energy
         
         if(lpimd)then
-          
+          if(keyens.ge.43) then
+          call quantum_energy_nm
+     x      (idnode,mxnode,natms,temp,engke,engcfg,engrng,engqpi,
+     x      engqvr,qmsrgr)
+          else
           call quantum_energy
      x      (idnode,mxnode,natms,temp,engke,engcfg,engrng,engqpi,
      x      engqvr,qmsrgr)
+          endif
           engcfg=engcfg+engrng
-          
+c          write(6,*) "engcfg",engcfg
+c          write(6,*) "engrng",engrng
         endif
-        
+
+c     calculate correlation function        
+        if(lcorr.and.(mod(nstep,intsta).eq.0))then
+          call correlation
+     x      (idnode,mxnode,natms,ntpmls,molcorr,keyens,keycorr,nstep,
+     x      nummols,numsit,tstep) 
+        endif
+
 c     calculate physical quantities
         
         if(nstep.gt.0)call static
@@ -1078,7 +1104,8 @@ c     close output channels
         close (nevnt)
         close (ntherm)
         close (npuni)
-        
+        close (corr)  
+
       endif
       
 c     terminate job

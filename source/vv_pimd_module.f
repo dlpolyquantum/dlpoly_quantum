@@ -9,13 +9,14 @@ c
 c***********************************************************************
       
       use setup_module,   only : pi,boltz,hbar,mspimd,nrite
-      use config_module,  only : stress,buffer,xxx,yyy,zzz,vxx,vyy,vzz
+      use config_module,  only : stress,buffer,xxx,yyy,zzz,vxx,vyy,vzz,
+     x                           weight
       use pimd_module,    only : zmass,rzmass,etx,ety,etz,pcx,pcy,pcz,
      x                           pxx,pyy,pzz,uxx,uyy,uzz,
      x                           wxx,wyy,wzz,nbeads,nchain,
      x                           unstage_coords,unstage_momenta,
      x                           norm2coord,norm2momenta,
-     x                           freerp
+     x                           freerp,nmfreq,cvec1,cvec2
       use error_module,   only : error
       use utility_module, only : puni
       
@@ -827,8 +828,8 @@ c     verlet first part
         
 c     integrate thermostats - 1/4 step
         
-        if(nchain.gt.0)call thermo_chain_sy
-     x    (idnode,mxnode,natms,qstep,taut,temp)
+c        if(nchain.gt.0)call thermo_chain_sy
+c     x    (idnode,mxnode,natms,qstep,taut,temp)
         
 c     integrate bead momenta - 1/2 step
         
@@ -842,8 +843,8 @@ c     integrate bead momenta - 1/2 step
         
 c     integrate thermostats - 1/4 step
         
-        if(nchain.gt.0)call thermo_chain_sy
-     x    (idnode,mxnode,natms,qstep,taut,temp)
+c        if(nchain.gt.0)call thermo_chain_sy
+c     x    (idnode,mxnode,natms,qstep,taut,temp)
         
 c     integrate positions (full step)
         
@@ -866,8 +867,8 @@ c     verlet second part
         
 c     integrate thermostats - 1/4 step
         
-        if(nchain.gt.0)call thermo_chain_sy
-     x    (idnode,mxnode,natms,qstep,taut,temp)
+c        if(nchain.gt.0)call thermo_chain_sy
+c     x    (idnode,mxnode,natms,qstep,taut,temp)
         
 c     integrate bead momenta - 1/2 step
         
@@ -881,13 +882,13 @@ c     integrate bead momenta - 1/2 step
         
 c     integrate thermostats - 1/4 step
         
-        if(nchain.gt.0)call thermo_chain_sy
-     x    (idnode,mxnode,natms,qstep,taut,temp)
+c        if(nchain.gt.0)call thermo_chain_sy
+c     x    (idnode,mxnode,natms,qstep,taut,temp)
         
 c     calculate thermostat energy
         
-        call thermostat_energy
-     x    (idnode,mxnode,natms,nbeads,nchain,qq1,qqk,temp,engthe)
+c        call thermostat_energy
+c     x    (idnode,mxnode,natms,nbeads,nchain,qq1,qqk,temp,engthe)
         
 c     unstage momenta (needed for REVCON file)
         
@@ -956,7 +957,7 @@ c**********************************************************************
       real(8), intent(in)  :: tstep,taut,temp
       real(8), intent(out) :: engke,engthe
       
-      integer i,j,k,iatm0,iatm1
+      integer i,j,k,iatm0,iatm1,nstart
       real(8) ppp,qqq,qq1,qqk,hstep,qstep,strkin(9)
 
       real(8) :: mass(nbeads),rmass(nbeads)
@@ -972,16 +973,29 @@ c     thermostat parameters
       qstep=tstep/4.d0
       qq1=boltz*temp*taut**2
       qqk=hbar**2/(boltz*temp*dble(nbeads))
-      
+      nstart=1
+
 c     verlet first part
       
       if(isw.eq.1)then
-        
+       
+c      write(6,*) "vv x pos"
+c      write(6,*) uxx(:) 
+c      write(6,*) "vv y pos"
+c      write(6,*) uyy(:) 
+c      write(6,*) "vv z pos"
+c      write(6,*) uzz(:) 
+c      write(6,*) "vv mom"
+c      write(6,*) pxx(:) 
 c     integrate thermostats - 1/4 step
         
-        if(nchain.gt.0)call thermo_chain_sy
-     x    (idnode,mxnode,natms,qstep,taut,temp)
+        if(nchain.gt.0)call thermo_chain_nm
+     x    (idnode,mxnode,natms,nstart,qstep,taut,temp)
         
+c      write(6,*) "vv mom after thermo"
+c      write(6,*) pxx(:) 
+c      write(6,*) "vv force"
+c      write(6,*) wxx(:) 
 c     integrate bead momenta - 1/2 step
         
         do i=1,iatm1-iatm0
@@ -991,27 +1005,43 @@ c     integrate bead momenta - 1/2 step
           pzz(i)=pzz(i)+hstep*wzz(i)
           
         enddo
+c      write(6,*) "vv mom after force"
+c      write(6,*) pxx(:) 
         
 c     integrate thermostats - 1/4 step
         
-        if(nchain.gt.0)call thermo_chain_sy
-     x    (idnode,mxnode,natms,qstep,taut,temp)
+        if(nchain.gt.0)call thermo_chain_nm
+     x    (idnode,mxnode,natms,nstart,qstep,taut,temp)
         
+c      write(6,*) "vv mom after thermo 2"
+c      write(6,*) pxx(:) 
 c     integrate free ring polymer positions (full step) 
         
         do i=1,(iatm1-iatm0)/nbeads
-
+c          write(6,*) "free RP atom",i
           mass(1:nbeads)=zmass((i-1)*nbeads+1:i*nbeads)
           rmass(1:nbeads)=rzmass((i-1)*nbeads+1:i*nbeads)
 
           call freerp (pxx((i-1)*nbeads+1:i*nbeads),
      x            uxx((i-1)*nbeads+1:i*nbeads),mass,rmass,tstep,temp)
+          call freerp (pyy((i-1)*nbeads+1:i*nbeads),
+     x            uyy((i-1)*nbeads+1:i*nbeads),mass,rmass,tstep,temp)
+          call freerp (pzz((i-1)*nbeads+1:i*nbeads),
+     x            uzz((i-1)*nbeads+1:i*nbeads),mass,rmass,tstep,temp)
 
 c          uxx(i)=uxx(i)+(tstep*rzmass(i))*pxx(i)
 c          uyy(i)=uyy(i)+(tstep*rzmass(i))*pyy(i)
 c          uzz(i)=uzz(i)+(tstep*rzmass(i))*pzz(i)
           
         enddo
+c      write(6,*) "vv x pos after free"
+c      write(6,*) uxx(:) 
+c      write(6,*) "vv y pos after free"
+c      write(6,*) uyy(:) 
+c      write(6,*) "vv z pos after free"
+c      write(6,*) uzz(:) 
+c      write(6,*) "vv mom after free"
+c      write(6,*) pxx(:) 
         
 c     unstage coordinates
 
@@ -1027,8 +1057,8 @@ c     verlet second part
         
 c     integrate thermostats - 1/4 step
         
-        if(nchain.gt.0)call thermo_chain_sy
-     x    (idnode,mxnode,natms,qstep,taut,temp)
+        if(nchain.gt.0)call thermo_chain_nm
+     x    (idnode,mxnode,natms,nstart,qstep,taut,temp)
         
 c     integrate bead momenta - 1/2 step
         
@@ -1042,13 +1072,14 @@ c     integrate bead momenta - 1/2 step
         
 c     integrate thermostats - 1/4 step
         
-        if(nchain.gt.0)call thermo_chain_sy
-     x    (idnode,mxnode,natms,qstep,taut,temp)
+        if(nchain.gt.0)call thermo_chain_nm
+     x    (idnode,mxnode,natms,nstart,qstep,taut,temp)
         
 c     calculate thermostat energy
         
-        call thermostat_energy
-     x    (idnode,mxnode,natms,nbeads,nchain,qq1,qqk,temp,engthe)
+        call thermostat_energy_nm
+     x    (idnode,mxnode,natms,nbeads,nchain,nstart,qq1,qqk,taut,temp,
+     x    engthe)
         
 c     unstage momenta (needed for REVCON file)
         
@@ -1068,6 +1099,13 @@ c     calculate  kinetic tensor and kinetic energy
           strkin(5)=strkin(5)+pyy(i)*pyy(i)*rzmass(i)
           strkin(6)=strkin(6)+pyy(i)*pzz(i)*rzmass(i)
           strkin(9)=strkin(9)+pzz(i)*pzz(i)*rzmass(i)
+          
+c          strkin(1)=strkin(1)+vxx(i)*vxx(i)*weight(i)
+c          strkin(2)=strkin(2)+vxx(i)*vyy(i)*weight(i)
+c          strkin(3)=strkin(3)+vxx(i)*vzz(i)*weight(i)
+c          strkin(5)=strkin(5)+vyy(i)*vyy(i)*weight(i)
+c          strkin(6)=strkin(6)+vyy(i)*vzz(i)*weight(i)
+c          strkin(9)=strkin(9)+vzz(i)*vzz(i)*weight(i)
           
         enddo
         
@@ -1092,6 +1130,594 @@ c     calculate  kinetic tensor and kinetic energy
       
       end subroutine pimd_nvt_nhc_nm
       
+      subroutine pimd_nve(lmsite,isw,idnode,mxnode,natms,imcon,
+     x  ntpmls,tstep,g_qt4f,temp,engke)
+      
+c**********************************************************************
+c     
+c     dl_poly_quantum subroutine for integrating the equations of 
+c     motion for ring polymer molecular dynamics - using normal mode 
+c     variables 
+c     
+c     reference: tuckerman, berne, martyna, klein
+c     j. chem. phys. vol. 99 (4) p. 2796
+c     
+c     copyright - 
+c     authors   - Dil Limbu and Nathan London 2023
+c     
+c**********************************************************************
+      
+      implicit none
+
+      logical lmsite
+      integer, intent(in) :: imcon,ntpmls
+      real(8), intent(in) :: g_qt4f
+      integer, intent(in)  :: isw,idnode,mxnode,natms
+      real(8), intent(in)  :: tstep,temp
+      real(8), intent(out) :: engke
+      
+      integer i,j,k,iatm0,iatm1
+      real(8) hstep,strkin(9)
+
+      real(8) :: mass(nbeads),rmass(nbeads)
+
+c     block indices
+      
+      iatm0=nbeads*((idnode*natms)/mxnode)
+      iatm1=nbeads*(((idnode+1)*natms)/mxnode)
+      
+c     thermostat parameters
+      
+      hstep=tstep/2.d0
+      
+c     verlet first part
+      
+      if(isw.eq.1)then
+       
+c      write(6,*) "vv x pos"
+c      write(6,*) uxx(:) 
+c      write(6,*) "vv y pos"
+c      write(6,*) uyy(:) 
+c      write(6,*) "vv z pos"
+c      write(6,*) uzz(:) 
+c      write(6,*) "vv mom"
+c      write(6,*) pxx(:) 
+        
+c      write(6,*) "vv mom after thermo"
+c      write(6,*) pxx(:) 
+c      write(6,*) "vv force"
+c      write(6,*) wxx(:) 
+c     integrate bead momenta - 1/2 step
+        
+        do i=1,iatm1-iatm0
+          
+          pxx(i)=pxx(i)+hstep*wxx(i)
+          pyy(i)=pyy(i)+hstep*wyy(i)
+          pzz(i)=pzz(i)+hstep*wzz(i)
+          
+        enddo
+c      write(6,*) "vv mom after force"
+c      write(6,*) pxx(:) 
+        
+c      write(6,*) "vv mom after thermo 2"
+c      write(6,*) pxx(:) 
+c     integrate free ring polymer positions (full step) 
+        
+        do i=1,(iatm1-iatm0)/nbeads
+c          write(6,*) "free RP atom",i
+          mass(1:nbeads)=zmass((i-1)*nbeads+1:i*nbeads)
+          rmass(1:nbeads)=rzmass((i-1)*nbeads+1:i*nbeads)
+
+          call freerp (pxx((i-1)*nbeads+1:i*nbeads),
+     x            uxx((i-1)*nbeads+1:i*nbeads),mass,rmass,tstep,temp)
+          call freerp (pyy((i-1)*nbeads+1:i*nbeads),
+     x            uyy((i-1)*nbeads+1:i*nbeads),mass,rmass,tstep,temp)
+          call freerp (pzz((i-1)*nbeads+1:i*nbeads),
+     x            uzz((i-1)*nbeads+1:i*nbeads),mass,rmass,tstep,temp)
+
+c          uxx(i)=uxx(i)+(tstep*rzmass(i))*pxx(i)
+c          uyy(i)=uyy(i)+(tstep*rzmass(i))*pyy(i)
+c          uzz(i)=uzz(i)+(tstep*rzmass(i))*pzz(i)
+          
+        enddo
+c      write(6,*) "vv x pos after free"
+c      write(6,*) uxx(:) 
+c      write(6,*) "vv y pos after free"
+c      write(6,*) uyy(:) 
+c      write(6,*) "vv z pos after free"
+c      write(6,*) uzz(:) 
+c      write(6,*) "vv mom after free"
+c      write(6,*) pxx(:) 
+        
+c     unstage coordinates
+
+      call norm2coord(lmsite,idnode,mxnode,natms,imcon,nbeads,
+     x       ntpmls,g_qt4f)
+
+c        call unstage_coords(lmsite,idnode,mxnode,natms,imcon,nbeads,
+c     x       ntpmls,g_qt4f)
+        
+c     verlet second part
+        
+      else
+        
+c     integrate bead momenta - 1/2 step
+        
+        do i=1,iatm1-iatm0
+          
+          pxx(i)=pxx(i)+hstep*wxx(i)
+          pyy(i)=pyy(i)+hstep*wyy(i)
+          pzz(i)=pzz(i)+hstep*wzz(i)
+          
+        enddo
+        
+c     unstage momenta (needed for REVCON file)
+        
+        call norm2momenta(idnode,mxnode,natms)
+        
+c        call unstage_momenta(idnode,mxnode,natms)
+        
+c     calculate  kinetic tensor and kinetic energy
+        
+        strkin(:)=0.d0
+        
+        do i=1,iatm1-iatm0
+          
+          strkin(1)=strkin(1)+pxx(i)*pxx(i)*rzmass(i)
+          strkin(2)=strkin(2)+pxx(i)*pyy(i)*rzmass(i)
+          strkin(3)=strkin(3)+pxx(i)*pzz(i)*rzmass(i)
+          strkin(5)=strkin(5)+pyy(i)*pyy(i)*rzmass(i)
+          strkin(6)=strkin(6)+pyy(i)*pzz(i)*rzmass(i)
+          strkin(9)=strkin(9)+pzz(i)*pzz(i)*rzmass(i)
+          
+c          strkin(1)=strkin(1)+vxx(i)*vxx(i)*weight(i)
+c          strkin(2)=strkin(2)+vxx(i)*vyy(i)*weight(i)
+c          strkin(3)=strkin(3)+vxx(i)*vzz(i)*weight(i)
+c          strkin(5)=strkin(5)+vyy(i)*vyy(i)*weight(i)
+c          strkin(6)=strkin(6)+vyy(i)*vzz(i)*weight(i)
+c          strkin(9)=strkin(9)+vzz(i)*vzz(i)*weight(i)
+          
+        enddo
+        
+        strkin(4)=strkin(2)
+        strkin(7)=strkin(3)
+        strkin(8)=strkin(6)
+        
+        if(mxnode.gt.1)then
+          
+          buffer(1:9)=strkin(1:9)
+          call gdsum(buffer(1),10,buffer(11))
+          strkin(1:9)=buffer(1:9)
+          
+        endif
+        
+        engke=0.5d0*(strkin(1)+strkin(5)+strkin(9))
+        stress(:)=stress(:)+strkin(:)
+        
+      endif
+      
+      end subroutine pimd_nve
+      
+      subroutine pacmd(lmsite,isw,idnode,mxnode,natms,imcon,
+     x  ntpmls,tstep,taut,g_qt4f,temp,engke,engthe)
+      
+c**********************************************************************
+c     
+c     dl_poly_quantum subroutine for integrating the equations of 
+c     motion for path intergral molecular dynamics - using normal mode 
+c     variables thermostated with nose-hoover chains and integrated 
+c     with the velocity verlet algorithm
+c     
+c     reference: tuckerman, berne, martyna, klein
+c     j. chem. phys. vol. 99 (4) p. 2796
+c     
+c     copyright - 
+c     authors   - Dil Limbu and Nathan London 2023
+c     
+c**********************************************************************
+      
+      implicit none
+
+      logical lmsite
+      integer, intent(in) :: imcon,ntpmls
+      real(8), intent(in) :: g_qt4f
+      integer, intent(in)  :: isw,idnode,mxnode,natms
+      real(8), intent(in)  :: tstep,taut,temp
+      real(8), intent(out) :: engke,engthe
+      
+      integer i,j,k,iatm0,iatm1,nstart
+      real(8) ppp,qqq,qq1,qqk,hstep,qstep,strkin(9)
+
+      real(8) :: mass(nbeads),rmass(nbeads)
+
+c     block indices
+      
+      iatm0=nbeads*((idnode*natms)/mxnode)
+      iatm1=nbeads*(((idnode+1)*natms)/mxnode)
+      
+c     thermostat parameters
+      
+      hstep=tstep/2.d0
+      qstep=tstep/4.d0
+      qq1=boltz*temp*taut**2
+      qqk=hbar**2/(boltz*temp*dble(nbeads))
+      nstart=2
+
+c     verlet first part
+      
+      if(isw.eq.1)then
+       
+c      write(6,*) "vv x pos"
+c      write(6,*) uxx(:) 
+c      write(6,*) "vv y pos"
+c      write(6,*) uyy(:) 
+c      write(6,*) "vv z pos"
+c      write(6,*) uzz(:)
+c      write(6,*) "mass"
+c      write(6,*) zmass(:) 
+c      write(6,*) "vv mom"
+c      write(6,*) pxx(:) 
+c     integrate thermostats - 1/4 step
+        
+        if(nchain.gt.0)call thermo_chain_nm
+     x    (idnode,mxnode,natms,nstart,qstep,taut,temp)
+        
+c      write(6,*) "vv mom after thermo"
+c      write(6,*) pxx(:) 
+c      write(6,*) "vv force"
+c      write(6,*) wxx(:) 
+c     integrate bead momenta - 1/2 step
+        
+        do i=1,iatm1-iatm0
+          
+          pxx(i)=pxx(i)+hstep*wxx(i)
+          pyy(i)=pyy(i)+hstep*wyy(i)
+          pzz(i)=pzz(i)+hstep*wzz(i)
+          
+        enddo
+c      write(6,*) "vv mom after force"
+c      write(6,*) pxx(:) 
+        
+c     integrate thermostats - 1/4 step
+        
+        if(nchain.gt.0)call thermo_chain_nm
+     x    (idnode,mxnode,natms,nstart,qstep,taut,temp)
+        
+c      write(6,*) "vv mom after thermo 2"
+c      write(6,*) pxx(:) 
+c     integrate free ring polymer positions (full step) 
+        
+        do i=1,(iatm1-iatm0)/nbeads
+c          write(6,*) "free RP atom",i
+          mass(1:nbeads)=zmass((i-1)*nbeads+1:i*nbeads)
+          rmass(1:nbeads)=rzmass((i-1)*nbeads+1:i*nbeads)
+
+          call freerp (pxx((i-1)*nbeads+1:i*nbeads),
+     x            uxx((i-1)*nbeads+1:i*nbeads),mass,rmass,tstep,temp)
+          call freerp (pyy((i-1)*nbeads+1:i*nbeads),
+     x            uyy((i-1)*nbeads+1:i*nbeads),mass,rmass,tstep,temp)
+          call freerp (pzz((i-1)*nbeads+1:i*nbeads),
+     x            uzz((i-1)*nbeads+1:i*nbeads),mass,rmass,tstep,temp)
+
+c          uxx(i)=uxx(i)+(tstep*rzmass(i))*pxx(i)
+c          uyy(i)=uyy(i)+(tstep*rzmass(i))*pyy(i)
+c          uzz(i)=uzz(i)+(tstep*rzmass(i))*pzz(i)
+          
+        enddo
+c      write(6,*) "vv x pos after free"
+c      write(6,*) uxx(:) 
+c      write(6,*) "vv y pos after free"
+c      write(6,*) uyy(:) 
+c      write(6,*) "vv z pos after free"
+c      write(6,*) uzz(:) 
+c      write(6,*) "vv mom after free"
+c      write(6,*) pxx(:) 
+        
+c     unstage coordinates
+
+      call norm2coord(lmsite,idnode,mxnode,natms,imcon,nbeads,
+     x       ntpmls,g_qt4f)
+
+c        call unstage_coords(lmsite,idnode,mxnode,natms,imcon,nbeads,
+c     x       ntpmls,g_qt4f)
+        
+c     verlet second part
+        
+      else
+        
+c     integrate thermostats - 1/4 step
+        
+        if(nchain.gt.0)call thermo_chain_nm
+     x    (idnode,mxnode,natms,nstart,qstep,taut,temp)
+        
+c      write(6,*) "vv mom after thermo 3"
+c       write(6,*) pxx(:) 
+c     integrate bead momenta - 1/2 step
+        
+        do i=1,iatm1-iatm0
+          
+          pxx(i)=pxx(i)+hstep*wxx(i)
+          pyy(i)=pyy(i)+hstep*wyy(i)
+          pzz(i)=pzz(i)+hstep*wzz(i)
+          
+        enddo
+c     write(6,*) "vv mom after force 2"
+c      write(6,*) pxx(:) 
+        
+c     integrate thermostats - 1/4 step
+        
+        if(nchain.gt.0)call thermo_chain_nm
+     x    (idnode,mxnode,natms,nstart,qstep,taut,temp)
+        
+c      write(6,*) "vv mom after thermo 4"
+c      write(6,*) pxx(:) 
+c      write(6,*) ""
+c     calculate thermostat energy
+        
+        call thermostat_energy_nm
+     x    (idnode,mxnode,natms,nbeads,nchain,nstart,qq1,qqk,taut,temp,
+     x    engthe)
+        
+c     unstage momenta (needed for REVCON file)
+        
+        call norm2momenta(idnode,mxnode,natms)
+        
+c        call unstage_momenta(idnode,mxnode,natms)
+        
+c     calculate  kinetic tensor and kinetic energy
+        
+        strkin(:)=0.d0
+        
+        do i=1,iatm1-iatm0
+          
+          strkin(1)=strkin(1)+pxx(i)*pxx(i)*rzmass(i)
+          strkin(2)=strkin(2)+pxx(i)*pyy(i)*rzmass(i)
+          strkin(3)=strkin(3)+pxx(i)*pzz(i)*rzmass(i)
+          strkin(5)=strkin(5)+pyy(i)*pyy(i)*rzmass(i)
+          strkin(6)=strkin(6)+pyy(i)*pzz(i)*rzmass(i)
+          strkin(9)=strkin(9)+pzz(i)*pzz(i)*rzmass(i)
+          
+c          strkin(1)=strkin(1)+vxx(i)*vxx(i)*weight(i)
+c          strkin(2)=strkin(2)+vxx(i)*vyy(i)*weight(i)
+c          strkin(3)=strkin(3)+vxx(i)*vzz(i)*weight(i)
+c          strkin(5)=strkin(5)+vyy(i)*vyy(i)*weight(i)
+c          strkin(6)=strkin(6)+vyy(i)*vzz(i)*weight(i)
+c          strkin(9)=strkin(9)+vzz(i)*vzz(i)*weight(i)
+          
+        enddo
+        
+        strkin(4)=strkin(2)
+        strkin(7)=strkin(3)
+        strkin(8)=strkin(6)
+        
+        if(mxnode.gt.1)then
+          
+          buffer(1:9)=strkin(1:9)
+          buffer(10)=engthe
+          call gdsum(buffer(1),10,buffer(11))
+          strkin(1:9)=buffer(1:9)
+          engthe=buffer(10)
+          
+        endif
+        
+        engke=0.5d0*(strkin(1)+strkin(5)+strkin(9))
+        stress(:)=stress(:)+strkin(:)
+        
+      endif
+      
+      end subroutine pacmd
+      
+      subroutine trpmd(lmsite,isw,idnode,mxnode,natms,imcon,
+     x  ntpmls,tstep,g_qt4f,temp,engke)
+      
+c**********************************************************************
+c     
+c     dl_poly_quantum subroutine for integrating the equations of 
+c     motion for ring polymer molecular dynamics - using normal mode 
+c     variables 
+c     
+c     reference: tuckerman, berne, martyna, klein
+c     j. chem. phys. vol. 99 (4) p. 2796
+c     
+c     copyright - 
+c     authors   - Dil Limbu and Nathan London 2023
+c     
+c**********************************************************************
+      
+      implicit none
+
+      logical lmsite,noskip
+      integer, intent(in) :: imcon,ntpmls
+      real(8), intent(in) :: g_qt4f
+      integer, intent(in)  :: isw,idnode,mxnode,natms
+      real(8), intent(in)  :: tstep,temp
+      real(8), intent(out) :: engke
+      
+      integer i,j,k,iatm0,iatm1
+      real(8) hstep,strkin(9),uuu(102),beta
+
+      real(8) :: mass(nbeads),rmass(nbeads)
+
+c     block indices
+      
+      iatm0=nbeads*((idnode*natms)/mxnode)
+      iatm1=nbeads*(((idnode+1)*natms)/mxnode)
+      
+c     thermostat parameters
+      
+      hstep=tstep/2.d0
+      beta=1.d0/(temp*boltz)
+      noskip=.true.
+      
+c     verlet first part
+      
+      if(isw.eq.1)then
+       
+c      write(6,*) "vv x pos"
+c      write(6,*) uxx(:) 
+c      write(6,*) "vv y pos"
+c      write(6,*) uyy(:) 
+c      write(6,*) "vv z pos"
+c      write(6,*) uzz(:) 
+c      write(6,*) "vv mom"
+c      write(6,*) pxx(:) 
+        
+
+c     thermostat momentum - 1/2 step
+
+        do i=1,(iatm1-iatm0)/nbeads
+          do j=1,nbeads
+c            if(idnode.eq.0)then
+c              write(6,*)"index",(i-1)*nbeads+j
+c          write(6,*)"j",j
+c          write(6,*)"mass",zmass((i-1)*nbeads+j)
+c              write(6,*)"cvec1",cvec1(j)
+c              write(6,*)"cvec2",cvec2(j)
+c            endif
+c            write(6,*)"factor",sqrt(zmass((i-1)*nbeads+j)/beta)
+c            write(6,*)"facC2",sqrt(zmass((i-1)*nbeads+j)/beta)*cvec2(j)
+            pxx((i-1)*nbeads+j)=pxx((i-1)*nbeads+j)*cvec1(j)+
+     x        sqrt(zmass((i-1)*nbeads+j)/beta)*cvec2(j)*
+     x        gssrnd(noskip,uuu)
+            pyy((i-1)*nbeads+j)=pyy((i-1)*nbeads+j)*cvec1(j)+
+     x        sqrt(zmass((i-1)*nbeads+j)/beta)*cvec2(j)*
+     x        gssrnd(noskip,uuu)
+             pzz((i-1)*nbeads+j)=pzz((i-1)*nbeads+j)*cvec1(j)+
+     x        sqrt(zmass((i-1)*nbeads+j)/beta)*cvec2(j)*
+     x        gssrnd(noskip,uuu)
+          enddo
+        enddo
+c      write(6,*) "vv mom after thermo"
+c      write(6,*) pxx(:) 
+c      write(6,*) "vv force"
+c      write(6,*) wxx(:) 
+
+c     integrate bead momenta - 1/2 step
+        
+        do i=1,iatm1-iatm0
+          
+          pxx(i)=pxx(i)+hstep*wxx(i)
+          pyy(i)=pyy(i)+hstep*wyy(i)
+          pzz(i)=pzz(i)+hstep*wzz(i)
+          
+        enddo
+c      write(6,*) "vv mom after force"
+c      write(6,*) pxx(:) 
+        
+c      write(6,*) "vv mom after thermo 2"
+c      write(6,*) pxx(:) 
+c     integrate free ring polymer positions (full step) 
+        
+        do i=1,(iatm1-iatm0)/nbeads
+c          write(6,*) "free RP atom",i
+          mass(1:nbeads)=zmass((i-1)*nbeads+1:i*nbeads)
+          rmass(1:nbeads)=rzmass((i-1)*nbeads+1:i*nbeads)
+
+          call freerp (pxx((i-1)*nbeads+1:i*nbeads),
+     x            uxx((i-1)*nbeads+1:i*nbeads),mass,rmass,tstep,temp)
+          call freerp (pyy((i-1)*nbeads+1:i*nbeads),
+     x            uyy((i-1)*nbeads+1:i*nbeads),mass,rmass,tstep,temp)
+          call freerp (pzz((i-1)*nbeads+1:i*nbeads),
+     x            uzz((i-1)*nbeads+1:i*nbeads),mass,rmass,tstep,temp)
+
+c          uxx(i)=uxx(i)+(tstep*rzmass(i))*pxx(i)
+c          uyy(i)=uyy(i)+(tstep*rzmass(i))*pyy(i)
+c          uzz(i)=uzz(i)+(tstep*rzmass(i))*pzz(i)
+          
+        enddo
+c      write(6,*) "vv x pos after free"
+c      write(6,*) uxx(:) 
+c      write(6,*) "vv y pos after free"
+c      write(6,*) uyy(:) 
+c      write(6,*) "vv z pos after free"
+c      write(6,*) uzz(:) 
+c      write(6,*) "vv mom after free"
+c      write(6,*) pxx(:) 
+        
+c     unstage coordinates
+
+      call norm2coord(lmsite,idnode,mxnode,natms,imcon,nbeads,
+     x       ntpmls,g_qt4f)
+
+c        call unstage_coords(lmsite,idnode,mxnode,natms,imcon,nbeads,
+c     x       ntpmls,g_qt4f)
+        
+c     verlet second part
+        
+      else
+        
+c     integrate bead momenta - 1/2 step
+        
+        do i=1,iatm1-iatm0
+          
+          pxx(i)=pxx(i)+hstep*wxx(i)
+          pyy(i)=pyy(i)+hstep*wyy(i)
+          pzz(i)=pzz(i)+hstep*wzz(i)
+          
+        enddo
+        
+c     thermostat momentum - 1/2 step
+
+        do i=1,(iatm1-iatm0)/nbeads
+          do j=1,nbeads
+            pxx((i-1)*nbeads+j)=pxx((i-1)*nbeads+j)*cvec1(j)+
+     x        sqrt(zmass((i-1)*nbeads+j)/beta)*cvec2(j)*
+     x        gssrnd(noskip,uuu)
+            pyy((i-1)*nbeads+j)=pyy((i-1)*nbeads+j)*cvec1(j)+
+     x        sqrt(zmass((i-1)*nbeads+j)/beta)*cvec2(j)*
+     x        gssrnd(noskip,uuu)
+            pzz((i-1)*nbeads+j)=pzz((i-1)*nbeads+j)*cvec1(j)+
+     x        sqrt(zmass((i-1)*nbeads+j)/beta)*cvec2(j)*
+     x        gssrnd(noskip,uuu)
+          enddo
+        enddo
+
+c     unstage momenta (needed for REVCON file)
+        
+        call norm2momenta(idnode,mxnode,natms)
+        
+c        call unstage_momenta(idnode,mxnode,natms)
+        
+c     calculate  kinetic tensor and kinetic energy
+        
+        strkin(:)=0.d0
+        
+        do i=1,iatm1-iatm0
+          
+          strkin(1)=strkin(1)+pxx(i)*pxx(i)*rzmass(i)
+          strkin(2)=strkin(2)+pxx(i)*pyy(i)*rzmass(i)
+          strkin(3)=strkin(3)+pxx(i)*pzz(i)*rzmass(i)
+          strkin(5)=strkin(5)+pyy(i)*pyy(i)*rzmass(i)
+          strkin(6)=strkin(6)+pyy(i)*pzz(i)*rzmass(i)
+          strkin(9)=strkin(9)+pzz(i)*pzz(i)*rzmass(i)
+          
+c          strkin(1)=strkin(1)+vxx(i)*vxx(i)*weight(i)
+c          strkin(2)=strkin(2)+vxx(i)*vyy(i)*weight(i)
+c          strkin(3)=strkin(3)+vxx(i)*vzz(i)*weight(i)
+c          strkin(5)=strkin(5)+vyy(i)*vyy(i)*weight(i)
+c          strkin(6)=strkin(6)+vyy(i)*vzz(i)*weight(i)
+c          strkin(9)=strkin(9)+vzz(i)*vzz(i)*weight(i)
+          
+        enddo
+        
+        strkin(4)=strkin(2)
+        strkin(7)=strkin(3)
+        strkin(8)=strkin(6)
+        
+        if(mxnode.gt.1)then
+          
+          buffer(1:9)=strkin(1:9)
+          call gdsum(buffer(1),10,buffer(11))
+          strkin(1:9)=buffer(1:9)
+          
+        endif
+        
+        engke=0.5d0*(strkin(1)+strkin(5)+strkin(9))
+        stress(:)=stress(:)+strkin(:)
+        
+      endif
+      
+      end subroutine trpmd
 
       function gssrnd(noskip,uuu)
       
@@ -1199,7 +1825,7 @@ c     integrate thermostat momenta - 1/2 step
           
           if(nchain.gt.2)then
             
-            do j=nchain-1,2
+            do j=nchain-1,2,-1
               
               pcx(j,i)=pcx(j,i)*(1.d0-qstep*pcx(j+1,i)/qqq(k))
               pcy(j,i)=pcy(j,i)*(1.d0-qstep*pcy(j+1,i)/qqq(k))
@@ -1430,7 +2056,7 @@ c     integrate thermostat momenta
               
               if(nchain.gt.2)then
                 
-                do j=nchain-1,2
+                do j=nchain-1,2,-1
                   
                   pcx(j,i)=pcx(j,i)*(1.d0-qstep*pcx(j+1,i)/qqq(k))
                   pcy(j,i)=pcy(j,i)*(1.d0-qstep*pcy(j+1,i)/qqq(k))
@@ -1630,4 +2256,299 @@ c**********************************************************************
 
       end subroutine thermostat_energy
             
+      subroutine thermo_chain_nm
+     x  (idnode,mxnode,natms,nstart,tstep,taut,temp)
+      
+c**********************************************************************
+c     
+c     dl_poly classic routine for updating the thermostat chain momenta in
+c     path integral molecular dynamics (suzuki-yoshida version)
+c     
+c     suzuki-yoshida sixth order scheme
+c     
+c     copyright - daresbury laboratory
+c     author    - w.smith aug 2016
+c     
+c**********************************************************************
+      
+      implicit none
+
+      logical safe
+      integer, intent(in) :: idnode,mxnode,natms,nstart
+      real(8), intent(in) :: tstep,taut,temp
+      integer i,j,k,m,n,fail,iatm0,iatm1,nsy,ncyc
+      real(8) fstep,hstep,qstep,w1,w2,w3,w4,w5,w6,w7
+      real(8) wsy(7)
+      real(8), allocatable :: qqq(:)
+
+      safe=.true.
+      
+c     suzuki-yoshida parameters
+
+      nsy=7
+      ncyc=10
+      wsy(1)=0.784513610477560d0
+      wsy(2)=0.235573213359357d0
+      wsy(3)=-1.17767998417887d0
+      wsy(4)=1.d0-2.d0*(wsy(1)+wsy(2)+wsy(3))
+      wsy(5)=-1.17767998417887d0
+      wsy(6)=0.235573213359357d0
+      wsy(7)=0.784513610477560d0
+      
+      iatm0=nbeads*((idnode*natms)/mxnode)
+      iatm1=nbeads*(((idnode+1)*natms)/mxnode)
+
+c     allocate working arrays
+      
+      fail=0
+      
+      allocate (qqq(nbeads),stat=fail)
+      
+      safe=(fail.eq.0)
+      if(mxnode.gt.1)call gstate(safe)
+      if(.not.safe)call error(idnode,538)
+      
+c     define thermostat masses
+      
+      qqq(1)=4.d0*boltz*temp*taut**2
+      do k=2,nbeads
+        qqq(k)=boltz*temp/nmfreq(k)**2
+      enddo
+      
+      do m=1,nsy
+        
+        do n=1,ncyc
+          
+c     define scaled time steps
+          
+          fstep=tstep*wsy(m)/dble(ncyc)
+          hstep=0.5d0*tstep*wsy(m)/dble(ncyc)
+          qstep=0.25d0*tstep*wsy(m)/dble(ncyc)
+          
+c     integrate thermostat momenta
+          
+          do k=nstart,nbeads
+            
+            do i=k,iatm1-iatm0,nbeads
+              
+              if(nchain.gt.1)then
+                
+                pcx(nchain,i)=pcx(nchain,i)+
+     x            hstep*(pcx(nchain-1,i)**2/qqq(k)-boltz*temp)
+                pcy(nchain,i)=pcy(nchain,i)+
+     x            hstep*(pcy(nchain-1,i)**2/qqq(k)-boltz*temp)
+                pcz(nchain,i)=pcz(nchain,i)+
+     x            hstep*(pcz(nchain-1,i)**2/qqq(k)-boltz*temp)
+
+              endif
+              
+              if(nchain.gt.2)then
+                
+                do j=nchain-1,2,-1
+                  
+                  pcx(j,i)=pcx(j,i)*(1.d0-qstep*pcx(j+1,i)/qqq(k))
+                  pcy(j,i)=pcy(j,i)*(1.d0-qstep*pcy(j+1,i)/qqq(k))
+                  pcz(j,i)=pcz(j,i)*(1.d0-qstep*pcz(j+1,i)/qqq(k))
+
+                  pcx(j,i)=pcx(j,i)+hstep*(pcx(j-1,i)**2/qqq(k)-
+     x              boltz*temp)
+                  pcy(j,i)=pcy(j,i)+hstep*(pcy(j-1,i)**2/qqq(k)-
+     x              boltz*temp)
+                  pcz(j,i)=pcz(j,i)+hstep*(pcz(j-1,i)**2/qqq(k)-
+     x              boltz*temp)
+                  
+                  pcx(j,i)=pcx(j,i)*(1.d0-qstep*pcx(j+1,i)/qqq(k))
+                  pcy(j,i)=pcy(j,i)*(1.d0-qstep*pcy(j+1,i)/qqq(k))
+                  pcz(j,i)=pcz(j,i)*(1.d0-qstep*pcz(j+1,i)/qqq(k))
+                  
+                enddo
+
+              endif
+              
+              if(nchain.gt.1)then
+                
+                pcx(1,i)=pcx(1,i)*(1.d0-qstep*pcx(2,i)/qqq(k))
+                pcy(1,i)=pcy(1,i)*(1.d0-qstep*pcy(2,i)/qqq(k))
+                pcz(1,i)=pcz(1,i)*(1.d0-qstep*pcz(2,i)/qqq(k))
+                
+              endif
+              
+              pcx(1,i)=pcx(1,i)+hstep*(pxx(i)**2*rzmass(i)-boltz*temp)
+              pcy(1,i)=pcy(1,i)+hstep*(pyy(i)**2*rzmass(i)-boltz*temp)
+              pcz(1,i)=pcz(1,i)+hstep*(pzz(i)**2*rzmass(i)-boltz*temp)
+              
+              if(nchain.gt.1)then
+                
+                pcx(1,i)=pcx(1,i)*(1.d0-qstep*pcx(2,i)/qqq(k))
+                pcy(1,i)=pcy(1,i)*(1.d0-qstep*pcy(2,i)/qqq(k))
+                pcz(1,i)=pcz(1,i)*(1.d0-qstep*pcz(2,i)/qqq(k))
+                
+              endif
+              
+            enddo
+            
+          enddo
+          
+c     integrate thermostat variables
+          
+          do k=nstart,nbeads
+            
+            do i=k,iatm1-iatm0,nbeads
+              
+              do j=1,nchain
+                
+                etx(j,i)=etx(j,i)+fstep*pcx(j,i)/qqq(k)
+                ety(j,i)=ety(j,i)+fstep*pcy(j,i)/qqq(k)
+                etz(j,i)=etz(j,i)+fstep*pcz(j,i)/qqq(k)
+                
+              enddo
+              
+            enddo
+            
+          enddo
+          
+c     apply thermostats to bead momenta
+          
+          do k=nstart,nbeads
+            
+            do i=k,iatm1-iatm0,nbeads
+              
+              pxx(i)=pxx(i)*(1.d0-(fstep/qqq(k))*pcx(1,i))
+              pyy(i)=pyy(i)*(1.d0-(fstep/qqq(k))*pcy(1,i))
+              pzz(i)=pzz(i)*(1.d0-(fstep/qqq(k))*pcz(1,i))
+              
+            enddo
+            
+          enddo
+        
+c     integrate thermostat momenta
+          
+          do k=nstart,nbeads
+            
+            do i=k,iatm1-iatm0,nbeads
+              
+              if(nchain.gt.1)then
+                
+                pcx(1,i)=pcx(1,i)*(1.d0-qstep*pcx(2,i)/qqq(k))
+                pcy(1,i)=pcy(1,i)*(1.d0-qstep*pcy(2,i)/qqq(k))
+                pcz(1,i)=pcz(1,i)*(1.d0-qstep*pcz(2,i)/qqq(k))
+                
+              endif
+              
+              pcx(1,i)=pcx(1,i)+hstep*(pxx(i)**2*rzmass(i)-boltz*temp)
+              pcy(1,i)=pcy(1,i)+hstep*(pyy(i)**2*rzmass(i)-boltz*temp)
+              pcz(1,i)=pcz(1,i)+hstep*(pzz(i)**2*rzmass(i)-boltz*temp)
+              
+              if(nchain.gt.1)then
+                
+                pcx(1,i)=pcx(1,i)*(1.d0-qstep*pcx(2,i)/qqq(k))
+                pcy(1,i)=pcy(1,i)*(1.d0-qstep*pcy(2,i)/qqq(k))
+                pcz(1,i)=pcz(1,i)*(1.d0-qstep*pcz(2,i)/qqq(k))
+                
+              endif
+              
+              if(nchain.gt.2)then
+                
+                do j=2,nchain-1
+                  
+                  pcx(j,i)=pcx(j,i)*(1.d0-qstep*pcx(j+1,i)/qqq(k))
+                  pcy(j,i)=pcy(j,i)*(1.d0-qstep*pcy(j+1,i)/qqq(k))
+                  pcz(j,i)=pcz(j,i)*(1.d0-qstep*pcz(j+1,i)/qqq(k))
+                  
+                  pcx(j,i)=pcx(j,i)+hstep*(pcx(j-1,i)**2/qqq(k)-
+     x              boltz*temp)
+                  pcy(j,i)=pcy(j,i)+hstep*(pcy(j-1,i)**2/qqq(k)-
+     x              boltz*temp)
+                  pcz(j,i)=pcz(j,i)+hstep*(pcz(j-1,i)**2/qqq(k)-
+     x              boltz*temp)
+                  
+                  pcx(j,i)=pcx(j,i)*(1.d0-qstep*pcx(j+1,i)/qqq(k))
+                  pcy(j,i)=pcy(j,i)*(1.d0-qstep*pcy(j+1,i)/qqq(k))
+                  pcz(j,i)=pcz(j,i)*(1.d0-qstep*pcz(j+1,i)/qqq(k))
+                  
+                enddo
+                
+              endif
+              
+              if(nchain.gt.1)then
+                
+                pcx(nchain,i)=pcx(nchain,i)+
+     x            hstep*(pcx(nchain-1,i)**2/qqq(k)-boltz*temp)
+                pcy(nchain,i)=pcy(nchain,i)+
+     x            hstep*(pcy(nchain-1,i)**2/qqq(k)-boltz*temp)
+                pcz(nchain,i)=pcz(nchain,i)+
+     x            hstep*(pcz(nchain-1,i)**2/qqq(k)-boltz*temp)
+                
+              endif
+              
+            enddo
+            
+          enddo
+          
+        enddo
+        
+      enddo
+      
+      deallocate (qqq,stat=fail)
+      
+      safe=(fail.eq.0)
+      if(mxnode.gt.1)call gstate(safe)
+      if(.not.safe)call error(idnode,539)
+      
+      end subroutine thermo_chain_nm
+
+      subroutine thermostat_energy_nm
+     x  (idnode,mxnode,natms,nbeads,nchain,nstart,qq1,qqk,taut,temp,
+     x  engthe)
+
+c**********************************************************************
+c     
+c     dl_poly_classic subroutine for calculating the total thermostat
+c     energy in a path intergral molecular dynamics simulation
+c     
+c     copyright - daresbury laboratory
+c     author    - w.smith dec 2016
+c     
+c**********************************************************************
+      
+      implicit none
+      
+      integer, intent(in ) :: idnode,mxnode,natms,nbeads,nchain,nstart
+      real(8), intent(in)  :: qq1,qqk,taut,temp
+      real(8), intent(out) :: engthe
+
+      integer i,j,k,iatm0,iatm1
+      real(8), allocatable :: qqq(:)
+
+      iatm0=nbeads*((idnode*natms)/mxnode)
+      iatm1=nbeads*(((idnode+1)*natms)/mxnode)
+      
+      allocate (qqq(nbeads))
+       
+c     define thermostat masses
+      
+      qqq(1)=4.d0*boltz*temp*taut**2
+      do k=2,nbeads
+        qqq(k)=boltz*temp/nmfreq(k)**2
+      enddo
+      engthe=0.d0
+      
+      do k=nstart,nbeads
+        
+        do i=k,iatm1-iatm0,nbeads
+          
+          do j=1,nchain
+            
+            engthe=engthe+boltz*temp*(etx(j,i)+ety(j,i)+etz(j,i))+
+     x        (pcx(j,i)**2+pcy(j,i)**2+pcz(j,i)**2)/(2.d0*qqq(k))
+            
+          enddo
+          
+        enddo
+        
+c        qqq=qqk
+        
+      enddo
+
+      end subroutine thermostat_energy_nm
       end module vv_pimd_module

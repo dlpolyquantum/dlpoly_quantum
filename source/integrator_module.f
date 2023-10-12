@@ -735,8 +735,30 @@ c     nvt ensemble - nose-hoover chains - normal mode
      x    (lmsite,isw,idnode,mxnode,natms,imcon,ntpmls,tstep,taut,
      x    g_qt4f,temp,engke,engthe)
         
-      else
+      else if(keyens.eq.44) then
+
+c     nve ensemble (RPMD) - normal mode
         
+        call pimd_nve
+     x    (lmsite,isw,idnode,mxnode,natms,imcon,ntpmls,tstep,
+     x    g_qt4f,temp,engke)
+      
+      else if(keyens.eq.45) then
+
+c     PACMD - 
+
+        call pacmd
+     x    (lmsite,isw,idnode,mxnode,natms,imcon,ntpmls,tstep,taut,
+     x    g_qt4f,temp,engke,engthe)
+       
+      else if(keyens.eq.46) then
+
+c     TRPMD
+        call trpmd
+     x    (lmsite,isw,idnode,mxnode,natms,imcon,ntpmls,tstep,
+     x    g_qt4f,temp,engke)
+
+      else 
 c     invalid option
         
         call error(idnode,430)
@@ -755,10 +777,10 @@ c     calculate gaussian moments of bead momentum
         else
           
 c     calculate gaussian moments of thermostats
-          
+          if(keyens.ne.44)then
           call thermostat_moments
      x      (idnode,mxnode,natms,nbeads,nchain,temp,taut,gaumom)
-          
+          endif
         endif
 
       endif
@@ -830,7 +852,7 @@ c**********************************************************************
 
       do i=1,iatm1-iatm0
         
-        ppp=(pxx(i)**2+pyy(i)**2+pzz(i)**2)/(zmass(i)*boltz*temp)
+        ppp=(pxx(i)**2+pyy(i)**2+pzz(i)**2)*rzmass(i)/(boltz*temp)
         gaumom(0)=gaumom(0)+1.d0
         gaumom(1)=ppp/(3.d0*gaumom(0))+
      x    gaumom(1)*(gaumom(0)-1.d0)/gaumom(0)

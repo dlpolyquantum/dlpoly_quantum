@@ -44,6 +44,7 @@ c**********************************************************************
       real(8), allocatable, save :: etx(:,:),ety(:,:),etz(:,:)
       real(8), allocatable, save :: pcx(:,:),pcy(:,:),pcz(:,:)
       real(8), allocatable, save :: nmfreq(:),transform(:,:)
+      real(8), allocatable, save :: cvec1(:),cvec2(:)
 
       public alloc_pimd_arrays,dealloc_pimd_arrays
       public quantum_energy,ring_forces,stage_mass
@@ -142,7 +143,8 @@ c     TESTED BY DIL LIMBU
       end subroutine dealloc_pimd_arrays
       
       subroutine pimd_init
-     x  (idnode,mxnode,natms,keyres,keyens,temp,sigma,engke,strkin,uuu)
+     x  (idnode,mxnode,natms,keyres,keyens,temp,sigma,engke,strkin,uuu,
+     x  tstep)
       
 c**********************************************************************
 c     
@@ -156,21 +158,42 @@ c**********************************************************************
       implicit none
       
       integer, intent(in) :: idnode,mxnode,natms,keyres,keyens
-      integer i,j,k,iatm0,iatm1,fail
-      real(8), intent(in) :: temp,sigma
+      integer i,j,k,iatm0,iatm1,fail(2)
+      real(8), intent(in) :: temp,sigma,tstep
       real(8) engke,tmpscl,tmpold
       real(8) strkin(9),uuu(102)
-      real(8) freq
+      real(8) freq,rand
 
       iatm0=nbeads*((idnode*natms)/mxnode)
       iatm1=nbeads*(((idnode+1)*natms)/mxnode)
       
+c     get normal mode frequencies
+      if(keyens.ge.43)then
+        fail(:)=0
+        allocate(nmfreq(nbeads),stat=fail(1))
+c        allocate(adiabvec(nbeads),stat=fail(2))
+
+        if(keyens.ge.44)then
+          freq = dble(nbeads)*boltz*temp/hbar
+        else
+          freq = sqrt(dble(nbeads))*boltz*temp/hbar
+        endif
+
+        nmfreq(1) = 0.d0
+
+        do i=2,nbeads
+
+          nmfreq(i) = 2.d0*freq*sin((i-1)*pi/nbeads)
+        
+        enddo
+      endif
+
 c     initialise pimd masses
      
         if(keyens.le.42) then 
           call stage_mass(idnode,mxnode,natms)
         else
-          call normal_mode_mass(idnode,mxnode,natms,keyens)
+          call normal_mode_mass(idnode,mxnode,natms,keyens,temp)
         endif
 
 c     initialise staged coordinates
@@ -259,7 +282,7 @@ c     restore staged momenta for restart
         endif
         
 c     read pimd thermostats
-        if(keyens.ne.44) then
+        if(keyens.lt.44.or.keyens.eq.45) then
           call read_thermostats(idnode,mxnode,natms,tmpold)
           if(keyens.eq.41)then
              call read_rnd_cfg(idnode,mxnode,uuu)
@@ -330,28 +353,26 @@ c     calculate kinetic tensor and energy
       if(mxnode.gt.1)call gdsum(strkin,9,buffer)
       engke=0.5d0*(strkin(1)+strkin(5)+strkin(9))
      
-c     get normal mode frequencies
-      if(keyens.ge.43)then
-        fail=0
-        allocate(nmfreq(nbeads),stat=fail)
-        
-        if(keyens.eq.44)then
-          freq = dble(nbeads)*boltz*temp/hbar
-        else
-          freq = sqrt(dble(nbeads))*boltz*temp/hbar
-        endif
+     
+      if(keyens.eq.46)then 
+        rand=puni(1,uuu)
 
-        nmfreq(1) = 0.d0
+        fail(:)=0
+        if(idnode.eq.0)write(6,*)"allocate"
+        allocate(cvec1(nbeads),stat=fail(1))
+        allocate(cvec2(nbeads),stat=fail(2))
 
+        cvec1(1)=1.d0
+        cvec2(1)=0.d0
         do i=2,nbeads
-
-          nmfreq(i) = 2.d0*freq*sin((i-1)*pi/nbeads)
-        
+          cvec1(i)=dexp(-tstep*nmfreq(i))
+          cvec2(i)=sqrt(1.d0-cvec1(i)**2)
         enddo
+        if(idnode.eq.0)then
+          write(6,*)"cvec1",cvec1(:)
+          write(6,*)"cvec2",cvec2(:)
+        endif
       endif
-      
-c      write(6,*) "end of pimd_init"
-c      write(6,*) pxx(:) 
 
       return      
       end subroutine pimd_init
@@ -1763,7 +1784,7 @@ c     ensure remaining beads make an unbroken ring
       enddo
       
       end subroutine ring_gather_nm
-      subroutine normal_mode_mass(idnode,mxnode,natms,keyens)
+      subroutine normal_mode_mass(idnode,mxnode,natms,keyens,temp)
       
 c**********************************************************************
 c     
@@ -1777,7 +1798,9 @@ c**********************************************************************
       implicit none
       
       integer, intent(in) :: idnode,mxnode,natms,keyens
-      integer i,k,iatm0,iatm1
+      integer :: i,k,iatm0,iatm1
+      real(8), intent(in):: temp
+      real(8) :: omega
 
       iatm0=(idnode*natms)/mxnode+1
       iatm1=((idnode+1)*natms)/mxnode
@@ -1795,10 +1818,27 @@ c     assigning reverse mass of zero to M-sites
             rzmass((i-iatm0)*nbeads+k)=0.d0
             
           else
-            if(keyens.eq.44)then
+            if(keyens.eq.44.or.keyens.eq.46)then
+c            if(keyens.ge.44)then
             zmass((i-iatm0)*nbeads+k)=weight((k-1)*natms+i)/dble(nbeads)
             rzmass((i-iatm0)*nbeads+k)=
      x        dble(nbeads)/weight((k-1)*natms+i)
+            elseif(keyens.eq.45)then
+              omega=nbeads**(dble(nbeads)/dble(nbeads-1))*
+     x          boltz*temp/hbar
+                if(k.eq.1)then
+                  zmass((i-iatm0)*nbeads+k)=weight((k-1)*natms+i)
+     x              /dble(nbeads)
+                  rzmass((i-iatm0)*nbeads+k)=
+     x              dble(nbeads)/weight((k-1)*natms+i)
+                else
+                  zmass((i-iatm0)*nbeads+k)=weight((k-1)*natms+i)
+     x              /dble(nbeads)
+c                  zmass((i-iatm0)*nbeads+k)=weight((k-1)*natms+i)*
+c     x              nmfreq(k)**2/(omega**2*dble(nbeads))
+                  rzmass((i-iatm0)*nbeads+k)=dble(nbeads)*omega**2/
+     x              (nmfreq(k)**2*weight((k-1)*natms+i))
+                endif
             else
             zmass((i-iatm0)*nbeads+k)=weight((k-1)*natms+i)
             rzmass((i-iatm0)*nbeads+k)=1.d0/weight((k-1)*natms+i)
@@ -1806,7 +1846,14 @@ c     assigning reverse mass of zero to M-sites
           endif
 
         enddo
-        
+      
+c      if(keyens.eq.45)then
+c        omega=nbeads**(dble(nbeads)/dble(nbeads-1))*boltz*temp/hbar
+c        adiabvec(k)=nmfreq(k)**2/(omega**2)
+c      else
+c        adiabvec(k)=1.d0
+c      endif
+
       enddo
 
       end subroutine normal_mode_mass
@@ -1905,10 +1952,16 @@ c**********************************************************************
       enddo
       
       do i=1,nbeads*(iatm1-iatm0+1)
-      
-        pxx(i)=zmass(i)*pxx(i)
-        pyy(i)=zmass(i)*pyy(i)
-        pzz(i)=zmass(i)*pzz(i)
+        
+        if(zmass(i).lt.1d-6)then
+          pxx(i)=zmass(i)*pxx(i)
+          pyy(i)=zmass(i)*pyy(i)
+          pzz(i)=zmass(i)*pzz(i)
+        else
+          pxx(i)=pxx(i)/rzmass(i)
+          pyy(i)=pyy(i)/rzmass(i)
+          pzz(i)=pzz(i)/rzmass(i)
+        endif
       
       enddo
 
@@ -2045,10 +2098,10 @@ c *******************************************************************
 
 c     restore coordinate array replication
 
-      call pmerge(idnode,mxnode,natms,xxx,yyy,zzz)
-
       call ring_gather_nm(idnode,mxnode,natms)
-
+     
+      call pmerge(idnode,mxnode,natms,xxx,yyy,zzz)
+      
       end subroutine norm2coord
       
       subroutine norm2momenta(idnode,mxnode,natms)
@@ -2074,11 +2127,11 @@ c**********************************************************************
       iatm1=((idnode+1)*natms)/mxnode
       
       do i=1,nbeads*(iatm1-iatm0+1)
-        
-        pxx(i)=pxx(i)*rzmass(i)
-        pyy(i)=pyy(i)*rzmass(i)
-        pzz(i)=pzz(i)*rzmass(i)
-        
+       
+          pxx(i)=pxx(i)*rzmass(i)
+          pyy(i)=pyy(i)*rzmass(i)
+          pzz(i)=pzz(i)*rzmass(i)
+
       enddo
 
       do i=iatm0,iatm1
@@ -2107,10 +2160,16 @@ c**********************************************************************
 
       do i=1,nbeads*(iatm1-iatm0+1)
         
-        pxx(i)=pxx(i)*zmass(i)
-        pyy(i)=pyy(i)*zmass(i)
-        pzz(i)=pzz(i)*zmass(i)
-        
+        if(zmass(i).lt.1d-6)then
+          pxx(i)=zmass(i)*pxx(i)
+          pyy(i)=zmass(i)*pyy(i)
+          pzz(i)=zmass(i)*pzz(i)
+        else
+          pxx(i)=pxx(i)/rzmass(i)
+          pyy(i)=pyy(i)/rzmass(i)
+          pzz(i)=pzz(i)/rzmass(i)
+        endif
+      
       enddo
 c     restore velocity array replication
       

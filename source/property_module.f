@@ -754,6 +754,7 @@ c     energetic properties of system
       
       stpvir=virsrp+vircpe+virbnd+vircon+vircom+virtbp+virang
      x  +virshl+virtet+virter+virmet+virfld+virrng
+c     x  +virshl+virtet+virter+virmet+virfld
       stpeng=engcfg+engke+engrot
       stprot=2.d0*engrot/(boltz*max(1.d0,degrot))
       stpshl=2.d0*shlke/(boltz*max(1.d0,degshl))
@@ -762,7 +763,7 @@ c     energetic properties of system
       if(imcon.gt.0)stpprs=(2.d0*engke-stpvir)/(3.d0*stpvol)
       stpeth=stpeng+stpprs*stpvol
       stpcns=stpeng+consv+engthe
-
+c      write(6,*) "kinetic",engke
 c     convert pressure to units of katm
       
       stpprs=stpprs*prsunt
