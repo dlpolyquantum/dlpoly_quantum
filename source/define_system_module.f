@@ -60,7 +60,7 @@ c***********************************************************************
      x  nrespa,g_qt4f,alpha,delr,epsq,fmax,press,quattol,rcut,rprim,
      x  rvdw,taup,taut,temp,timcls,timjob,tolnce,tstep,rlxtol,opttol,
      x  zlen,ehit,xhit,yhit,zhit,ebias,vmin,catchrad,sprneb,deltad,tlow,
-     x  hyp_units,chi)
+     x  hyp_units,chi,nsp1)
       
 c***********************************************************************
 c     
@@ -99,6 +99,7 @@ c***********************************************************************
       real(8) catchrad,sprneb,deltad,tlow,xhit,yhit,zhit,ebias,vmin
       real(8) prntim,chi
       real(8) g_qt4f
+      integer nsp1
       
 CSGIC      real(8) dummy
 CCRAY      real(8) dummy
@@ -539,17 +540,50 @@ c     read path integral option
             nchain=intstr(directive,lenrec,idum)
             taut=dblstr(directive,lenrec,idum)
             nchain=max(nchain,1)
-          elseif(findstring('nve',directive,idum))then
+          elseif(findstring('pile',directive,idum))then
             keyens=44
             nbeads=intstr(directive,lenrec,idum)
-          elseif(findstring('pacmd',directive,idum))then
+            taut=dblstr(directive,lenrec,idum)
+          elseif(findstring('piglet',directive,idum))then
             keyens=45
+            nbeads=intstr(directive,lenrec,idum)
+            nsp1=intstr(directive,lenrec,idum)
+            nsp1=nsp1+1
+          elseif(findstring('npt',directive,idum))then
+c barostat options            
+            if(findstring('nhc',directive,idum))then
+              keyens=51
+              nbeads=intstr(directive,lenrec,idum)
+              nrespa=intstr(directive,lenrec,idum)
+              nchain=intstr(directive,lenrec,idum)
+              taut=dblstr(directive,lenrec,idum)
+              taup=dblstr(directive,lenrec,idum)
+              nrespa=max(nrespa,1)
+              nchain=max(nchain,1)
+              inhc=.true.         
+            elseif(findstring('piglet',directive,idum))then
+              keyens=52
+              nbeads=intstr(directive,lenrec,idum)
+              nrespa=intstr(directive,lenrec,idum)
+              nchain=intstr(directive,lenrec,idum)
+              taup=dblstr(directive,lenrec,idum)
+              nsp1=intstr(directive,lenrec,idum)
+              nsp1=nsp1+1
+              nrespa=max(nrespa,1)
+              nchain=max(nchain,1)
+              inhc=.true.         
+            endif
+          elseif(findstring('nve',directive,idum))then
+            keyens=61
+            nbeads=intstr(directive,lenrec,idum)
+          elseif(findstring('pacmd',directive,idum))then
+            keyens=62
             nbeads=intstr(directive,lenrec,idum)
             nchain=intstr(directive,lenrec,idum)
             taut=dblstr(directive,lenrec,idum)
             nchain=max(nchain,1)
           elseif(findstring('trpmd',directive,idum))then
-            keyens=46
+            keyens=63
             nbeads=intstr(directive,lenrec,idum)
           else
 c     default is nvt
@@ -592,11 +626,37 @@ c     default is nvt
      x          1p,e12.4)")taut
             elseif(keyens.eq.44)then
               write(nrite,
-     x          "(1x,'RPMD in normal modes')")
+     x          "(1x,'Canonical Ensemble in normal modes with PILE')")
+              write(nrite,"(1x,'Thermostat relaxation time (ps):',
+     x          1p,e12.4)")taut
             elseif(keyens.eq.45)then
               write(nrite,
+     x          "(1x,'Canonical Ensemble in normal modes with PIGLET')")
+              write(nrite,"(1x,'Thermostat w/ extra no. of momenta of:',
+     x          1p,i5)")nsp1-1
+            elseif(keyens.eq.51)then
+              write(nrite,
+     x        "(/,1x,'Canonical Ensemble in normal mode with NHC',
+     x          /,1x,'thermostat relaxation time',1p,e12.4,
+     x          /,1x,'barostat relaxation time',1p,e12.4,
+     x          /,1x,'number of RESPA steps             ',1p,i6,
+     x          /,1x,'number of chains     ',1p,i6)")
+     x                taut,taup,nrespa,nchain
+            elseif(keyens.eq.52)then
+              write(nrite,
+     x        "(/,1x,'Canonical Ensemble in normal mode NHC-PIGLET',
+     x          /,1x,'barostat relaxation time',1p,e12.4,
+     x          /,1x,'number of RESPA steps             ',1p,i6,
+     x          /,1x,'number of chains     ',1p,i6,
+     x          /,1x,'Thermostat w/ extra no. of momenta of ',1p,i5)")
+     x                taup,nrespa,nchain,nsp1-1
+            elseif(keyens.eq.61)then
+              write(nrite,
+     x          "(1x,'RPMD in normal modes')")
+            elseif(keyens.eq.62)then
+              write(nrite,
      x          "(1x,'Partialy Adiabatic CMD')")
-            elseif(keyens.eq.46)then
+            elseif(keyens.eq.63)then
               write(nrite,
      x          "(1x,'Thermostatted RPMD')")
             endif
@@ -2024,7 +2084,7 @@ c     site multiplicity factor for pimd
 c      write(6,*)"numatm",numatm 
 c    restructure config read for pimd when keyres > 0
 
-      if(keyres.eq.0.and.keyens.lt.44)then
+      if(keyres.eq.0.and.keyens.lt.61)then
         mbeads=1
         matms=mxatms
       else
@@ -2187,7 +2247,7 @@ c ******************************************************************
       
 c     for pimd expand initial atomic system to quantum system
       
-      if(lpimd.and.keyres.eq.0.and.keyens.lt.44)then
+      if(lpimd.and.keyres.eq.0.and.keyens.lt.61)then
         
         m=indatm*nbeads+1
         

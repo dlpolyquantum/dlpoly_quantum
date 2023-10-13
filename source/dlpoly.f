@@ -91,7 +91,8 @@ c     declare required modules
       use nhc_module
       use water_module
       use correlation_module
-
+      use pimd_piglet_module
+      
       implicit none
       
       character*1 hms,dec
@@ -214,7 +215,7 @@ c     input the control parameters defining the simulation
      x  nrespa,g_qt4f,alpha,delr,epsq,fmax,press,quattol,rcut,rprim,
      x  rvdw,taup,taut,temp,timcls,timjob,tolnce,tstep,rlxtol,opttol,
      x  zlen,ehit,xhit,yhit,zhit,ebias,vmin,catchrad,sprneb,deltad,tlow,
-     x  hyp_units,chi)
+     x  hyp_units,chi,nsp1)
 
 c *******************************************************************      
 c     M.R.Momeni & F.A.Shakib
@@ -229,6 +230,10 @@ c     allocate arrays related to qtip4p/f water model
       call alloc_water_arrays(idnode,mxnode)
  
 c *******************************************************************
+
+c     allocate arrays related to piglet thermostat
+
+      call alloc_piglet_arrays(idnode,mxnode)
 
 c     input the system force field
       
@@ -560,7 +565,7 @@ c     energy accumulators
           engrot=0.d0
           
         endif
-        
+
 c     calculate volume of simulation cell
         
         if(imcon.ne.0.and.imcon.ne.6)then
@@ -606,10 +611,17 @@ c     integrate equations of motion stage 1 of velocity verlet
         if(lpimd)then
           
           isw=1
+c          call pimd_integrate
+c     x      (lmsite,isw,idnode,mxnode,imcon,ntpmls,natms,keyens,nstep,
+c     x      tstep,taut,g_qt4f,temp,engke,engthe,chi,uuu,gaumom)
+          
           call pimd_integrate
      x      (lmsite,isw,idnode,mxnode,imcon,ntpmls,natms,keyens,nstep,
-     x      tstep,taut,g_qt4f,temp,engke,engthe,chi,uuu,gaumom)
-          
+     x      tstep,g_qt4f,temp,engke,engthe,chi,uuu,gaumom,
+     x      safe,nrespa,ntpatm,ntshl,keyshl,taut,taup,sigma,
+     x      sigma_nhc,sigma_volm,alpha_volm,virtot,vircon,virlrc,virrng,
+     x      press,volm,chit,consv,conint,elrc,chit_shl,sigma_shl)
+      
         elseif(keyver.gt.0)then
           
           isw=1
@@ -719,10 +731,17 @@ c     integrate equations of motion
         if(lpimd)then
           
           isw=2
+c          call pimd_integrate
+c     x      (lmsite,isw,idnode,mxnode,imcon,ntpmls,natms,keyens,nstep,
+c     x      tstep,taut,g_qt4f,temp,engke,engthe,chi,uuu,gaumom)
+          
           call pimd_integrate
      x      (lmsite,isw,idnode,mxnode,imcon,ntpmls,natms,keyens,nstep,
-     x      tstep,taut,g_qt4f,temp,engke,engthe,chi,uuu,gaumom)
-          
+     x      tstep,g_qt4f,temp,engke,engthe,chi,uuu,gaumom,
+     x      safe,nrespa,ntpatm,ntshl,keyshl,taut,taup,sigma,
+     x      sigma_nhc,sigma_volm,alpha_volm,virtot,vircon,virlrc,virrng,
+     x      press,volm,chit,consv,conint,elrc,chit_shl,sigma_shl)
+      
         elseif(keyver.eq.0)then
           
 c     integrate equations of motion by leapfrog verlet
@@ -855,15 +874,20 @@ c     reset atom velocities at intervals if required
 c     calculate quantum energy
         
         if(lpimd)then
-          if(keyens.ge.43) then
-          call quantum_energy_nm
-     x      (idnode,mxnode,natms,temp,engke,engcfg,engrng,engqpi,
-     x      engqvr,qmsrgr)
+
+          if(keyens.ge.43)then 
+
+            call quantum_energy_nm
+     x        (idnode,mxnode,natms,temp,engke,engcfg,engrng,engqpi,
+     x        engqvr,qmsrgr)
+
           else
-          call quantum_energy
-     x      (idnode,mxnode,natms,temp,engke,engcfg,engrng,engqpi,
-     x      engqvr,qmsrgr)
+
+            call quantum_energy
+     x        (idnode,mxnode,natms,temp,engke,engcfg,engrng,engqpi,
+     x        engqvr,qmsrgr)
           endif
+
           engcfg=engcfg+engrng
 c          write(6,*) "engcfg",engcfg
 c          write(6,*) "engrng",engrng
