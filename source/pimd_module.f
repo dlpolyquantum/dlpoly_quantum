@@ -290,7 +290,7 @@ c     restore staged momenta for restart
         endif
         
 c     read pimd thermostats
-        if(keyens.lt.44.or.keyens.eq.45) then
+        if(keyens.lt.44.or.keyens.eq.62) then
           call read_thermostats(idnode,mxnode,natms,tmpold)
           if(keyens.eq.41)then
              call read_rnd_cfg(idnode,mxnode,uuu)
@@ -1337,11 +1337,11 @@ c     Method Development and Materials Simulation Laboratory
 
 c     update the position of M-site if water model qtip4p/f requested
 
-        if(lmsite)then
+c        if(lmsite)then
 
-          call qtip4pf(idnode,mxnode,imcon,nbeads,ntpmls,g_qt4f)
+c          call qtip4pf(idnode,mxnode,imcon,nbeads,ntpmls,g_qt4f)
 
-        endif
+c        endif
 
 c *******************************************************************      
 
@@ -1351,6 +1351,14 @@ c     restore coordinate array replication
       
       call pmerge(idnode,mxnode,natms,xxx,yyy,zzz)
       
+c     update the position of M-site if water model qtip4p/f requested
+
+        if(lmsite)then
+
+          call qtip4pf(idnode,mxnode,imcon,nbeads,ntpmls,g_qt4f)
+
+        endif
+
       end subroutine unstage_coords
       
       subroutine unstage_momenta(idnode,mxnode,natms)
@@ -1766,8 +1774,8 @@ c     assigning reverse mass of zero to M-sites
             rzmass((i-iatm0)*nbeads+k)=0.d0
             
           else
-            if(keyens.eq.61.or.keyens.eq.63)then
-c            if(keyens.ge.44)then
+            if(keyens.eq.45.or.keyens.eq.61.or.keyens.eq.63)then
+c     assigneing scaled mass for piglet thermostat,rpmd, or trpmd 
             zmass((i-iatm0)*nbeads+k)=weight((k-1)*natms+i)/dble(nbeads)
             rzmass((i-iatm0)*nbeads+k)=
      x        dble(nbeads)/weight((k-1)*natms+i)
@@ -1790,12 +1798,6 @@ c     x              nmfreq(k)**2/(omega**2*dble(nbeads))
             else
               zmass((i-iatm0)*nbeads+k)=weight((k-1)*natms+i)
               rzmass((i-iatm0)*nbeads+k)=1.d0/(weight((k-1)*natms+i))
-            endif
-c     assigneing scaled mass for piglet thermostat 
-            if(keyens.eq.45)then
-              zmass((i-iatm0)*nbeads+k)=weight((k-1)*natms+i)/nbeads
-              rzmass((i-iatm0)*nbeads+k)=1.d0/(weight((k-1)*natms+i)/
-     x                                             nbeads)
             endif
 
           endif
@@ -2043,11 +2045,11 @@ c     Method Development and Materials Simulation Laboratory
 
 c     update the position of M-site if water model qtip4p/f requested
 
-        if(lmsite)then
+c        if(lmsite)then
 
-          call qtip4pf(idnode,mxnode,imcon,nbeads,ntpmls,g_qt4f)
+c          call qtip4pf(idnode,mxnode,imcon,nbeads,ntpmls,g_qt4f)
 
-        endif
+c        endif
 
 c *******************************************************************
 
@@ -2056,6 +2058,14 @@ c     restore coordinate array replication
       call ring_gather(idnode,mxnode,natms)
 
       call pmerge(idnode,mxnode,natms,xxx,yyy,zzz)
+
+c     update the position of M-site if water model qtip4p/f requested
+
+        if(lmsite)then
+
+          call qtip4pf(idnode,mxnode,imcon,nbeads,ntpmls,g_qt4f)
+
+        endif
 
       end subroutine norm2coord
       
@@ -2467,6 +2477,7 @@ c     initialise rinq potential energy and rms bondlength
       
 c     fixed contributions to spring constant
       
+c      sprcon=0.5d0*freq**2
       sprcon=0.5d0*dble(nbeads)*(boltz*temp/hbar)**2
 c      sprcon=0.5d0*(dble(nbeads)*boltz*temp/hbar)**2
       
@@ -2800,6 +2811,7 @@ c
 c      virrng=2.d0*engrng
 cc      write(6,*) "ring energy",engrng 
 c      end subroutine ring_energy
+
 c      subroutine quantum_energy_nm
 c     x  (idnode,mxnode,natms,temp,engke,engcfg,engrng,engqpi,
 c     x  engqvr,qmsrgr)

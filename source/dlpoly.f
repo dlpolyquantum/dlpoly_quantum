@@ -116,7 +116,7 @@ c     declare required modules
       integer ntpter,keyshl,isw,keyver,keystr,keytol,numgau,khit
       integer nhit,keybpd,ntrack,nblock,blkout,numneb,nturn,mode
       integer natms2,ntghost,nsolva,isolva,nofic,iadd
-      integer nrespa,iqt4,keycorr,molcorr
+      integer nrespa,iqt4,keycorr,molcorr,wrtcorr
 
       real(8) alpha,delr,epsq,fmax,press,quattol,rcut,rprim,rvdw,taup
       real(8) taut,temp,timcls,timjob,tolnce,tstep,tzero,dlrpot,drewd
@@ -215,7 +215,7 @@ c     input the control parameters defining the simulation
      x  nrespa,g_qt4f,alpha,delr,epsq,fmax,press,quattol,rcut,rprim,
      x  rvdw,taup,taut,temp,timcls,timjob,tolnce,tstep,rlxtol,opttol,
      x  zlen,ehit,xhit,yhit,zhit,ebias,vmin,catchrad,sprneb,deltad,tlow,
-     x  hyp_units,chi,nsp1)
+     x  hyp_units,chi,nsp1,wrtcorr)
 
 c *******************************************************************      
 c     M.R.Momeni & F.A.Shakib
@@ -431,11 +431,25 @@ c     bias potential dynamics option - reset forces
       
 c     stage initial forces for pimd
       
-      if(lpimd.and.(keyens.le.42))call stage_forces(lmsite,idnode,
+      if(lpimd)then
+
+        if(keyens.le.42)then
+
+          call stage_forces(lmsite,idnode,
      x               mxnode,natms,nbeads, ntpmls,g_qt4f)
-      if(lpimd.and.(keyens.ge.43))call force2norm(lmsite,idnode,
+
+        elseif(keyens.ge.43)then
+
+          call force2norm(lmsite,idnode,
      x               mxnode,natms,nbeads,ntpmls,g_qt4f)
-      
+        endif
+
+      elseif(lmsite)then
+
+        call qt4_force_redist(idnode,mxnode,nbeads,ntpmls,g_qt4f) 
+
+      endif
+
       if(ltad.or.(lbpd.and.keybpd.eq.2))then
         
 c     construct the first reference state
@@ -886,6 +900,10 @@ c     calculate quantum energy
             call quantum_energy
      x        (idnode,mxnode,natms,temp,engke,engcfg,engrng,engqpi,
      x        engqvr,qmsrgr)
+
+            call ring_energy
+     x        (idnode,mxnode,natms,temp,engrng,virrng,qmsbnd,stress)
+
           endif
 
           engcfg=engcfg+engrng
@@ -894,7 +912,7 @@ c          write(6,*) "engrng",engrng
         endif
 
 c     calculate correlation function        
-        if(lcorr.and.(mod(nstep,intsta).eq.0))then
+        if(lcorr.and.(mod(nstep,wrtcorr).eq.0))then
           call correlation
      x      (idnode,mxnode,natms,ntpmls,molcorr,keyens,keycorr,nstep,
      x      nummols,numsit,tstep) 

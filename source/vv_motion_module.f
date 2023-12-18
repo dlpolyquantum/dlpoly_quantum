@@ -527,17 +527,25 @@ c     update positions
 
 c  update the position of M-site if water model qtip4p/f requested
 
-        if(lmsite)then
+!        if(lmsite)then
 
-          call qtip4pf(idnode,mxnode,imcon,nbeads,ntpmls,g_qt4f)
+!          call qtip4pf(idnode,mxnode,imcon,nbeads,ntpmls,g_qt4f)
 
-        endif
+!        endif
 
 c     merge position data
         
         if(mxnode.gt.1)
      x    call merge(idnode,mxnode,natms,mxbuff,xxx,yyy,zzz,buffer)
         
+c  update the position of M-site if water model qtip4p/f requested
+
+        if(lmsite)then
+
+          call qtip4pf(idnode,mxnode,imcon,nbeads,ntpmls,g_qt4f)
+
+        endif
+
 c     apply shake corrections to bond constraints
 
         if(ntcons.gt.0)then
@@ -1562,17 +1570,25 @@ c     update positions
 
 c  update the position of M-site if water model qtip4p/f requested
 
-        if(lmsite)then
+c        if(lmsite)then
 
-          call qtip4pf(idnode,mxnode,imcon,nbeads,ntpmls,g_qt4f)
+c          call qtip4pf(idnode,mxnode,imcon,nbeads,ntpmls,g_qt4f)
 
-        endif
+c        endif
 
 c     merge position data, i.e. merge coordinate arrays across
 c     a number of processors        
 
         if(mxnode.gt.1)
      x    call merge(idnode,mxnode,natms,mxbuff,xxx,yyy,zzz,buffer)
+
+c     update the position of M-site if water model qtip4p/f requested
+
+        if(lmsite)then
+
+          call qtip4pf(idnode,mxnode,imcon,nbeads,ntpmls,g_qt4f)
+
+        endif
 
 c cccccccc shake/rattle testing cccccccc
 
@@ -2756,11 +2772,11 @@ c     update positions
 
 c  update the position of M-site if water model qtip4p/f requested
 
-        if(lmsite)then
+c        if(lmsite)then
 
-          call qtip4pf(idnode,mxnode,imcon,nbeads,ntpmls,g_qt4f)
+c          call qtip4pf(idnode,mxnode,imcon,nbeads,ntpmls,g_qt4f)
 
-        endif
+c        endif
 
 c     update the volume based on v_epsilon
 
@@ -2788,6 +2804,14 @@ c     merge position data
         
         if(mxnode.gt.1)
      x    call merge(idnode,mxnode,natms,mxbuff,xxx,yyy,zzz,buffer)
+
+c     update the position of M-site if water model qtip4p/f requested
+
+        if(lmsite)then
+
+          call qtip4pf(idnode,mxnode,imcon,nbeads,ntpmls,g_qt4f)
+
+        endif
 
 c     second stage of velocity verlet algorithm
         

@@ -1281,6 +1281,7 @@ c***********************************************************************
       integer nhko,idnode,imcon,idum,jmp
       integer nlatt,kmax1,kmax2,kmax3,kmaxpow2,keyres
       dimension celprp(10),cell(9)
+      integer nrespa
       
       nhko=0
       mxstak=0
@@ -1344,29 +1345,38 @@ c     open the simulation input file
           elseif(findstring('pimd',record,idum))then
         
             lpimd = .true.
-            if(findstring('nhc',record,idum))then
+            if(findstring('npt',record,idum))then
+              if(findstring('nhc',record,idum))then
+                nbeads=intstr(record,lenrec,idum)
+                nrespa=intstr(record,lenrec,idum)
+                nchain=intstr(record,lenrec,idum)
+                nchain=max(nchain,1)
+              elseif(findstring('pile',record,idum))then
+                nbeads=intstr(record,lenrec,idum)
+              endif
+            elseif(findstring('nhc',record,idum))then
               nbeads=intstr(record,lenrec,idum)
               nchain=intstr(record,lenrec,idum)
               nchain=max(nchain,1)
             elseif(findstring('nm',record,idum))then
               nbeads=intstr(record,lenrec,idum)
+              nrespa=intstr(record,lenrec,idum)
               nchain=intstr(record,lenrec,idum)
               nchain=max(nchain,1)
+            elseif(findstring('pile',record,idum))then
+              nbeads=intstr(record,lenrec,idum)
             elseif(findstring('nve',record,idum))then
               nbeads=intstr(record,lenrec,idum)
               keyres=1
             elseif(findstring('pacmd',record,idum))then
               nbeads=intstr(record,lenrec,idum)
+              nrespa=intstr(record,lenrec,idum)
               nchain=intstr(record,lenrec,idum)
               nchain=max(nchain,1)
               keyres=1
             elseif(findstring('trpmd',record,idum))then
               nbeads=intstr(record,lenrec,idum)
               keyres=1
-            elseif(findstring('npt',record,idum))then
-              nbeads=intstr(record,lenrec,idum)
-              nchain=intstr(record,lenrec,idum)
-              nchain=max(nchain,1)
             else
               nbeads=intstr(record,lenrec,idum)
             endif

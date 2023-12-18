@@ -765,7 +765,7 @@ c     nvt ensemble - nose-hoover chains - normal mode
         
         call pimd_nvt_nhc_nm
      x    (lmsite,isw,idnode,mxnode,natms,imcon,ntpmls,tstep,taut,
-     x    g_qt4f,temp,engke,engthe)
+     x    g_qt4f,temp,engke,engthe,nrespa)
         
       else if(keyens.eq.44) then
         
@@ -807,6 +807,17 @@ c     npt ensemble - nhc barostat - piglet thermostat - normal mode
      x    g_qt4f,press,volm,chit,consv,
      x    conint,engke,elrc,chit_shl,sigma_shl,temp,engthe,uuu)
       
+      else if(keyens.eq.53) then
+        
+c     npt ensemble - PILE thermostat - normal mode
+        
+        call pimd_npt_pile_nm
+     x    (safe,lmsite,isw,idnode,mxnode,natms,imcon,
+     x    ntpmls,ntpatm,ntshl,keyshl,tstep,taut,taup,sigma,
+     x    sigma_volm,alpha_volm,virtot,vircon,virlrc,
+     x    g_qt4f,press,volm,chit,consv,
+     x    conint,engke,elrc,chit_shl,sigma_shl,temp,engthe,uuu)
+
       else if(keyens.eq.61) then
         
 c     nve ensemble (RPMD) - normal mode
@@ -821,7 +832,7 @@ c     PACMD -
 
         call pacmd
      x    (lmsite,isw,idnode,mxnode,natms,imcon,ntpmls,tstep,taut,
-     x    g_qt4f,temp,engke,engthe)
+     x    g_qt4f,temp,engke,engthe,nrespa)
        
       else if(keyens.eq.63) then
 

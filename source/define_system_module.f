@@ -60,7 +60,7 @@ c***********************************************************************
      x  nrespa,g_qt4f,alpha,delr,epsq,fmax,press,quattol,rcut,rprim,
      x  rvdw,taup,taut,temp,timcls,timjob,tolnce,tstep,rlxtol,opttol,
      x  zlen,ehit,xhit,yhit,zhit,ebias,vmin,catchrad,sprneb,deltad,tlow,
-     x  hyp_units,chi,nsp1)
+     x  hyp_units,chi,nsp1,wrtcorr)
       
 c***********************************************************************
 c     
@@ -99,7 +99,7 @@ c***********************************************************************
       real(8) catchrad,sprneb,deltad,tlow,xhit,yhit,zhit,ebias,vmin
       real(8) prntim,chi
       real(8) g_qt4f
-      integer nsp1
+      integer nsp1,wrtcorr
       
 CSGIC      real(8) dummy
 CCRAY      real(8) dummy
@@ -519,37 +519,7 @@ c     read path integral option
           lpimd=.true.
           keyver=2
           keyens=40
-          if(findstring('nvt',directive,idum))then
-            keyens=40
-            nbeads=intstr(directive,lenrec,idum)
-            taut=dblstr(directive,lenrec,idum)
-          elseif(findstring('gth',directive,idum))then
-            keyens=41
-            nbeads=intstr(directive,lenrec,idum)
-            taut=dblstr(directive,lenrec,idum)
-            chi=dblstr(directive,lenrec,idum)
-          elseif(findstring('nhc',directive,idum))then
-            keyens=42
-            nbeads=intstr(directive,lenrec,idum)
-            nchain=intstr(directive,lenrec,idum)
-            taut=dblstr(directive,lenrec,idum)
-            nchain=max(nchain,1)
-          elseif(findstring('nm',directive,idum))then
-            keyens=43
-            nbeads=intstr(directive,lenrec,idum)
-            nchain=intstr(directive,lenrec,idum)
-            taut=dblstr(directive,lenrec,idum)
-            nchain=max(nchain,1)
-          elseif(findstring('pile',directive,idum))then
-            keyens=44
-            nbeads=intstr(directive,lenrec,idum)
-            taut=dblstr(directive,lenrec,idum)
-          elseif(findstring('piglet',directive,idum))then
-            keyens=45
-            nbeads=intstr(directive,lenrec,idum)
-            nsp1=intstr(directive,lenrec,idum)
-            nsp1=nsp1+1
-          elseif(findstring('npt',directive,idum))then
+          if(findstring('npt',directive,idum))then
 c barostat options            
             if(findstring('nhc',directive,idum))then
               keyens=51
@@ -572,15 +542,54 @@ c barostat options
               nrespa=max(nrespa,1)
               nchain=max(nchain,1)
               inhc=.true.         
+            elseif(findstring('pile',directive,idum))then
+              keyens=53
+              nbeads=intstr(directive,lenrec,idum)
+              taut=dblstr(directive,lenrec,idum)
+              taup=dblstr(directive,lenrec,idum)
             endif
+          elseif(findstring('nvt',directive,idum))then
+            keyens=40
+            nbeads=intstr(directive,lenrec,idum)
+            taut=dblstr(directive,lenrec,idum)
+          elseif(findstring('gth',directive,idum))then
+            keyens=41
+            nbeads=intstr(directive,lenrec,idum)
+            taut=dblstr(directive,lenrec,idum)
+            chi=dblstr(directive,lenrec,idum)
+          elseif(findstring('nhc',directive,idum))then
+            keyens=42
+            nbeads=intstr(directive,lenrec,idum)
+            nchain=intstr(directive,lenrec,idum)
+            taut=dblstr(directive,lenrec,idum)
+            nchain=max(nchain,1)
+          elseif(findstring('nm',directive,idum))then
+            keyens=43
+            nbeads=intstr(directive,lenrec,idum)
+            nrespa=intstr(directive,lenrec,idum)
+            nchain=intstr(directive,lenrec,idum)
+            taut=dblstr(directive,lenrec,idum)
+            nrespa=max(nrespa,1)
+            nchain=max(nchain,1)
+          elseif(findstring('pile',directive,idum))then
+            keyens=44
+            nbeads=intstr(directive,lenrec,idum)
+            taut=dblstr(directive,lenrec,idum)
+          elseif(findstring('piglet',directive,idum))then
+            keyens=45
+            nbeads=intstr(directive,lenrec,idum)
+            nsp1=intstr(directive,lenrec,idum)
+            nsp1=nsp1+1
           elseif(findstring('nve',directive,idum))then
             keyens=61
             nbeads=intstr(directive,lenrec,idum)
           elseif(findstring('pacmd',directive,idum))then
             keyens=62
             nbeads=intstr(directive,lenrec,idum)
+            nrespa=intstr(directive,lenrec,idum)
             nchain=intstr(directive,lenrec,idum)
             taut=dblstr(directive,lenrec,idum)
+            nrespa=max(nrespa,1)
             nchain=max(nchain,1)
           elseif(findstring('trpmd',directive,idum))then
             keyens=63
@@ -619,7 +628,9 @@ c     default is nvt
      x          1p,e12.4)")taut
             elseif(keyens.eq.43)then
               write(nrite,
-     x          "(1x,'Canonical Ensemble in normal modes with NHC')")
+     x          "(1x,'Canonical Ensemble in normal modes with mNHC')")
+              write(nrite,"(1x,'Number of  RESPA steps :',i5)")
+     x          nrespa
               write(nrite,"(1x,'Number of Nose-Hoover chains :',i5)")
      x          nchain
               write(nrite,"(1x,'Thermostat relaxation time (ps):',
@@ -636,7 +647,7 @@ c     default is nvt
      x          1p,i5)")nsp1-1
             elseif(keyens.eq.51)then
               write(nrite,
-     x        "(/,1x,'Canonical Ensemble in normal mode with NHC',
+     x        "(/,1x,'NPT Simulation in normal mode with mNHC',
      x          /,1x,'thermostat relaxation time',1p,e12.4,
      x          /,1x,'barostat relaxation time',1p,e12.4,
      x          /,1x,'number of RESPA steps             ',1p,i6,
@@ -644,18 +655,30 @@ c     default is nvt
      x                taut,taup,nrespa,nchain
             elseif(keyens.eq.52)then
               write(nrite,
-     x        "(/,1x,'Canonical Ensemble in normal mode NHC-PIGLET',
+     x        "(/,1x,'NPT Simulation in normal mode with NHC-PIGLET',
      x          /,1x,'barostat relaxation time',1p,e12.4,
      x          /,1x,'number of RESPA steps             ',1p,i6,
      x          /,1x,'number of chains     ',1p,i6,
      x          /,1x,'Thermostat w/ extra no. of momenta of ',1p,i5)")
      x                taup,nrespa,nchain,nsp1-1
+            elseif(keyens.eq.53)then
+              write(nrite,
+     x        "(/,1x,'NPT Simulation in normal mode with PILE',
+     x          /,1x,'thermostat relaxation time',1p,e12.4,
+     x          /,1x,'barostat relaxation time',1p,e12.4)")
+     x                taut,taup
             elseif(keyens.eq.61)then
               write(nrite,
      x          "(1x,'RPMD in normal modes')")
             elseif(keyens.eq.62)then
               write(nrite,
      x          "(1x,'Partialy Adiabatic CMD')")
+              write(nrite,"(1x,'Number of  RESPA steps :',i5)")
+     x          nrespa
+              write(nrite,"(1x,'Number of Nose-Hoover chains :',i5)")
+     x          nchain
+              write(nrite,"(1x,'Thermostat relaxation time (ps):',
+     x          1p,e12.4)")taut
             elseif(keyens.eq.63)then
               write(nrite,
      x          "(1x,'Thermostatted RPMD')")
@@ -668,12 +691,15 @@ c     correlation function option
           if(findstring('velocity',directive,idum))then
             keycorr=1
             molcorr=intstr(directive,lenrec,idum)
+            wrtcorr=intstr(directive,lenrec,idum)
           elseif(findstring('dipole',directive,idum))then
             keycorr=2
             molcorr=intstr(directive,lenrec,idum)
+            wrtcorr=intstr(directive,lenrec,idum)
 c         default is velocity autocorrelation for molecule type 1
           else
             keycorr=1
+            wrtcorr=10
           endif
           if(molcorr.eq.0) molcorr=1
           if(idnode.eq.0)then
@@ -681,10 +707,14 @@ c         default is velocity autocorrelation for molecule type 1
               write(nrite,"(/,1x,'Correlation function: velocity')")
               write(nrite,"(/,1x,'Correlation function molecule:',i5)")
      x          molcorr
+              write(nrite,"(/,1x,'Correlation function steps:',i5)")
+     x          wrtcorr
             elseif(keycorr.eq.2)then 
               write(nrite,"(/,1x,'Correlation function: dipole')")
               write(nrite,"(/,1x,'Correlation function molecule:',i5)")
      x          molcorr
+              write(nrite,"(/,1x,'Correlation function steps:',i5)")
+     x          wrtcorr
             endif
           endif
 
