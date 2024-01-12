@@ -531,19 +531,8 @@ c barostat options
               nrespa=max(nrespa,1)
               nchain=max(nchain,1)
               inhc=.true.         
-            elseif(findstring('piglet',directive,idum))then
-              keyens=52
-              nbeads=intstr(directive,lenrec,idum)
-              nrespa=intstr(directive,lenrec,idum)
-              nchain=intstr(directive,lenrec,idum)
-              taup=dblstr(directive,lenrec,idum)
-              nsp1=intstr(directive,lenrec,idum)
-              nsp1=nsp1+1
-              nrespa=max(nrespa,1)
-              nchain=max(nchain,1)
-              inhc=.true.         
             elseif(findstring('pile',directive,idum))then
-              keyens=53
+              keyens=52
               nbeads=intstr(directive,lenrec,idum)
               taut=dblstr(directive,lenrec,idum)
               taup=dblstr(directive,lenrec,idum)
@@ -654,14 +643,6 @@ c     default is nvt
      x          /,1x,'number of chains     ',1p,i6)")
      x                taut,taup,nrespa,nchain
             elseif(keyens.eq.52)then
-              write(nrite,
-     x        "(/,1x,'NPT Simulation in normal mode with NHC-PIGLET',
-     x          /,1x,'barostat relaxation time',1p,e12.4,
-     x          /,1x,'number of RESPA steps             ',1p,i6,
-     x          /,1x,'number of chains     ',1p,i6,
-     x          /,1x,'Thermostat w/ extra no. of momenta of ',1p,i5)")
-     x                taup,nrespa,nchain,nsp1-1
-            elseif(keyens.eq.53)then
               write(nrite,
      x        "(/,1x,'NPT Simulation in normal mode with PILE',
      x          /,1x,'thermostat relaxation time',1p,e12.4,

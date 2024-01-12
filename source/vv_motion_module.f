@@ -1121,7 +1121,8 @@ c     deallocate working arrays
       subroutine nvtvv_h1
      x  (safe,lshmov,isw,idnode,mxnode,natms,imcon,nscons,ntcons,
      x  ntshl,keyshl,tstep,taut,sigma,chit,consv,conint,engke,
-     x  tolnce,vircon,chit_shl,sigma_shl)
+     x  tolnce,vircon,chit_shl,sigma_shl,
+     x  lmsite,g_qt4f,ntpmls)
 
 c***********************************************************************
 c     
@@ -1145,13 +1146,16 @@ c***********************************************************************
 
       integer, parameter :: nnn=4
       
-      logical safe,lshmov
+      logical safe,lshmov,lmsite
       integer isw,idnode,mxnode,natms,imcon,nscons,ntcons
       integer i,j,k,iatm0,iatm1
       real(8) tstep,taut,sigma,chit,consv,conint,engke,tolnce,vircon
       real(8) hstep,qmass
       integer fail(nnn)
       real(8) strkin(9)
+
+      integer ntpmls
+      real(8) g_qt4f
 
       real(8), allocatable :: xxt(:),yyt(:),zzt(:)
       real(8), allocatable :: txx(:),tyy(:),tzz(:)
@@ -1283,6 +1287,14 @@ c     merge position data
         if(mxnode.gt.1)
      x    call merge(idnode,mxnode,natms,mxbuff,xxx,yyy,zzz,buffer)
 
+c     update the position of M-site if water model qtip4p/f requested
+
+        if(lmsite)then
+
+          call qtip4pf(idnode,mxnode,imcon,nbeads,ntpmls,g_qt4f)
+
+        endif
+
 c     apply shake corrections to bond constraints
         
         if(ntcons.gt.0)then
@@ -1302,6 +1314,14 @@ c     apply shake corrections to bond constraints
 c     second stage of velocity verlet algorithm
         
       else
+
+c  Redistribute the M-site forces if water model qtip4p/f requested
+
+        if(lmsite)then
+
+          call qt4_force_redist(idnode,mxnode,nbeads,ntpmls,g_qt4f)
+
+        endif
 
 c     update velocities
         
@@ -1567,14 +1587,6 @@ c     update positions
           zzz(i)=zzz(i)+tstep*vzz(i)
           
         enddo
-
-c  update the position of M-site if water model qtip4p/f requested
-
-c        if(lmsite)then
-
-c          call qtip4pf(idnode,mxnode,imcon,nbeads,ntpmls,g_qt4f)
-
-c        endif
 
 c     merge position data, i.e. merge coordinate arrays across
 c     a number of processors        
@@ -2600,7 +2612,6 @@ c***********************************************************************
       real(8) hstep,sigma,qmass_t
       real(8) sigma_nhc,qmass_baro,qmass_part
       real(8) volm_mass,sigma_volm,alpha_volm,g_qt4f
-c      real(8) v_epsilon
       real(8) press,volm,virtot,vircon,virlrc
       real(8) heta_nhc,hpeta_nhc,heta_1,heta_rest,hpeta_1,hpeta_rest
       real(8) hepsilon,hksi,hpksi
@@ -2770,26 +2781,9 @@ c     update positions
           
         enddo
 
-c  update the position of M-site if water model qtip4p/f requested
-
-c        if(lmsite)then
-
-c          call qtip4pf(idnode,mxnode,imcon,nbeads,ntpmls,g_qt4f)
-
-c        endif
-
 c     update the volume based on v_epsilon
 
         volm=volm*exp(3.d0*tstep*v_epsilon)
-
-        if(mxnode.gt.1)then
-          
-          buffer(1)=volm
-          call gdsum(buffer(1),1,buffer(2))
-          volm=buffer(1)
-          volm=volm/(mxnode)
-          
-        endif
 
 c     scale cell vectors - isotropic
 
@@ -2838,9 +2832,6 @@ c     update velocities
 
         enddo
 
-cccccc added here for testing scale2 ccc        
-c        engke=getkin(natms,idnode,mxnode)
-
 c     update the momentum variable of the volume
 
         v_epsilon=v_epsilon+hstep*(1.d0/volm_mass)*
@@ -2874,15 +2865,6 @@ c     merge velocity data
         
         if(mxnode.gt.1)
      x    call merge(idnode,mxnode,natms,mxbuff,vxx,vyy,vzz,buffer)
-
-c     scale cell vectors - isotropic
-
-c          scale=(volm/volm0)**(1.d0/3.d0)
-c          scale=exp(tstep*v_epsilon)
-c          do i=1,9
-c            cell(i)=cell0(i)*scale
-c            cell(i)=cell(i)*scale
-c          enddo
 
 c     conserved quantity less kinetic and potential energy terms
 

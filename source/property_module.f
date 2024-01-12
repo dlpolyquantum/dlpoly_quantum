@@ -763,22 +763,13 @@ c     x  +virshl+virtet+virter+virmet+virfld
       stptmp=2.d0*(engke+engrot)/(boltz*degfre)
       stpprs=0.d0
       if(imcon.gt.0)stpprs=(2.d0*engke-stpvir)/(3.d0*stpvol)
-c      if(imcon.gt.0)stpprs=press2
       stpeth=stpeng+stpprs*stpvol
       stpcns=stpeng+consv+engthe
-c      write(6,*) "kinetic",engke
+
 c     convert pressure to units of katm
       
       stpprs=stpprs*prsunt
       
-c      if(idnode.eq.0)then
-        
-c        write(1001,'(20e15.6)')stpvir,virsrp,vircpe,virbnd,vircon,
-c     x      vircom,virtbp,virang,virshl,virtet,virter,virmet,virfld,
-c     x      virrng,stptmp,stpprs,engke,dble(degfre)
-
-c      endif
-
 c     calculate mean squared displacements 
 c     atomic displacements from origin of production run
       

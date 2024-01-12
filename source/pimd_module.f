@@ -1788,10 +1788,10 @@ c     assigneing scaled mass for piglet thermostat,rpmd, or trpmd
                   rzmass((i-iatm0)*nbeads+k)=
      x              dble(nbeads)/weight((k-1)*natms+i)
                 else
-                  zmass((i-iatm0)*nbeads+k)=weight((k-1)*natms+i)
-     x              /dble(nbeads)
-c                  zmass((i-iatm0)*nbeads+k)=weight((k-1)*natms+i)*
-c     x              nmfreq(k)**2/(omega**2*dble(nbeads))
+c                  zmass((i-iatm0)*nbeads+k)=weight((k-1)*natms+i)
+c     x              /dble(nbeads)
+                  zmass((i-iatm0)*nbeads+k)=weight((k-1)*natms+i)*
+     x              nmfreq(k)**2/(omega**2*dble(nbeads))
                   rzmass((i-iatm0)*nbeads+k)=dble(nbeads)*omega**2/
      x              (nmfreq(k)**2*weight((k-1)*natms+i))
                 endif
@@ -1804,6 +1804,11 @@ c     x              nmfreq(k)**2/(omega**2*dble(nbeads))
 
         enddo
       
+        if(keyens.eq.62)then
+           omega=nbeads**(dble(nbeads)/dble(nbeads-1))*boltz*temp/hbar
+           nmfreq(k)=omega
+           if(k.eq.1)nmfreq(k)=0.d0
+        endif
 c      if(keyens.eq.45)then
 c        omega=nbeads**(dble(nbeads)/dble(nbeads-1))*boltz*temp/hbar
 c        adiabvec(k)=nmfreq(k)**2/(omega**2)
