@@ -2349,6 +2349,7 @@ c     initialise rinq potential energy and rms bondlength
       
 c     fixed contributions to spring constant
       
+c      sprcon=0.5d0*freq**2
       sprcon=0.5d0*dble(nbeads)*(boltz*temp/hbar)**2
       
 c     inverse of cell matrix

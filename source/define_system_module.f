@@ -99,7 +99,7 @@ c***********************************************************************
       real(8) catchrad,sprneb,deltad,tlow,xhit,yhit,zhit,ebias,vmin
       real(8) prntim,chi
       real(8) g_qt4f
-      integer nsp1
+      integer nsp1,wrtcorr
       
 CSGIC      real(8) dummy
 CCRAY      real(8) dummy
