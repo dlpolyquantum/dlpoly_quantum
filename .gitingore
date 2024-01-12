@@ -1,2 +1,2 @@
-*.o
-*.mod
+source/*.o
+source/*.mod

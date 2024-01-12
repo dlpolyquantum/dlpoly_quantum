@@ -30,11 +30,7 @@ ccc npt variable
       use site_module, only:dens
       use nhc_module, only:ksi,pksi,eta_nhc,peta,v_epsilon
      
-<<<<<<< HEAD
       public pimd_nvt,pimd_nvt_nhc,pimd_nvt_gth1,pimd_nvt_gth2
-=======
-      public pimd_nvt,pimd_nvt_nhc,pimd_nvt_gth1,pimd_nvt_gth2,press2
->>>>>>> refs/remotes/origin/normalmode
       
       contains
       
@@ -847,13 +843,8 @@ c     verlet first part
         
 c     integrate thermostats - 1/2 step
         
-<<<<<<< HEAD
         if(nchain.gt.0)call thermo_chain_mnhc
      x  (idnode,mxnode,natms,nstart,hstep,taut,temp,nrespa)
-=======
-        if(nchain.gt.0)call thermo_chain_sy
-     x    (idnode,mxnode,natms,qstep,taut,temp)
->>>>>>> refs/remotes/origin/normalmode
         
 c     integrate bead momenta - 1/2 step
         
@@ -865,14 +856,6 @@ c     integrate bead momenta - 1/2 step
           
         enddo
         
-<<<<<<< HEAD
-=======
-c     integrate thermostats - 1/4 step
-        
-        if(nchain.gt.0)call thermo_chain_sy
-     x    (idnode,mxnode,natms,qstep,taut,temp)
-        
->>>>>>> refs/remotes/origin/normalmode
 c     integrate positions (full step)
         
         do i=1,iatm1-iatm0
@@ -892,14 +875,6 @@ c     verlet second part
         
       else
         
-<<<<<<< HEAD
-=======
-c     integrate thermostats - 1/4 step
-        
-        if(nchain.gt.0)call thermo_chain_sy
-     x    (idnode,mxnode,natms,qstep,taut,temp)
-        
->>>>>>> refs/remotes/origin/normalmode
 c     integrate bead momenta - 1/2 step
         
         do i=1,iatm1-iatm0
@@ -912,13 +887,8 @@ c     integrate bead momenta - 1/2 step
         
 c     integrate thermostats - 1/2 step
         
-<<<<<<< HEAD
         if(nchain.gt.0)call thermo_chain_mnhc
      x  (idnode,mxnode,natms,nstart,hstep,taut,temp,nrespa)
-=======
-        if(nchain.gt.0)call thermo_chain_sy
-     x    (idnode,mxnode,natms,qstep,taut,temp)
->>>>>>> refs/remotes/origin/normalmode
         
 c     calculate thermostat energy
         
@@ -1013,12 +983,6 @@ c     verlet first part
       if(isw.eq.1)then
        
 c     integrate thermostats - 1/2 step
-<<<<<<< HEAD
-=======
-        
-        if(nchain.gt.0)call thermo_chain_nm_mnhc
-     x    (idnode,mxnode,natms,nstart,hstep,taut,temp,nrespa)
->>>>>>> refs/remotes/origin/normalmode
         
         if(nchain.gt.0)call thermo_chain_nm_mnhc
      x    (idnode,mxnode,natms,nstart,hstep,taut,temp,nrespa)
@@ -1281,10 +1245,7 @@ c     block indices
 c     thermostat parameters
       
       hstep=tstep/2.d0
-<<<<<<< HEAD
 c     only thermostat non-centroid modes
-=======
->>>>>>> refs/remotes/origin/normalmode
       nstart=2
 
 c     verlet first part
@@ -1410,11 +1371,7 @@ c**********************************************************************
       
       implicit none
 
-<<<<<<< HEAD
       logical lmsite,noskip,newjob
-=======
-      logical lmsite,noskip
->>>>>>> refs/remotes/origin/normalmode
       integer, intent(in)  :: imcon,ntpmls
       real(8), intent(in)  :: g_qt4f
       integer, intent(in)  :: isw,idnode,mxnode,natms
@@ -1423,7 +1380,6 @@ c**********************************************************************
       
       integer :: i,j,k,iatm0,iatm1
       real(8) :: hstep,strkin(9),uuu(102),beta
-<<<<<<< HEAD
       real(8) :: mass(nbeads),rmass(nbeads),gama(nbeads)
 
       data newjob/.true./
@@ -1432,9 +1388,6 @@ c**********************************************************************
 c     initialize pile parameters C1 and C2 vector for nbeads
 
       if(newjob)then
-=======
-      real(8) :: mass(nbeads),rmass(nbeads)
->>>>>>> refs/remotes/origin/normalmode
 
 c     block indices
       
@@ -1473,13 +1426,8 @@ c     thermostat momentum - 1/2 step
 
         do i=1,(iatm1-iatm0)/nbeads
           do j=1,nbeads
-<<<<<<< HEAD
             pxx((i-1)*nbeads+j)=pxx((i-1)*nbeads+j)*pileC1(j)+
      x        sqrt(zmass((i-1)*nbeads+j)/beta)*pileC2(j)*
-=======
-            pxx((i-1)*nbeads+j)=pxx((i-1)*nbeads+j)*cvec1(j)+
-     x        sqrt(zmass((i-1)*nbeads+j)/beta)*cvec2(j)*
->>>>>>> refs/remotes/origin/normalmode
      x        gssrnd(noskip,uuu)
             pyy((i-1)*nbeads+j)=pyy((i-1)*nbeads+j)*pileC1(j)+
      x        sqrt(zmass((i-1)*nbeads+j)/beta)*pileC2(j)*
@@ -1627,460 +1575,6 @@ c**********************************************************************
       return
       end function gssrnd
       
-<<<<<<< HEAD
-=======
-      subroutine thermo_chain_vv
-     x  (idnode,mxnode,natms,tstep,taut,temp)
-      
-c**********************************************************************
-c     
-c     dl_poly classic routine for updating the thermostat chain momenta in
-c     path integral molecular dynamics (velocity verlet version)
-c     
-c     copyright - daresbury laboratory
-c     author    - w.smith aug 2016
-c     
-c**********************************************************************
-      
-      implicit none
-      
-      integer, intent(in) :: idnode,mxnode,natms
-      real(8), intent(in) :: tstep,taut,temp
-      integer i,j,k,m,n,fail,iatm0,iatm1
-      real(8) hstep,qstep
-      real(8), allocatable :: qqq(:)
-
-      logical safe
-      iatm0=nbeads*((idnode*natms)/mxnode)
-      iatm1=nbeads*(((idnode+1)*natms)/mxnode)
-
-c     allocate working arrays
-      
-      fail=0
-      safe=.true.
-      
-      allocate (qqq(nbeads),stat=fail)
-      
-      safe=(fail.eq.0)
-      if(mxnode.gt.1)call gstate(safe)
-      if(.not.safe)call error(idnode,536)
-      
-c     define scaled time steps
-      
-      hstep=0.5d0*tstep
-      qstep=0.25d0*tstep
-      
-c     define thermostat masses
-      
-      qqq(1)=boltz*temp*taut**2
-      do k=2,nbeads
-        qqq(k)=hbar**2/(boltz*temp*dble(nbeads))
-      enddo
-      
-c     integrate thermostat momenta - 1/2 step
-      
-      do k=1,nbeads
-        
-        do i=k,iatm1-iatm0,nbeads
-          
-          if(nchain.gt.1)then
-            
-            pcx(nchain,i)=pcx(nchain,i)+
-     x        hstep*(pcx(nchain-1,i)**2/qqq(k)-boltz*temp)
-            pcy(nchain,i)=pcy(nchain,i)+
-     x        hstep*(pcy(nchain-1,i)**2/qqq(k)-boltz*temp)
-            pcz(nchain,i)=pcz(nchain,i)+
-     x        hstep*(pcz(nchain-1,i)**2/qqq(k)-boltz*temp)
-
-          endif
-          
-          if(nchain.gt.2)then
-            
-            do j=nchain-1,2,-1
-              
-              pcx(j,i)=pcx(j,i)*(1.d0-qstep*pcx(j+1,i)/qqq(k))
-              pcy(j,i)=pcy(j,i)*(1.d0-qstep*pcy(j+1,i)/qqq(k))
-              pcz(j,i)=pcz(j,i)*(1.d0-qstep*pcz(j+1,i)/qqq(k))
-
-              pcx(j,i)=pcx(j,i)+hstep*(pcx(j-1,i)**2/qqq(k)-boltz*temp)
-              pcy(j,i)=pcy(j,i)+hstep*(pcy(j-1,i)**2/qqq(k)-boltz*temp)
-              pcz(j,i)=pcz(j,i)+hstep*(pcz(j-1,i)**2/qqq(k)-boltz*temp)
-              
-              pcx(j,i)=pcx(j,i)*(1.d0-qstep*pcx(j+1,i)/qqq(k))
-              pcy(j,i)=pcy(j,i)*(1.d0-qstep*pcy(j+1,i)/qqq(k))
-              pcz(j,i)=pcz(j,i)*(1.d0-qstep*pcz(j+1,i)/qqq(k))
-              
-            enddo
-
-          endif
-          
-          if(nchain.gt.1)then
-            
-            pcx(1,i)=pcx(1,i)*(1.d0-qstep*pcx(2,i)/qqq(k))
-            pcy(1,i)=pcy(1,i)*(1.d0-qstep*pcy(2,i)/qqq(k))
-            pcz(1,i)=pcz(1,i)*(1.d0-qstep*pcz(2,i)/qqq(k))
-            
-          endif
-          
-          pcx(1,i)=pcx(1,i)+hstep*(pxx(i)**2*rzmass(i)-boltz*temp)
-          pcy(1,i)=pcy(1,i)+hstep*(pyy(i)**2*rzmass(i)-boltz*temp)
-          pcz(1,i)=pcz(1,i)+hstep*(pzz(i)**2*rzmass(i)-boltz*temp)
-          
-          if(nchain.gt.1)then
-            
-            pcx(1,i)=pcx(1,i)*(1.d0-qstep*pcx(2,i)/qqq(k))
-            pcy(1,i)=pcy(1,i)*(1.d0-qstep*pcy(2,i)/qqq(k))
-            pcz(1,i)=pcz(1,i)*(1.d0-qstep*pcz(2,i)/qqq(k))
-            
-          endif
-         
-        enddo
-        
-      enddo
-      
-c     apply thermostats to bead momenta
-      
-      do k=1,nbeads
-        
-        do i=k,iatm1-iatm0,nbeads
-          
-          pxx(i)=pxx(i)*(1.d0-(tstep/qqq(k))*pcx(1,i))
-          pyy(i)=pyy(i)*(1.d0-(tstep/qqq(k))*pcy(1,i))
-          pzz(i)=pzz(i)*(1.d0-(tstep/qqq(k))*pcz(1,i))
-          
-        enddo
-        
-      enddo
-      
-c     integrate thermostats - full step
-      
-      do k=1,nbeads
-        
-        do i=k,iatm1-iatm0,nbeads
-          
-          do j=1,nchain
-            
-            etx(j,i)=etx(j,i)+tstep*pcx(j,i)/qqq(k)
-            ety(j,i)=ety(j,i)+tstep*pcy(j,i)/qqq(k)
-            etz(j,i)=etz(j,i)+tstep*pcz(j,i)/qqq(k)
-            
-          enddo
-          
-        enddo
-        
-      enddo
-      
-c     integrate thermostat momenta - 1/2 step
-      
-      do k=1,nbeads
-        
-        do i=k,iatm1-iatm0,nbeads
-
-          if(nchain.gt.1)then
-            
-            pcx(1,i)=pcx(1,i)*(1.d0-qstep*pcx(2,i)/qqq(k))
-            pcy(1,i)=pcy(1,i)*(1.d0-qstep*pcy(2,i)/qqq(k))
-            pcz(1,i)=pcz(1,i)*(1.d0-qstep*pcz(2,i)/qqq(k))
-            
-          endif
-          
-          pcx(1,i)=pcx(1,i)+hstep*(pxx(i)**2*rzmass(i)-boltz*temp)
-          pcy(1,i)=pcy(1,i)+hstep*(pyy(i)**2*rzmass(i)-boltz*temp)
-          pcz(1,i)=pcz(1,i)+hstep*(pzz(i)**2*rzmass(i)-boltz*temp)
-
-          if(nchain.gt.1)then
-            
-            pcx(1,i)=pcx(1,i)*(1.d0-qstep*pcx(2,i)/qqq(k))
-            pcy(1,i)=pcy(1,i)*(1.d0-qstep*pcy(2,i)/qqq(k))
-            pcz(1,i)=pcz(1,i)*(1.d0-qstep*pcz(2,i)/qqq(k))
-
-          endif
-          
-          if(nchain.gt.2)then
-            
-            do j=2,nchain-1
-              
-              pcx(j,i)=pcx(j,i)*(1.d0-qstep*pcx(j+1,i)/qqq(k))
-              pcy(j,i)=pcy(j,i)*(1.d0-qstep*pcy(j+1,i)/qqq(k))
-              pcz(j,i)=pcz(j,i)*(1.d0-qstep*pcz(j+1,i)/qqq(k))
-              
-              pcx(j,i)=pcx(j,i)+hstep*(pcx(j-1,i)**2/qqq(k)-boltz*temp)
-              pcy(j,i)=pcy(j,i)+hstep*(pcy(j-1,i)**2/qqq(k)-boltz*temp)
-              pcz(j,i)=pcz(j,i)+hstep*(pcz(j-1,i)**2/qqq(k)-boltz*temp)
-              
-              pcx(j,i)=pcx(j,i)*(1.d0-qstep*pcx(j+1,i)/qqq(k))
-              pcy(j,i)=pcy(j,i)*(1.d0-qstep*pcy(j+1,i)/qqq(k))
-              pcz(j,i)=pcz(j,i)*(1.d0-qstep*pcz(j+1,i)/qqq(k))
-              
-            enddo
-
-          endif
-          
-          if(nchain.gt.1)then
-            
-            pcx(nchain,i)=pcx(nchain,i)+
-     x        hstep*(pcx(nchain-1,i)**2/qqq(k)-boltz*temp)
-            pcy(nchain,i)=pcy(nchain,i)+
-     x        hstep*(pcy(nchain-1,i)**2/qqq(k)-boltz*temp)
-            pcz(nchain,i)=pcz(nchain,i)+
-     x        hstep*(pcz(nchain-1,i)**2/qqq(k)-boltz*temp)
-            
-          endif
-         
-        enddo
-        
-      enddo
-      
-      deallocate (qqq,stat=fail)
-      
-      safe=(fail.eq.0)
-      if(mxnode.gt.1)call gstate(safe)
-      if(.not.safe)call error(idnode,537)
-      
-      end subroutine thermo_chain_vv
-
-      subroutine thermo_chain_sy
-     x  (idnode,mxnode,natms,tstep,taut,temp)
-      
-c**********************************************************************
-c     
-c     dl_poly classic routine for updating the thermostat chain momenta in
-c     path integral molecular dynamics (suzuki-yoshida version)
-c     
-c     suzuki-yoshida sixth order scheme
-c     
-c     copyright - daresbury laboratory
-c     author    - w.smith aug 2016
-c     
-c**********************************************************************
-      
-      implicit none
-
-      logical safe
-      integer, intent(in) :: idnode,mxnode,natms
-      real(8), intent(in) :: tstep,taut,temp
-      integer i,j,k,m,n,fail,iatm0,iatm1,nsy,ncyc
-      real(8) fstep,hstep,qstep,w1,w2,w3,w4,w5,w6,w7
-      real(8) wsy(7)
-      real(8), allocatable :: qqq(:)
-
-      safe=.true.
-      
-c     suzuki-yoshida parameters
-
-      nsy=7
-      ncyc=10
-      wsy(1)=0.784513610477560d0
-      wsy(2)=0.235573213359357d0
-      wsy(3)=-1.17767998417887d0
-      wsy(4)=1.d0-2.d0*(wsy(1)+wsy(2)+wsy(3))
-      wsy(5)=-1.17767998417887d0
-      wsy(6)=0.235573213359357d0
-      wsy(7)=0.784513610477560d0
-      
-      iatm0=nbeads*((idnode*natms)/mxnode)
-      iatm1=nbeads*(((idnode+1)*natms)/mxnode)
-
-c     allocate working arrays
-      
-      fail=0
-      
-      allocate (qqq(nbeads),stat=fail)
-      
-      safe=(fail.eq.0)
-      if(mxnode.gt.1)call gstate(safe)
-      if(.not.safe)call error(idnode,538)
-      
-c     define thermostat masses
-      
-      qqq(1)=boltz*temp*taut**2
-      do k=2,nbeads
-        qqq(k)=hbar**2/(boltz*temp*dble(nbeads))
-      enddo
-      
-      do m=1,nsy
-        
-        do n=1,ncyc
-          
-c     define scaled time steps
-          
-          fstep=tstep*wsy(m)/dble(ncyc)
-          hstep=0.5d0*tstep*wsy(m)/dble(ncyc)
-          qstep=0.25d0*tstep*wsy(m)/dble(ncyc)
-          
-c     integrate thermostat momenta
-          
-          do k=1,nbeads
-            
-            do i=k,iatm1-iatm0,nbeads
-              
-              if(nchain.gt.1)then
-                
-                pcx(nchain,i)=pcx(nchain,i)+
-     x            hstep*(pcx(nchain-1,i)**2/qqq(k)-boltz*temp)
-                pcy(nchain,i)=pcy(nchain,i)+
-     x            hstep*(pcy(nchain-1,i)**2/qqq(k)-boltz*temp)
-                pcz(nchain,i)=pcz(nchain,i)+
-     x            hstep*(pcz(nchain-1,i)**2/qqq(k)-boltz*temp)
-
-              endif
-              
-              if(nchain.gt.2)then
-                
-                do j=nchain-1,2,-1
-                  
-                  pcx(j,i)=pcx(j,i)*(1.d0-qstep*pcx(j+1,i)/qqq(k))
-                  pcy(j,i)=pcy(j,i)*(1.d0-qstep*pcy(j+1,i)/qqq(k))
-                  pcz(j,i)=pcz(j,i)*(1.d0-qstep*pcz(j+1,i)/qqq(k))
-
-                  pcx(j,i)=pcx(j,i)+hstep*(pcx(j-1,i)**2/qqq(k)-
-     x              boltz*temp)
-                  pcy(j,i)=pcy(j,i)+hstep*(pcy(j-1,i)**2/qqq(k)-
-     x              boltz*temp)
-                  pcz(j,i)=pcz(j,i)+hstep*(pcz(j-1,i)**2/qqq(k)-
-     x              boltz*temp)
-                  
-                  pcx(j,i)=pcx(j,i)*(1.d0-qstep*pcx(j+1,i)/qqq(k))
-                  pcy(j,i)=pcy(j,i)*(1.d0-qstep*pcy(j+1,i)/qqq(k))
-                  pcz(j,i)=pcz(j,i)*(1.d0-qstep*pcz(j+1,i)/qqq(k))
-                  
-                enddo
-
-              endif
-              
-              if(nchain.gt.1)then
-                
-                pcx(1,i)=pcx(1,i)*(1.d0-qstep*pcx(2,i)/qqq(k))
-                pcy(1,i)=pcy(1,i)*(1.d0-qstep*pcy(2,i)/qqq(k))
-                pcz(1,i)=pcz(1,i)*(1.d0-qstep*pcz(2,i)/qqq(k))
-                
-              endif
-              
-              pcx(1,i)=pcx(1,i)+hstep*(pxx(i)**2*rzmass(i)-boltz*temp)
-              pcy(1,i)=pcy(1,i)+hstep*(pyy(i)**2*rzmass(i)-boltz*temp)
-              pcz(1,i)=pcz(1,i)+hstep*(pzz(i)**2*rzmass(i)-boltz*temp)
-              
-              if(nchain.gt.1)then
-                
-                pcx(1,i)=pcx(1,i)*(1.d0-qstep*pcx(2,i)/qqq(k))
-                pcy(1,i)=pcy(1,i)*(1.d0-qstep*pcy(2,i)/qqq(k))
-                pcz(1,i)=pcz(1,i)*(1.d0-qstep*pcz(2,i)/qqq(k))
-                
-              endif
-              
-            enddo
-            
-          enddo
-          
-c     integrate thermostat variables
-          
-          do k=1,nbeads
-            
-            do i=k,iatm1-iatm0,nbeads
-              
-              do j=1,nchain
-                
-                etx(j,i)=etx(j,i)+fstep*pcx(j,i)/qqq(k)
-                ety(j,i)=ety(j,i)+fstep*pcy(j,i)/qqq(k)
-                etz(j,i)=etz(j,i)+fstep*pcz(j,i)/qqq(k)
-                
-              enddo
-              
-            enddo
-            
-          enddo
-          
-c     apply thermostats to bead momenta
-          
-          do k=1,nbeads
-            
-            do i=k,iatm1-iatm0,nbeads
-              
-              pxx(i)=pxx(i)*(1.d0-(fstep/qqq(k))*pcx(1,i))
-              pyy(i)=pyy(i)*(1.d0-(fstep/qqq(k))*pcy(1,i))
-              pzz(i)=pzz(i)*(1.d0-(fstep/qqq(k))*pcz(1,i))
-              
-            enddo
-            
-          enddo
-        
-c     integrate thermostat momenta
-          
-          do k=1,nbeads
-            
-            do i=k,iatm1-iatm0,nbeads
-              
-              if(nchain.gt.1)then
-                
-                pcx(1,i)=pcx(1,i)*(1.d0-qstep*pcx(2,i)/qqq(k))
-                pcy(1,i)=pcy(1,i)*(1.d0-qstep*pcy(2,i)/qqq(k))
-                pcz(1,i)=pcz(1,i)*(1.d0-qstep*pcz(2,i)/qqq(k))
-                
-              endif
-              
-              pcx(1,i)=pcx(1,i)+hstep*(pxx(i)**2*rzmass(i)-boltz*temp)
-              pcy(1,i)=pcy(1,i)+hstep*(pyy(i)**2*rzmass(i)-boltz*temp)
-              pcz(1,i)=pcz(1,i)+hstep*(pzz(i)**2*rzmass(i)-boltz*temp)
-              
-              if(nchain.gt.1)then
-                
-                pcx(1,i)=pcx(1,i)*(1.d0-qstep*pcx(2,i)/qqq(k))
-                pcy(1,i)=pcy(1,i)*(1.d0-qstep*pcy(2,i)/qqq(k))
-                pcz(1,i)=pcz(1,i)*(1.d0-qstep*pcz(2,i)/qqq(k))
-                
-              endif
-              
-              if(nchain.gt.2)then
-                
-                do j=2,nchain-1
-                  
-                  pcx(j,i)=pcx(j,i)*(1.d0-qstep*pcx(j+1,i)/qqq(k))
-                  pcy(j,i)=pcy(j,i)*(1.d0-qstep*pcy(j+1,i)/qqq(k))
-                  pcz(j,i)=pcz(j,i)*(1.d0-qstep*pcz(j+1,i)/qqq(k))
-                  
-                  pcx(j,i)=pcx(j,i)+hstep*(pcx(j-1,i)**2/qqq(k)-
-     x              boltz*temp)
-                  pcy(j,i)=pcy(j,i)+hstep*(pcy(j-1,i)**2/qqq(k)-
-     x              boltz*temp)
-                  pcz(j,i)=pcz(j,i)+hstep*(pcz(j-1,i)**2/qqq(k)-
-     x              boltz*temp)
-                  
-                  pcx(j,i)=pcx(j,i)*(1.d0-qstep*pcx(j+1,i)/qqq(k))
-                  pcy(j,i)=pcy(j,i)*(1.d0-qstep*pcy(j+1,i)/qqq(k))
-                  pcz(j,i)=pcz(j,i)*(1.d0-qstep*pcz(j+1,i)/qqq(k))
-                  
-                enddo
-                
-              endif
-              
-              if(nchain.gt.1)then
-                
-                pcx(nchain,i)=pcx(nchain,i)+
-     x            hstep*(pcx(nchain-1,i)**2/qqq(k)-boltz*temp)
-                pcy(nchain,i)=pcy(nchain,i)+
-     x            hstep*(pcy(nchain-1,i)**2/qqq(k)-boltz*temp)
-                pcz(nchain,i)=pcz(nchain,i)+
-     x            hstep*(pcz(nchain-1,i)**2/qqq(k)-boltz*temp)
-                
-              endif
-              
-            enddo
-            
-          enddo
-          
-        enddo
-        
-      enddo
-      
-      deallocate (qqq,stat=fail)
-      
-      safe=(fail.eq.0)
-      if(mxnode.gt.1)call gstate(safe)
-      if(.not.safe)call error(idnode,539)
-      
-      end subroutine thermo_chain_sy
-
->>>>>>> refs/remotes/origin/normalmode
       subroutine thermostat_energy
      x  (idnode,mxnode,natms,nbeads,nchain,qq1,qqk,temp,engthe)
 
@@ -2477,11 +1971,7 @@ c                j. chem. phys. 110, 3275 (1999)
 c                ceriotti, more, manolopoulos
 c                comp. phys. comm. 185, 1019 (2014)
 c
-<<<<<<< HEAD
 c     copyright - Dil Limbu and Nathan London
-=======
-c     copyright - 
->>>>>>> refs/remotes/origin/normalmode
 c     authors   - Dil Limbu and Nathan London 2023
 c     
 c**********************************************************************
@@ -3157,14 +2647,6 @@ c     conserved quantity less kinetic and potential energy terms
 
        consv=0.50*volm_a*volm_a/volm_mass+(press*volm)
 
-<<<<<<< HEAD
-=======
-c     calculate thermostat energy
-        
-c        call thermostat_energy
-c     x    (idnode,mxnode,natms,nbeads,nchain,qq1,qqk,temp,engthe)
-        
->>>>>>> refs/remotes/origin/normalmode
 c     unstage momenta (needed for REVCON file)
         
         call norm2momenta(idnode,mxnode,natms)
@@ -3365,11 +2847,7 @@ c     path integral molecular dynamics (suzuki-yoshida version)
 c     
 c     suzuki-yoshida sixth order scheme
 c     
-<<<<<<< HEAD
 c     copyright - Dil Limbu and Nathan London
-=======
-c     copyright - 
->>>>>>> refs/remotes/origin/normalmode
 c     authors   - Dil Limbu and Nathan London 2023
 c     
 c**********************************************************************
@@ -3386,11 +2864,6 @@ c**********************************************************************
       real(8)  :: expx,expy,expz
 
       safe=.true.
-<<<<<<< HEAD
-     
-=======
-      
->>>>>>> refs/remotes/origin/normalmode
 c     suzuki-yoshida parameters
 
       nsy=7
@@ -3786,9 +3259,5 @@ c     integrate thermostat momenta
       
       end subroutine thermo_chain_nm_mnhc
 
-<<<<<<< HEAD
-=======
-
->>>>>>> refs/remotes/origin/normalmode
       end module vv_pimd_module
       
