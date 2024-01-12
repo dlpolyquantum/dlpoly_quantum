@@ -1,5 +1,4 @@
-# Master makefile for DL_POLY Classic
-# Author: W. Smith January Dec 2010
+# Master makefile for DL_POLY Quantum
 # 
 #=======================================================================
 # Define default settings
@@ -7,7 +6,7 @@
 
 BINROOT = ../execute
 CC  = gcc
-EX = DLPOLY1.X
+EX = DLPOLY.X
 EXE = $(BINROOT)/$(EX)
 FC=mpif90
 SHELL=/bin/sh
@@ -31,6 +30,7 @@ OBJ_MOD = parse_module.o setup_module.o error_module.o \
 	nlist_builders_module.o forces_module.o \
 	lf_motion_module.o lf_rotation1_module.o \
 	lf_rotation2_module.o vv_motion_module.o \
+	pimd_piglet_module.o \
 	vv_rotation1_module.o vv_rotation2_module.o vv_pimd_module.o\
 	pmf_module.o integrator_module.o optimiser_module.o \
 	hyper_dynamics_module.o driver_module.o \
@@ -62,7 +62,7 @@ debug:
 
 #=================== Dlpoly ==========================================
 dlpoly:
-	$(MAKE) LD="mpif90 -o" LDFLAGS="" \
+	$(MAKE) LD="mpif90 -o" LDFLAGS="-lblas -llapack " \
 	FC=mpif90 FFLAGS?="-c -O2" \
 	EX=$(EX) BINROOT=$(BINROOT) $(TYPE)
 

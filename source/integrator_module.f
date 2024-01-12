@@ -406,10 +406,10 @@ c     Nose-Hoover thermostat
           call nvtvv_h1
      x      (safe,lshmov,isw,idnode,mxnode,natms,imcon,nscons,
      x      ntcons,ntshl,keyshl,tstep,taut,sigma,chit,consv,
-     x      conint,engke,tolnce,vircon,chit_shl,sigma_shl)
+     x      conint,engke,tolnce,vircon,chit_shl,sigma_shl,
+     x      lmsite,g_qt4f,ntpmls)
           
         elseif(keyens.eq.4) then
-
 
 c     Berendsen thermostat and isotropic barostat
 
@@ -678,9 +678,9 @@ c     eliminate "flying ice cube" in long simulations (Berendsen)
       return
       end subroutine vv_integrate
 
-      subroutine pimd_integrate
-     x  (lmsite,isw,idnode,mxnode,imcon,ntpmls,natms,keyens,nstep,tstep,
-     x  taut,g_qt4f,temp,engke,engthe,chi,uuu,gaumom)
+c      subroutine pimd_integrate
+c     x  (lmsite,isw,idnode,mxnode,imcon,ntpmls,natms,keyens,nstep,tstep,
+c     x  taut,g_qt4f,temp,engke,engthe,chi,uuu,gaumom)
       
 c***********************************************************************
 c     
@@ -693,13 +693,45 @@ c     author    - w. smith september 2016
 c     
 c***********************************************************************
 
+c      implicit none
+
+c      logical lmsite
+c      integer isw,idnode,mxnode,imcon,ntpmls,natms,keyens,nstep
+c      real(8) tstep,engke,engthe,temp,taut,chi,g_qt4f
+c      real(8) uuu(102),gaumom(0:5)
+      
+       subroutine pimd_integrate
+     x      (lmsite,isw,idnode,mxnode,imcon,ntpmls,natms,keyens,nstep,
+     x      tstep,g_qt4f,temp,engke,engthe,chi,uuu,gaumom,
+     x      safe,nrespa,ntpatm,ntshl,keyshl,taut,taup,sigma,
+     x      sigma_nhc,sigma_volm,alpha_volm,virtot,vircon,virlrc,virrng,
+     x      press,volm,chit,consv,conint,elrc,chit_shl,sigma_shl)
+      
+c***********************************************************************
+c     
+c     dl_poly subroutine for selecting the integration algorithm
+c     to solve the equations of motion. based on the velocity
+c     verlet algorithm
+c     
+c     copyright - daresbury laboratory
+c     author    - w. smith february 2005
+c     
+c***********************************************************************
+
       implicit none
 
-      logical lmsite
-      integer isw,idnode,mxnode,imcon,ntpmls,natms,keyens,nstep
-      real(8) tstep,engke,engthe,temp,taut,chi,g_qt4f
-      real(8) uuu(102),gaumom(0:5)
-      
+      logical safe,safep,lcnb,lshmov,lnfic,lmsite
+      integer isw,idnode,mxnode,imcon,natms,ngrp,keyens,nscons
+      integer nchain,nrespa,ntpmls
+      integer ntcons,ntpatm,ntfree,nspmf,ntpmf,mode,nstep,nofic
+      integer ntshl,keyshl
+      real(8) tstep,engke,engrot,tolnce,vircon,vircom,virrng
+      real(8) virtot,temp,press,volm,sigma,taut,taup,chit,chip
+      real(8) consv,conint,elrc,virlrc,virpmf,chit_shl,sigma_shl
+      real(8) sigma_nhc,sigma_volm,alpha_volm,g_qt4f
+      real(8) gaumom(0:5)
+      real(8) :: uuu(102),chi,engthe
+
       
       engthe=0.d0
       
@@ -725,10 +757,79 @@ c     nvt ensemble - nose-hoover chains
         
         call pimd_nvt_nhc
      x    (lmsite,isw,idnode,mxnode,natms,imcon,ntpmls,tstep,taut,
-     x    g_qt4f,temp,engke,engthe)
+     x    g_qt4f,temp,engke,engthe,nrespa)
         
-      else
+      else if(keyens.eq.43) then
         
+c     nvt ensemble - nose-hoover chains - normal mode
+        
+        call pimd_nvt_nhc_nm
+     x    (lmsite,isw,idnode,mxnode,natms,imcon,ntpmls,tstep,taut,
+     x    g_qt4f,temp,engke,engthe,nrespa)
+        
+      else if(keyens.eq.44) then
+        
+c     nvt ensemble - PILE thermostat - normal mode
+        
+        call pimd_nvt_pile_nm
+     x    (lmsite,isw,idnode,mxnode,natms,imcon,ntpmls,tstep,taut,
+     x    g_qt4f,temp,engke,engthe,uuu)
+
+      else if(keyens.eq.45) then
+        
+c     nvt ensemble - piglet thermostat - normal mode
+        
+        call pimd_nvt_piglet
+     x    (lmsite,isw,idnode,mxnode,natms,imcon,ntpmls,tstep,taut,
+     x    g_qt4f,temp,engke,engthe,uuu,virtot,vircon,virrng)
+
+      else if(keyens.eq.51) then
+        
+c     npt ensemble - nhc barostat - normal mode
+        
+        call pimd_npt_nhc_nm
+     x    (safe,lmsite,isw,idnode,mxnode,natms,imcon,
+     x    nrespa,ntpmls,        
+     x    ntpatm,ntshl,keyshl,tstep,taut,taup,sigma,
+     x    sigma_nhc,sigma_volm,alpha_volm,virtot,vircon,virlrc,
+     x    g_qt4f,press,volm,chit,consv,
+     x    conint,engke,elrc,chit_shl,sigma_shl,temp,engthe)
+      
+      else if(keyens.eq.52) then
+        
+c     npt ensemble - PILE thermostat - normal mode
+        
+        call pimd_npt_pile_nm
+     x    (safe,lmsite,isw,idnode,mxnode,natms,imcon,
+     x    ntpmls,ntpatm,ntshl,keyshl,tstep,taut,taup,sigma,
+     x    sigma_volm,alpha_volm,virtot,vircon,virlrc,
+     x    g_qt4f,press,volm,chit,consv,
+     x    conint,engke,elrc,chit_shl,sigma_shl,temp,engthe,uuu)
+
+      else if(keyens.eq.61) then
+        
+c     nve ensemble (RPMD) - normal mode
+
+        call pimd_nve
+     x    (lmsite,isw,idnode,mxnode,natms,imcon,ntpmls,tstep,
+     x    g_qt4f,temp,engke)
+      
+      else if(keyens.eq.62) then
+
+c     PACMD - 
+
+        call pacmd
+     x    (lmsite,isw,idnode,mxnode,natms,imcon,ntpmls,tstep,taut,
+     x    g_qt4f,temp,engke,engthe,nrespa)
+       
+      else if(keyens.eq.63) then
+
+c     TRPMD
+        call trpmd
+     x    (lmsite,isw,idnode,mxnode,natms,imcon,ntpmls,tstep,
+     x    g_qt4f,temp,engke)
+
+      else 
 c     invalid option
         
         call error(idnode,430)
@@ -747,10 +848,10 @@ c     calculate gaussian moments of bead momentum
         else
           
 c     calculate gaussian moments of thermostats
-          
+          if(keyens.ne.44)then
           call thermostat_moments
      x      (idnode,mxnode,natms,nbeads,nchain,temp,taut,gaumom)
-          
+          endif
         endif
 
       endif
@@ -822,7 +923,7 @@ c**********************************************************************
 
       do i=1,iatm1-iatm0
         
-        ppp=(pxx(i)**2+pyy(i)**2+pzz(i)**2)/(zmass(i)*boltz*temp)
+        ppp=(pxx(i)**2+pyy(i)**2+pzz(i)**2)*rzmass(i)/(boltz*temp)
         gaumom(0)=gaumom(0)+1.d0
         gaumom(1)=ppp/(3.d0*gaumom(0))+
      x    gaumom(1)*(gaumom(0)-1.d0)/gaumom(0)

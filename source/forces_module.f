@@ -45,7 +45,7 @@ c***********************************************************************
      x  rcuttb,engtbp,virtbp,rcutfb,engfbp,virfbp,rctter,engter,
      x  virter,engbnd,virbnd,engang,virang,engdih,virdih,enginv,
      x  virinv,engtet,virtet,engshl,shlke,virshl,engfld,virfld,
-     x  engcfg,fmax,temp,engord,virord,engrng,virrng,qmsbnd)
+     x  engcfg,fmax,temp,engord,virord,engrng,virrng,qmsbnd,keyens)
       
 c*********************************************************************
 c     
@@ -57,7 +57,7 @@ c     author    - w.smith
 c     
 c*********************************************************************
       
-      use pimd_module, only : ring_forces
+      use pimd_module, only : ring_forces,ring_energy
       
       implicit none
       
@@ -70,6 +70,7 @@ c*********************************************************************
       integer isolva,ntinv,ntteth,ntshl,ntptbp,ntpfbp,ntpter,keyshl
       integer keyfld,nbeads,nn,nsatm,ibase,nbase,numatm
       integer fail(1:8)
+      integer keyens
       
       real(8) delr,dlrpot,engcpe,engsrp,epsq,rcut,rprim,rvdw
       real(8) vircpe,virsrp,alpha,drewd,volm,engmet,virmet,qfactor
@@ -390,7 +391,6 @@ c     neutral groups
         endif
         
 c     calculate intramolecular forces
-        
         call intra_forces
      x    (llsolva,lfree,lghost,idnode,mxnode,imcon,natms,nbeads,nstep,
      x    keyfce,keyshl,ntbond,ntangl,ntdihd,ntinv,ntteth,ntshl,epsq,
@@ -570,9 +570,18 @@ c     calculate ring forces for pimd option
       
       if(lpimd)then
         
-        call ring_forces
-     x    (idnode,mxnode,natms,temp,engrng,virrng,qmsbnd,stress)
-        
+        if(keyens.le.42) then
+                
+          call ring_forces
+     x      (idnode,mxnode,natms,temp,engrng,virrng,qmsbnd,stress)
+
+        else
+
+          call ring_energy
+     x      (idnode,mxnode,natms,temp,engrng,virrng,qmsbnd,stress)
+
+        endif
+c        write(6,*)"engrng",engrng
       endif
       
 c     global summation of force arrays (basic replicated data strategy)
@@ -687,7 +696,8 @@ c     calculate bond forces
         
         engbnd=engbnd+engtmp*qfactor
         virbnd=virbnd+virtmp*qfactor
-        
+c        write(6,*) "engbnd",engbnd
+c        write(6,*) "virbnd",virbnd 
       endif
       
 c     calculate valence angle forces
@@ -1124,7 +1134,7 @@ c     sum up contributions to short range and coulombic potential
         cou_vir=buffer(10)
         
       endif
-      
+
       return
       end subroutine forces
       

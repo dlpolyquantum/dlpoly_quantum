@@ -46,7 +46,23 @@ c     copyright M.R.Momeni and F.A.Shakib 2021
 c     
 c     Method Development and Materials Simulation Laboratory
 c
-c                         DL_POLY QUANTUM VERSION 1.0
+c     Dil Limbu and Nathan London have added the following modules
+c     and subroutines to the DL_POLY QUANTUM VERSION 1.0 to introduce
+c     additional PI simulation methods and correlation function 
+c     calculations
+c
+c     correlation_module.f
+c     pimd_piglet_module.f
+c     Additional subroutines in pimd_module.f
+c     Additional subroutines in vv_pimd_modeule.f
+c     Additional changes in define_system_module.f and setup_module.f
+c       for CONTROL file reading
+c
+c     copyright - Dil Limbu and Nathan London
+c     authors - Dil Limbu and Nathan London 2023
+c
+c      
+c                         DL_POLY QUANTUM VERSION 2.0
 c
 c***********************************************************************
       
@@ -90,6 +106,8 @@ c     declare required modules
       use vv_pimd_module
       use nhc_module
       use water_module
+      use correlation_module
+      use pimd_piglet_module
       
       implicit none
       
@@ -102,7 +120,7 @@ c     declare required modules
       logical stropt,lzero,nolink,newgau,lminim,lminnow,lhit,lbpd
       logical prechk,tadall,lexcite,lsolva,lfree,lfrmas,lswitch
       logical lghost,llswitch,lnfic,nebgo,lpsoc,redirect,lpimd
-      logical inhc,lmsite
+      logical inhc,lmsite,lcorr
       
       integer npage,lines,idnode,mxnode,memr,intsta,istraj,nsbzdn
       integer keyens,keyfce,keyres,keytrj,kmax1,kmax2,kmax3,multt
@@ -114,7 +132,7 @@ c     declare required modules
       integer ntpter,keyshl,isw,keyver,keystr,keytol,numgau,khit
       integer nhit,keybpd,ntrack,nblock,blkout,numneb,nturn,mode
       integer natms2,ntghost,nsolva,isolva,nofic,iadd
-      integer nrespa,iqt4
+      integer nrespa,iqt4,keycorr,molcorr,wrtcorr
 
       real(8) alpha,delr,epsq,fmax,press,quattol,rcut,rprim,rvdw,taup
       real(8) taut,temp,timcls,timjob,tolnce,tstep,tzero,dlrpot,drewd
@@ -205,14 +223,16 @@ c     input the control parameters defining the simulation
      x  (seek,lfcap,lgofr,lnsq,loptim,lzero,lminim,lpgr,ltraj,ltscal,
      x  lzeql,lzden,nolink,newgau,lhit,lbpd,ltad,lneb,prechk,tadall,
      x  lsolva,lfree,lfrmas,lexcite,lswitch,lghost,lnfic,nebgo,lpsoc,
-     x  lpimd,inhc,lmsite,idnode,minstp,intsta,istraj,keybpd,keyens,
-     x  keyfce,keyres,keyver,keytrj,kmax1,kmax2,kmax3,multt,nstack,
-     x  nstbgr,nsbzdn,nstbpo,nhko,nlatt,nstbts,nsteql,nstraj,nstrun,
-     x  nospl,keytol,numgau,khit,nhit,nblock,ntrack,blkout,numneb,mode,
-     x  nsolva,isolva,nofic,nbeads,nchain,nrespa,g_qt4f,alpha,
-     x  delr,epsq,fmax,press,quattol,rcut,rprim,rvdw,taup,taut,temp,
-     x  timcls,timjob,tolnce,tstep,rlxtol,opttol,zlen,ehit,xhit,yhit,
-     x  zhit,ebias,vmin,catchrad,sprneb,deltad,tlow,hyp_units,chi)
+     x  lpimd,inhc,lmsite,lcorr,idnode,minstp,intsta,istraj,keybpd,
+     x  keyens,keyfce,keyres,keyver,keytrj,keycorr,molcorr,wrtcorr,
+     x  kmax1,kmax2,
+     x  kmax3,multt,nstack,nstbgr,nsbzdn,nstbpo,nhko,nlatt,nstbts,
+     x  nsteql,nstraj,nstrun,nospl,keytol,numgau,khit,nhit,nblock,
+     x  ntrack,blkout,numneb,mode,nsolva,isolva,nofic,nbeads,nchain,
+     x  nrespa,g_qt4f,alpha,delr,epsq,fmax,press,quattol,rcut,rprim,
+     x  rvdw,taup,taut,temp,timcls,timjob,tolnce,tstep,rlxtol,opttol,
+     x  zlen,ehit,xhit,yhit,zhit,ebias,vmin,catchrad,sprneb,deltad,tlow,
+     x  hyp_units,chi,nsp1)
 
 c *******************************************************************      
 c     M.R.Momeni & F.A.Shakib
@@ -227,6 +247,10 @@ c     allocate arrays related to qtip4p/f water model
       call alloc_water_arrays(idnode,mxnode)
  
 c *******************************************************************
+
+c     allocate arrays related to piglet thermostat
+
+      call alloc_piglet_arrays(idnode,mxnode)
 
 c     input the system force field
       
@@ -248,7 +272,6 @@ c     if water model qtip4p/f is requested
       if(lmsite)then
              
          call water_index(idnode,mxnode,nbeads,ntpmls,iqt4)
-
       endif   
 
 c *******************************************************************      
@@ -303,7 +326,7 @@ c     set initial system temperature
      x  (lpimd,inhc,idnode,imcon,keyres,mxnode,natms2,nbeads,ngrp,
      x  nscons,ntcons,ntfree,ntshl,levcfg,keyshl,keyens,degfre,degshl,
      x  nchain,degrot,engke,tolnce,temp,sigma,sigma_nhc,sigma_volm,
-     x  alpha_volm,uuu)
+     x  alpha_volm,uuu,tstep)
       
 c     read thermodynamic and structural data from restart file
       
@@ -414,8 +437,8 @@ c     calculate initial conditions for velocity verlet
      x    rprim,rvdw,shlke,engcfg,temp,tstep,virang,virbnd,vircpe,
      x    virdih,virfbp,virfld,virinv,virlrc,virmet,virshl,virsrp,
      x    virtbp,virter,virtet,volm,engmet,virtot,engord,virord,
-     x    engrng,virrng,qmsbnd)
-        
+     x    engrng,virrng,qmsbnd,keyens)
+       
 c     bias potential dynamics option - reset forces
         
         if(lbpd)call bpd_forces(natms,keybpd,vmin,ebias,temp,engcfg)
@@ -424,9 +447,25 @@ c     bias potential dynamics option - reset forces
       
 c     stage initial forces for pimd
       
-      if(lpimd)call stage_forces(lmsite,idnode,mxnode,natms,nbeads,
-     x              ntpmls,g_qt4f)
-      
+      if(lpimd)then
+
+        if(keyens.le.42)then
+
+          call stage_forces(lmsite,idnode,
+     x               mxnode,natms,nbeads, ntpmls,g_qt4f)
+
+        elseif(keyens.ge.43)then
+
+          call force2norm(lmsite,idnode,
+     x               mxnode,natms,nbeads,ntpmls,g_qt4f)
+        endif
+
+      elseif(lmsite)then
+
+        call qt4_force_redist(idnode,mxnode,nbeads,ntpmls,g_qt4f) 
+
+      endif
+
       if(ltad.or.(lbpd.and.keybpd.eq.2))then
         
 c     construct the first reference state
@@ -482,6 +521,10 @@ c     bypass the MD cycle for this option
         
       endif
       
+      if(lcorr)then
+        call corr_init(idnode,mxnode,natms,ntpmls,molcorr,keyens,
+     x    keycorr,nummols,numsit)
+      endif
 c***********************************************************************
 c     start of molecular dynamics calculations
 c***********************************************************************
@@ -551,7 +594,7 @@ c     energy accumulators
           engrot=0.d0
           
         endif
-        
+
 c     calculate volume of simulation cell
         
         if(imcon.ne.0.and.imcon.ne.6)then
@@ -597,10 +640,17 @@ c     integrate equations of motion stage 1 of velocity verlet
         if(lpimd)then
           
           isw=1
+c          call pimd_integrate
+c     x      (lmsite,isw,idnode,mxnode,imcon,ntpmls,natms,keyens,nstep,
+c     x      tstep,taut,g_qt4f,temp,engke,engthe,chi,uuu,gaumom)
+          
           call pimd_integrate
      x      (lmsite,isw,idnode,mxnode,imcon,ntpmls,natms,keyens,nstep,
-     x      tstep,taut,g_qt4f,temp,engke,engthe,chi,uuu,gaumom)
-          
+     x      tstep,g_qt4f,temp,engke,engthe,chi,uuu,gaumom,
+     x      safe,nrespa,ntpatm,ntshl,keyshl,taut,taup,sigma,
+     x      sigma_nhc,sigma_volm,alpha_volm,virtot,vircon,virlrc,virrng,
+     x      press,volm,chit,consv,conint,elrc,chit_shl,sigma_shl)
+      
         elseif(keyver.gt.0)then
           
           isw=1
@@ -670,7 +720,7 @@ c     scale t=0 tether reference positions (constant pressure only)
      x      engcfg,temp,tstep,virang,virbnd,vircpe,virdih,
      x      virfbp,virfld,virinv,virlrc,virmet,virshl,virsrp,
      x      virtbp,virter,virtet,volm,engmet,virtot,engord,virord,
-     x      engrng,virrng,qmsbnd)
+     x      engrng,virrng,qmsbnd,keyens)
           
         else
           
@@ -691,9 +741,11 @@ c     scale t=0 tether reference positions (constant pressure only)
         endif
         
 c     stage forces for pimd
+        if(lpimd.and.(keyens.le.42))call stage_forces(lmsite,idnode,
+     x               mxnode,natms,nbeads, ntpmls,g_qt4f)
+        if(lpimd.and.(keyens.ge.43))call force2norm(lmsite,idnode,
+     x               mxnode,natms,nbeads,ntpmls,g_qt4f)
         
-        if(lpimd)call stage_forces(lmsite,idnode,mxnode,natms,nbeads,
-     x                ntpmls,g_qt4f)
         
 c     bias potential dynamics option - reset forces
         
@@ -708,10 +760,17 @@ c     integrate equations of motion
         if(lpimd)then
           
           isw=2
+c          call pimd_integrate
+c     x      (lmsite,isw,idnode,mxnode,imcon,ntpmls,natms,keyens,nstep,
+c     x      tstep,taut,g_qt4f,temp,engke,engthe,chi,uuu,gaumom)
+          
           call pimd_integrate
      x      (lmsite,isw,idnode,mxnode,imcon,ntpmls,natms,keyens,nstep,
-     x      tstep,taut,g_qt4f,temp,engke,engthe,chi,uuu,gaumom)
-          
+     x      tstep,g_qt4f,temp,engke,engthe,chi,uuu,gaumom,
+     x      safe,nrespa,ntpatm,ntshl,keyshl,taut,taup,sigma,
+     x      sigma_nhc,sigma_volm,alpha_volm,virtot,vircon,virlrc,virrng,
+     x      press,volm,chit,consv,conint,elrc,chit_shl,sigma_shl)
+      
         elseif(keyver.eq.0)then
           
 c     integrate equations of motion by leapfrog verlet
@@ -828,24 +887,50 @@ c     apply temperature scaling
 c     reset atom velocities at intervals if required
         
         if(newgau)then
-          
-          if(mod(nstep,numgau).eq.0)call regauss
+          if(mod(nstep,numgau).eq.0)then
+            if(lpimd) then 
+              call gauss(natms*nbeads,vxx,vyy,vzz)
+              call momenta2norm(idnode,mxnode,natms)
+              call reset_pimd_momenta(idnode,mxnode,natms,sigma)
+            else
+            call regauss
      x      (idnode,imcon,mxnode,natms2*nbeads,ngrp,nscons,ntcons,
      x      ntshl,keyshl,sigma,temp,tolnce)
-          
+            endif
+          endif
         endif
         
 c     calculate quantum energy
         
         if(lpimd)then
-          
-          call quantum_energy
-     x      (idnode,mxnode,natms,temp,engke,engcfg,engrng,engqpi,
-     x      engqvr,qmsrgr)
+
+          if(keyens.ge.43)then 
+
+            call quantum_energy_nm
+     x        (idnode,mxnode,natms,temp,engke,engcfg,engrng,engqpi,
+     x        engqvr,qmsrgr)
+
+          else
+
+            call quantum_energy
+     x        (idnode,mxnode,natms,temp,engke,engcfg,engrng,engqpi,
+     x        engqvr,qmsrgr)
+
+            call ring_energy
+     x        (idnode,mxnode,natms,temp,engrng,virrng,qmsbnd,stress)
+
+          endif
+
           engcfg=engcfg+engrng
-          
         endif
-        
+
+c     calculate correlation function        
+        if(lcorr.and.(mod(nstep,wrtcorr).eq.0))then
+          call correlation
+     x      (idnode,mxnode,natms,ntpmls,molcorr,keyens,keycorr,nstep,
+     x      nummols,numsit,tstep) 
+        endif
+
 c     calculate physical quantities
         
         if(nstep.gt.0)call static
@@ -1014,7 +1099,6 @@ c     cycle time check
       
       call timchk(0,timelp)
       recycle=(recycle.and.timjob-timelp.gt.timcls)
-      
       enddo
       
 c***********************************************************************
@@ -1074,7 +1158,8 @@ c     close output channels
         close (nevnt)
         close (ntherm)
         close (npuni)
-        
+        close (corr)  
+
       endif
       
 c     terminate job

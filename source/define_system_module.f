@@ -52,14 +52,15 @@ c***********************************************************************
      x  (seek,lfcap,lgofr,lnsq,loptim,lzero,lminim,lpgr,ltraj,ltscal,
      x  lzeql,lzden,nolink,newgau,lhit,lbpd,ltad,lneb,prechk,tadall,
      x  lsolva,lfree,lfrmas,lexcite,lswitch,lghost,lnfic,nebgo,lpsoc,
-     x  lpimd,inhc,lmsite,idnode,minstp,intsta,istraj,keybpd,keyens,
-     x  keyfce,keyres,keyver,keytrj,kmax1,kmax2,kmax3,multt,nstack,
-     x  nstbgr,nsbzdn,nstbpo,nhko,nlatt,nstbts,nsteql,nstraj,nstrun,
-     x  nospl,keytol,numgau,khit,nhit,nblock,ntrack,blkout,numneb,mode,
-     x  nsolva,isolva,nofic,nbeads,nchain,nrespa,g_qt4f,alpha,
-     x  delr,epsq,fmax,press,quattol,rcut,rprim,rvdw,taup,taut,temp,
-     x  timcls,timjob,tolnce,tstep,rlxtol,opttol,zlen,ehit,xhit,yhit,
-     x  zhit,ebias,vmin,catchrad,sprneb,deltad,tlow,hyp_units,chi)
+     x  lpimd,inhc,lmsite,lcorr,idnode,minstp,intsta,istraj,keybpd,
+     x  keyens,keyfce,keyres,keyver,keytrj,keycorr,molcorr,wrtcorr,
+     x  kmax1,kmax2,kmax3,multt,nstack,nstbgr,nsbzdn,nstbpo,nhko,nlatt,
+     x  nstbts,nsteql,nstraj,nstrun,nospl,keytol,numgau,khit,nhit,
+     x  nblock,ntrack,blkout,numneb,mode,nsolva,isolva,nofic,nbeads,
+     x  nchain,nrespa,g_qt4f,alpha,delr,epsq,fmax,press,quattol,rcut,
+     x  rprim,rvdw,taup,taut,temp,timcls,timjob,tolnce,tstep,rlxtol,
+     x  opttol,zlen,ehit,xhit,yhit,zhit,ebias,vmin,catchrad,sprneb,
+     x  deltad,tlow,hyp_units,chi,nsp1)
       
 c***********************************************************************
 c     
@@ -84,10 +85,11 @@ c***********************************************************************
       logical lstep,ltemp,lcut,ldelr,lprim,lrfce,lens,novdw,lrvdw,kill
       logical lnsq,lzden,lewald,lspme,lhke,loop,lzero,nolink,newgau
       logical lminim,lminopt,ltad,lneb,lhit,lbpd,prechk,tadall,nebgo
-      logical lpimd,lver,inhc,lmsite
+      logical lpimd,lver,inhc,lmsite,lcorr
       integer idnode,intsta,istraj,keyens,keyfce,keyres,nstbpo,nsbzdn
-      integer keytrj,kmax1,kmax2,kmax3,multt,nstack,nstbgr,khit,nhit
-      integer nhko,nlatt,nstbts,nsteql,nstraj,nstrun,nospl,ntrack
+      integer keytrj,keycorr,molcorr,wrtcorr,kmax1,kmax2,kmax3,multt
+      integer nstack,nstbgr,khit
+      integer nhit,nhko,nlatt,nstbts,nsteql,nstraj,nstrun,nospl,ntrack
       integer idum,imcon,keyver,keytol,nblock,blkout,numgau,nbeads
       integer minstp,numneb,i,keybpd,mode,nsolva,isolva,nofic,nchain
       integer nrespa
@@ -97,6 +99,7 @@ c***********************************************************************
       real(8) catchrad,sprneb,deltad,tlow,xhit,yhit,zhit,ebias,vmin
       real(8) prntim,chi
       real(8) g_qt4f
+      integer nsp1,wrtcorr
       
 CSGIC      real(8) dummy
 CCRAY      real(8) dummy
@@ -237,6 +240,7 @@ c     temp scaling interval
       lpimd=.false.
       inhc=.false.
       lmsite=.false.
+      lcorr=.false.
       lver=.false.
       seek='all     '
       
@@ -499,6 +503,14 @@ c     activate nudged elastic band option
      x      numneb,keytol,sprneb,opttol,hyp_units)
           
 c     read path integral option
+c*******************************************************************
+c 
+c   Additional PI methods added
+c
+c   copyright - Dil Limbu and Nathan London
+c   authors - Dil Limbu and Nathan London 2023
+c
+c*******************************************************************            
 
         elseif(findstring('pimd',directive,idum))then
           
@@ -515,7 +527,25 @@ c     read path integral option
           lpimd=.true.
           keyver=2
           keyens=40
-          if(findstring('nvt',directive,idum))then
+          if(findstring('npt',directive,idum))then
+c barostat options            
+            if(findstring('nhc',directive,idum))then
+              keyens=51
+              nbeads=intstr(directive,lenrec,idum)
+              nrespa=intstr(directive,lenrec,idum)
+              nchain=intstr(directive,lenrec,idum)
+              taut=dblstr(directive,lenrec,idum)
+              taup=dblstr(directive,lenrec,idum)
+              nrespa=max(nrespa,1)
+              nchain=max(nchain,1)
+              inhc=.true.         
+            elseif(findstring('pile',directive,idum))then
+              keyens=52
+              nbeads=intstr(directive,lenrec,idum)
+              taut=dblstr(directive,lenrec,idum)
+              taup=dblstr(directive,lenrec,idum)
+            endif
+          elseif(findstring('nvt',directive,idum))then
             keyens=40
             nbeads=intstr(directive,lenrec,idum)
             taut=dblstr(directive,lenrec,idum)
@@ -527,9 +557,42 @@ c     read path integral option
           elseif(findstring('nhc',directive,idum))then
             keyens=42
             nbeads=intstr(directive,lenrec,idum)
+            nrespa=intstr(directive,lenrec,idum)
             nchain=intstr(directive,lenrec,idum)
             taut=dblstr(directive,lenrec,idum)
+            nrespa=max(nrespa,1)
             nchain=max(nchain,1)
+          elseif(findstring('nm',directive,idum))then
+            keyens=43
+            nbeads=intstr(directive,lenrec,idum)
+            nrespa=intstr(directive,lenrec,idum)
+            nchain=intstr(directive,lenrec,idum)
+            taut=dblstr(directive,lenrec,idum)
+            nrespa=max(nrespa,1)
+            nchain=max(nchain,1)
+          elseif(findstring('pile',directive,idum))then
+            keyens=44
+            nbeads=intstr(directive,lenrec,idum)
+            taut=dblstr(directive,lenrec,idum)
+          elseif(findstring('piglet',directive,idum))then
+            keyens=45
+            nbeads=intstr(directive,lenrec,idum)
+            nsp1=intstr(directive,lenrec,idum)
+            nsp1=nsp1+1
+          elseif(findstring('nve',directive,idum))then
+            keyens=61
+            nbeads=intstr(directive,lenrec,idum)
+          elseif(findstring('pacmd',directive,idum))then
+            keyens=62
+            nbeads=intstr(directive,lenrec,idum)
+            nrespa=intstr(directive,lenrec,idum)
+            nchain=intstr(directive,lenrec,idum)
+            taut=dblstr(directive,lenrec,idum)
+            nrespa=max(nrespa,1)
+            nchain=max(nchain,1)
+          elseif(findstring('trpmd',directive,idum))then
+            keyens=63
+            nbeads=intstr(directive,lenrec,idum)
           else
 c     default is nvt
             keyens=40
@@ -562,10 +625,92 @@ c     default is nvt
      x          nchain
               write(nrite,"(1x,'Thermostat relaxation time (ps):',
      x          1p,e12.4)")taut
+            elseif(keyens.eq.43)then
+              write(nrite,
+     x          "(1x,'Canonical Ensemble in normal modes with mNHC')")
+              write(nrite,"(1x,'Number of  RESPA steps :',i5)")
+     x          nrespa
+              write(nrite,"(1x,'Number of Nose-Hoover chains :',i5)")
+     x          nchain
+              write(nrite,"(1x,'Thermostat relaxation time (ps):',
+     x          1p,e12.4)")taut
+            elseif(keyens.eq.44)then
+              write(nrite,
+     x          "(1x,'Canonical Ensemble in normal modes with PILE')")
+              write(nrite,"(1x,'Thermostat relaxation time (ps):',
+     x          1p,e12.4)")taut
+            elseif(keyens.eq.45)then
+              write(nrite,
+     x          "(1x,'Canonical Ensemble in normal modes with PIGLET')")
+              write(nrite,"(1x,'Thermostat w/ extra no. of momenta of:',
+     x          1p,i5)")nsp1-1
+            elseif(keyens.eq.51)then
+              write(nrite,
+     x        "(/,1x,'NPT Simulation in normal mode with mNHC',
+     x          /,1x,'thermostat relaxation time',1p,e12.4,
+     x          /,1x,'barostat relaxation time',1p,e12.4,
+     x          /,1x,'number of RESPA steps             ',1p,i6,
+     x          /,1x,'number of chains     ',1p,i6)")
+     x                taut,taup,nrespa,nchain
+            elseif(keyens.eq.52)then
+              write(nrite,
+     x        "(/,1x,'NPT Simulation in normal mode with PILE',
+     x          /,1x,'thermostat relaxation time',1p,e12.4,
+     x          /,1x,'barostat relaxation time',1p,e12.4)")
+     x                taut,taup
+            elseif(keyens.eq.61)then
+              write(nrite,
+     x          "(1x,'RPMD in normal modes')")
+            elseif(keyens.eq.62)then
+              write(nrite,
+     x          "(1x,'Partialy Adiabatic CMD')")
+              write(nrite,"(1x,'Number of  RESPA steps :',i5)")
+     x          nrespa
+              write(nrite,"(1x,'Number of Nose-Hoover chains :',i5)")
+     x          nchain
+              write(nrite,"(1x,'Thermostat relaxation time (ps):',
+     x          1p,e12.4)")taut
+            elseif(keyens.eq.63)then
+              write(nrite,
+     x          "(1x,'Thermostatted RPMD')")
             endif
           endif
-          
-        elseif(findstring('impact',directive,idum))then
+         
+c     correlation function option
+        elseif(findstring('corr',directive,idum))then
+          lcorr=.true.
+          if(findstring('velocity',directive,idum))then
+            keycorr=1
+            molcorr=intstr(directive,lenrec,idum)
+            wrtcorr=intstr(directive,lenrec,idum)
+          elseif(findstring('dipole',directive,idum))then
+            keycorr=2
+            molcorr=intstr(directive,lenrec,idum)
+            wrtcorr=intstr(directive,lenrec,idum)
+c         default is velocity autocorrelation for molecule type 1
+c         written every 10 steps
+          else
+            keycorr=1
+            wrtcorr=10
+          endif
+          if(molcorr.eq.0) molcorr=1
+          if(idnode.eq.0)then
+            if(keycorr.eq.1)then
+              write(nrite,"(/,1x,'Correlation function: velocity')")
+              write(nrite,"(/,1x,'Correlation function molecule:',i5)")
+     x          molcorr
+              write(nrite,"(/,1x,'Correlation function steps:',i5)")
+     x          wrtcorr
+            elseif(keycorr.eq.2)then 
+              write(nrite,"(/,1x,'Correlation function: dipole')")
+              write(nrite,"(/,1x,'Correlation function molecule:',i5)")
+     x          molcorr
+              write(nrite,"(/,1x,'Correlation function steps:',i5)")
+     x          wrtcorr
+            endif
+          endif
+
+       elseif(findstring('impact',directive,idum))then
           
 c     activate the impact option
           
@@ -1958,10 +2103,10 @@ c     read the atomic coordinates
 c     site multiplicity factor for pimd
 
       numatm=nbeads*mxatms
-      
+c      write(6,*)"numatm",numatm 
 c    restructure config read for pimd when keyres > 0
 
-      if(keyres.eq.0)then
+      if(keyres.eq.0.and.keyens.lt.61)then
         mbeads=1
         matms=mxatms
       else
@@ -1980,7 +2125,7 @@ c     read atomic coordinates, velocities and forces
             do m=1,numsit(k)
               
               indatm=indatm+1
-              
+c              write(6,*)"indatm",indatm 
               if(indatm.gt.numatm)call error(idnode,45)
               
               xxx(indatm)=0.d0
@@ -2121,10 +2266,10 @@ c ******************************************************************
         endif
         
       endif
-      
+c      write(6,*) "xxx", xxx(:) 
 c     for pimd expand initial atomic system to quantum system
       
-      if(lpimd.and.keyres.eq.0)then
+      if(lpimd.and.keyres.eq.0.and.keyens.lt.61)then
         
         m=indatm*nbeads+1
         
@@ -2159,6 +2304,7 @@ c     initialise parallel random number sequence
          dum=puni(1,uuu)
         
       endif
+c      write(6,*) "xxx", xxx(:) 
       
 c     check integrity of cell vectors : for cubic, TO and RD cases
 c     ie. cell(1)=cell(5)=cell(9) (or cell(9)/sqrt(2) for RD)
@@ -2638,7 +2784,7 @@ c     number densities and long-range corrections
      x  (lpimd,inhc,idnode,imcon,keyres,mxnode,natms,nbeads,ngrp,nscons,
      x  ntcons,ntfree,ntshl,levcfg,keyshl,keyens,degfre,degshl,nchain,
      x  degrot,engke,tolnce,temp,sigma,sigma_nhc,sigma_volm,alpha_volm,
-     x  uuu)
+     x  uuu,tstep)
       
 c***********************************************************************
 c     
@@ -2654,7 +2800,7 @@ c***********************************************************************
       logical lpimd,inhc
       integer idnode,imcon,keyres,mxnode,natms,nbeads,ngrp,nscons
       integer ntcons,ntfree,ntshl,levcfg,i,io,k,keyshl,keyens,nchain
-      real(8) degfre,degshl,degrot,tolnce,temp,sigma,engke,rsq
+      real(8) degfre,degshl,degrot,tolnce,temp,sigma,engke,rsq,tstep
       real(8) sigma_nhc,eta_nhc(nchain),peta(nchain)
       real(8) sigma_volm,alpha_volm,ksi(nchain),pksi(nchain)
       real(8) uuu(102)
@@ -2701,12 +2847,12 @@ c     initialise nhc variables
 c *******************************************************************      
       
       if(lpimd)then
-        
+       
 c     initialise pimd simulations
       
         call pimd_init
      x    (idnode,mxnode,natms,keyres,keyens,temp,sigma,engke,
-     x    stress,uuu)
+     x    stress,uuu,tstep)
 
       else
 
@@ -2832,7 +2978,16 @@ c     print out sample of initial configuration
         endif
         
       enddo
-      
+
+c     write out normal mode frequencies for testing - Nathan London
+      if(keyens.ge.43)then
+        if(idnode.eq.0)write(nrite,
+     x    "(/,/,1x,'normal mode frequencies',/)")
+        do i=1,nbeads
+          if(idnode.eq.0)write(nrite,
+     x      "(1e12.4)")nmfreq(i)
+        enddo
+      endif 
       return
       end subroutine systemp
       

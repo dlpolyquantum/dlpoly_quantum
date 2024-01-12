@@ -120,6 +120,10 @@ c     pimd thermostats file
 c     pimd random number restart data
       
       integer, parameter :: npuni=46
+
+c     correlation function file
+      
+      integer, parameter :: corr=47
       
 c     data dumping interval in event of system crash
       
@@ -222,14 +226,14 @@ c     scan CONTROL file data
      x  (redirect,lewald,lspme,lhke,nolink,lcshft,lsolva,lfree,lfrmas,
      x  lghost,lpimd,lmsite,idnode,imcon,nhko,keyres,rcut,rvdw,delr,
      x  densvar,drdf,dzdn,zlen,cell)
-      
+c      write(6,*)"keyres",keyres 
       if(lpimd.and.keyres.gt.0)then
         if(numatm.ne.nbeads*mxatms)call abortscan(56,idnode)
       else
         if(numatm.ne.mxatms)call abortscan(56,idnode)
       endif
       if(lpimd)numatm=nbeads*mxatms
-      
+c      write(6,*)"numatm",numatm 
 c     set dimension of working coordinate arrays
       
       msatms=max(1,(mxatms-1)/mxnode+1)
@@ -1277,6 +1281,7 @@ c***********************************************************************
       integer nhko,idnode,imcon,idum,jmp
       integer nlatt,kmax1,kmax2,kmax3,kmaxpow2,keyres
       dimension celprp(10),cell(9)
+      integer nrespa
       
       nhko=0
       mxstak=0
@@ -1337,13 +1342,50 @@ c     open the simulation input file
             
             lmsite=.true.
 
+c*******************************************************************
+c 
+c   Additional PI methods added
+c
+c   copyright - Dil Limbu and Nathan London
+c   authors - Dil Limbu and Nathan London 2023
+c
+c*******************************************************************            
           elseif(findstring('pimd',record,idum))then
         
             lpimd = .true.
-            if(findstring('nhc',record,idum))then
+            if(findstring('npt',record,idum))then
+              if(findstring('nhc',record,idum))then
+                nbeads=intstr(record,lenrec,idum)
+                nrespa=intstr(record,lenrec,idum)
+                nchain=intstr(record,lenrec,idum)
+                nchain=max(nchain,1)
+              elseif(findstring('pile',record,idum))then
+                nbeads=intstr(record,lenrec,idum)
+              endif
+            elseif(findstring('nhc',record,idum))then
               nbeads=intstr(record,lenrec,idum)
+              nrespa=intstr(record,lenrec,idum)
               nchain=intstr(record,lenrec,idum)
               nchain=max(nchain,1)
+            elseif(findstring('nm',record,idum))then
+              nbeads=intstr(record,lenrec,idum)
+              nrespa=intstr(record,lenrec,idum)
+              nchain=intstr(record,lenrec,idum)
+              nchain=max(nchain,1)
+            elseif(findstring('pile',record,idum))then
+              nbeads=intstr(record,lenrec,idum)
+            elseif(findstring('nve',record,idum))then
+              nbeads=intstr(record,lenrec,idum)
+              keyres=1
+            elseif(findstring('pacmd',record,idum))then
+              nbeads=intstr(record,lenrec,idum)
+              nrespa=intstr(record,lenrec,idum)
+              nchain=intstr(record,lenrec,idum)
+              nchain=max(nchain,1)
+              keyres=1
+            elseif(findstring('trpmd',record,idum))then
+              nbeads=intstr(record,lenrec,idum)
+              keyres=1
             else
               nbeads=intstr(record,lenrec,idum)
             endif

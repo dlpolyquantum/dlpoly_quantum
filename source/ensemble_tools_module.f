@@ -239,7 +239,7 @@ c     define NHC time variables
 
       dt2=tstep
       dt4=0.5d0*tstep
-      dt8=0.125d0*tstep
+      dt8=0.25d0*tstep
       kT=2.d0*sigma_nhc
       dNkT=2.d0*sigma
 
@@ -298,10 +298,10 @@ c     Thermostat the velocities
 
       do j=nchain,1,-1
          if (j.eq.1) then
-           eta_nhc(j) = eta_nhc(j) -
+           eta_nhc(j) = eta_nhc(j) +
      x     (weight(nw)*dt2/nrespa)*peta(j)/qmass_t
          else
-           eta_nhc(j) = eta_nhc(j) -
+           eta_nhc(j) = eta_nhc(j) +
      x     (weight(nw)*dt2/nrespa)*peta(j)/qmass_part
          endif
       enddo
@@ -327,13 +327,13 @@ c     Start 2nd Suzuki-Yoshida scheme
        ENDDO
 
        ENDDO
-       
+      
       return
 
       end subroutine nhc_part
 
       subroutine nhc_baro
-     x     (idnode,mxnode,natms,nchain,nrespa,engke,sigma,
+     x     (idnode,mxnode,natms,nchain,nrespa,sigma_nhc,
      x     tstep,volm_mass,qmass_baro,taup,v_epsilon)
 
 c*********************************************************************
@@ -353,7 +353,7 @@ c*********************************************************************
       integer idnode,mxnode,natms,i,j,iatm0,iatm1
       integer nw,nsy,respa,nrespa,nchain
       parameter (nsy=7)
-      real(8) engke,sigma,tstep,scale,taup
+      real(8) tstep,scale,taup
       real(8) sigma_nhc,volm_mass,qmass_baro,v_epsilon
       real(8) dt2,dt4,dt8,weight(nsy),kT
 
@@ -362,7 +362,7 @@ c     define NHC time variables
 
       dt2=tstep
       dt4=0.5d0*tstep
-      dt8=0.125d0*tstep
+      dt8=0.25d0*tstep
       kT=2.0*sigma_nhc
 
 c     Assign Suzuki-Yoshida weights
@@ -377,7 +377,7 @@ c     Assign Suzuki-Yoshida weights
 
 c     Start Suzuki-Yoshida scheme      
 
-       DO nw=nsy,1,-1
+      DO nw=nsy,1,-1
 
 c     Start RESPA loop
 
@@ -406,12 +406,12 @@ c     Start 1st Suzuki-Yoshida scheme
 
 c     Thermostat the velocities
       
-      scale=exp((-weight(nw)*dt2/nrespa)*pksi(1)/qmass_baro)
+        scale=exp((-weight(nw)*dt2/nrespa)*pksi(1)/qmass_baro)
 
-      v_epsilon=scale*v_epsilon
+        v_epsilon=scale*v_epsilon
 
         do j=nchain,1,-1
-           ksi(j) = ksi(j) - 
+           ksi(j) = ksi(j) + 
      x     (weight(nw)*dt2/nrespa)*pksi(j)/qmass_baro
         enddo
 

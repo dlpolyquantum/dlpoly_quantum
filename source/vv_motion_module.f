@@ -527,17 +527,25 @@ c     update positions
 
 c  update the position of M-site if water model qtip4p/f requested
 
-        if(lmsite)then
+!        if(lmsite)then
 
-          call qtip4pf(idnode,mxnode,imcon,nbeads,ntpmls,g_qt4f)
+!          call qtip4pf(idnode,mxnode,imcon,nbeads,ntpmls,g_qt4f)
 
-        endif
+!        endif
 
 c     merge position data
         
         if(mxnode.gt.1)
      x    call merge(idnode,mxnode,natms,mxbuff,xxx,yyy,zzz,buffer)
         
+c  update the position of M-site if water model qtip4p/f requested
+
+        if(lmsite)then
+
+          call qtip4pf(idnode,mxnode,imcon,nbeads,ntpmls,g_qt4f)
+
+        endif
+
 c     apply shake corrections to bond constraints
 
         if(ntcons.gt.0)then
@@ -1113,7 +1121,8 @@ c     deallocate working arrays
       subroutine nvtvv_h1
      x  (safe,lshmov,isw,idnode,mxnode,natms,imcon,nscons,ntcons,
      x  ntshl,keyshl,tstep,taut,sigma,chit,consv,conint,engke,
-     x  tolnce,vircon,chit_shl,sigma_shl)
+     x  tolnce,vircon,chit_shl,sigma_shl,
+     x  lmsite,g_qt4f,ntpmls)
 
 c***********************************************************************
 c     
@@ -1137,13 +1146,16 @@ c***********************************************************************
 
       integer, parameter :: nnn=4
       
-      logical safe,lshmov
+      logical safe,lshmov,lmsite
       integer isw,idnode,mxnode,natms,imcon,nscons,ntcons
       integer i,j,k,iatm0,iatm1
       real(8) tstep,taut,sigma,chit,consv,conint,engke,tolnce,vircon
       real(8) hstep,qmass
       integer fail(nnn)
       real(8) strkin(9)
+
+      integer ntpmls
+      real(8) g_qt4f
 
       real(8), allocatable :: xxt(:),yyt(:),zzt(:)
       real(8), allocatable :: txx(:),tyy(:),tzz(:)
@@ -1275,6 +1287,14 @@ c     merge position data
         if(mxnode.gt.1)
      x    call merge(idnode,mxnode,natms,mxbuff,xxx,yyy,zzz,buffer)
 
+c     update the position of M-site if water model qtip4p/f requested
+
+        if(lmsite)then
+
+          call qtip4pf(idnode,mxnode,imcon,nbeads,ntpmls,g_qt4f)
+
+        endif
+
 c     apply shake corrections to bond constraints
         
         if(ntcons.gt.0)then
@@ -1294,6 +1314,14 @@ c     apply shake corrections to bond constraints
 c     second stage of velocity verlet algorithm
         
       else
+
+c  Redistribute the M-site forces if water model qtip4p/f requested
+
+        if(lmsite)then
+
+          call qt4_force_redist(idnode,mxnode,nbeads,ntpmls,g_qt4f)
+
+        endif
 
 c     update velocities
         
@@ -1560,19 +1588,19 @@ c     update positions
           
         enddo
 
-c  update the position of M-site if water model qtip4p/f requested
+c     merge position data, i.e. merge coordinate arrays across
+c     a number of processors        
+
+        if(mxnode.gt.1)
+     x    call merge(idnode,mxnode,natms,mxbuff,xxx,yyy,zzz,buffer)
+
+c     update the position of M-site if water model qtip4p/f requested
 
         if(lmsite)then
 
           call qtip4pf(idnode,mxnode,imcon,nbeads,ntpmls,g_qt4f)
 
         endif
-
-c     merge position data, i.e. merge coordinate arrays across
-c     a number of processors        
-
-        if(mxnode.gt.1)
-     x    call merge(idnode,mxnode,natms,mxbuff,xxx,yyy,zzz,buffer)
 
 c cccccccc shake/rattle testing cccccccc
 
@@ -2583,7 +2611,7 @@ c***********************************************************************
       real(8) tstep,taut,taup,chit,consv,conint,engke,elrc
       real(8) hstep,sigma,qmass_t
       real(8) sigma_nhc,qmass_baro,qmass_part
-      real(8) volm_mass,sigma_volm,alpha_volm,v_epsilon,g_qt4f
+      real(8) volm_mass,sigma_volm,alpha_volm,g_qt4f
       real(8) press,volm,virtot,vircon,virlrc
       real(8) heta_nhc,hpeta_nhc,heta_1,heta_rest,hpeta_1,hpeta_rest
       real(8) hepsilon,hksi,hpksi
@@ -2610,6 +2638,8 @@ c     metadynamics shell thermostat variables
       real(8)      :: shlke
 
 c     end metadynamics shell thermostat variables
+
+      real(8) :: Pint
 
       data uni/1.d0,0.d0,0.d0,0.d0,1.d0,0.d0,0.d0,0.d0,1.d0/
       data newjob/.true./
@@ -2682,7 +2712,7 @@ c     first stage of velocity verlet algorithm
 c     integrate and apply nhc barostat
 
         call nhc_baro
-     x     (idnode,mxnode,natms,nchain,nrespa,engke,sigma,
+     x     (idnode,mxnode,natms,nchain,nrespa,sigma_nhc,
      x     hstep,volm_mass,qmass_baro,taup,v_epsilon)
 
 c     integrate and apply nvt thermostat
@@ -2708,7 +2738,7 @@ c     ====================================================
 c     update the momentum variable of the volume
 
         v_epsilon=v_epsilon+hstep*(1.d0/volm_mass)*
-     x     ((alpha_volm*2.0*engke)-virtot-vircon-(press*volm))   
+     x     ((alpha_volm*2.0*engke)-virtot-vircon-3.d0*(press*volm))   
 
 c     first integrate sinh(alpha*v_epsilon*tstep/4)
 
@@ -2751,14 +2781,6 @@ c     update positions
           
         enddo
 
-c  update the position of M-site if water model qtip4p/f requested
-
-        if(lmsite)then
-
-          call qtip4pf(idnode,mxnode,imcon,nbeads,ntpmls,g_qt4f)
-
-        endif
-
 c     update the volume based on v_epsilon
 
         volm=volm*exp(3.d0*tstep*v_epsilon)
@@ -2766,14 +2788,24 @@ c     update the volume based on v_epsilon
 c     scale cell vectors - isotropic
 
           scale=(volm/volm0)**(1.d0/3.d0)
+c          scale=exp(tstep*v_epsilon)
           do i=1,9
             cell(i)=cell0(i)*scale
+c            cell(i)=cell(i)*scale
           enddo
-        
+
 c     merge position data
         
         if(mxnode.gt.1)
      x    call merge(idnode,mxnode,natms,mxbuff,xxx,yyy,zzz,buffer)
+
+c     update the position of M-site if water model qtip4p/f requested
+
+        if(lmsite)then
+
+          call qtip4pf(idnode,mxnode,imcon,nbeads,ntpmls,g_qt4f)
+
+        endif
 
 c     second stage of velocity verlet algorithm
         
@@ -2799,11 +2831,11 @@ c     update velocities
      x    *fzz(i)*exp(-alpha_volm*v_epsilon*hstep*0.5d0)*sinh_v
 
         enddo
-        
+
 c     update the momentum variable of the volume
 
         v_epsilon=v_epsilon+hstep*(1.d0/volm_mass)*
-     x     ((alpha_volm*2.0*engke)-virtot-vircon-(press*volm))   
+     x     ((alpha_volm*2.0*engke)-virtot-vircon-3.d0*(press*volm))   
 
 c     integrate and apply nvt thermostat
         
@@ -2826,20 +2858,13 @@ c     ====================================================
 c     integrate and apply nhc barostat
 
         call nhc_baro
-     x     (idnode,mxnode,natms,nchain,nrespa,engke,sigma,
+     x     (idnode,mxnode,natms,nchain,nrespa,sigma_nhc,
      x     hstep,volm_mass,qmass_baro,taup,v_epsilon)
 
 c     merge velocity data
         
         if(mxnode.gt.1)
      x    call merge(idnode,mxnode,natms,mxbuff,vxx,vyy,vzz,buffer)
-
-c     scale cell vectors - isotropic
-
-          scale=(volm/volm0)**(1.d0/3.d0)
-          do i=1,9
-            cell(i)=cell0(i)*scale
-          enddo
 
 c     conserved quantity less kinetic and potential energy terms
 

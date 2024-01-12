@@ -664,6 +664,8 @@ c     author - w. smith       august 1992
 c     
 c***********************************************************************
 
+c      use vv_pimd_module, only:press2
+
       implicit none
 
       logical lbpd,lzeql,lpimd,newjob
@@ -754,6 +756,7 @@ c     energetic properties of system
       
       stpvir=virsrp+vircpe+virbnd+vircon+vircom+virtbp+virang
      x  +virshl+virtet+virter+virmet+virfld+virrng
+c     x  +virshl+virtet+virter+virmet+virfld
       stpeng=engcfg+engke+engrot
       stprot=2.d0*engrot/(boltz*max(1.d0,degrot))
       stpshl=2.d0*shlke/(boltz*max(1.d0,degshl))

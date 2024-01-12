@@ -33,7 +33,7 @@ c***********************************************************************
      x  epsq,fmax,opttol,rctter,rcut,rcutfb,rcuttb,rprim,rvdw,shlke,
      x  engcfg,temp,tstep,virang,virbnd,vircpe,virdih,virfbp,virfld,
      x  virinv,virlrc,virmet,virshl,virsrp,virtbp,virter,virtet,volm,
-     x  engmet,virtot,engord,virord,engrng,virrng,qmsbnd)
+     x  engmet,virtot,engord,virord,engrng,virrng,qmsbnd,keyens)
       
 c***********************************************************************
 c     
@@ -67,6 +67,7 @@ c***********************************************************************
       real(8) virtbp,virter,virtet,volm,engmet,virtot
       real(8) engord,virord,engrng,virrng,qmsbnd
       
+      integer keyens
 c     construct verlet neighbour list
       
       call nlist_driver
@@ -86,7 +87,7 @@ c     calculate atomic forces
      x  rcuttb,engtbp,virtbp,rcutfb,engfbp,virfbp,rctter,engter,
      x  virter,engbnd,virbnd,engang,virang,engdih,virdih,enginv,
      x  virinv,engtet,virtet,engshl,shlke,virshl,engfld,virfld,
-     x  engcfg,fmax,temp,engord,virord,engrng,virrng,qmsbnd)
+     x  engcfg,fmax,temp,engord,virord,engrng,virrng,qmsbnd,keyens)
       
 c     frozen atoms option
       
@@ -168,6 +169,8 @@ c***********************************************************************
       
       real(8),allocatable,dimension(:),save :: xdcs,ydcs,zdcs 
 
+      integer keyens
+
       pass=0
       keyrlx=0
       shgofr=lgofr
@@ -225,7 +228,7 @@ c     calculate atomic forces
      x    rcuttb,engtbp,virtbp,rcutfb,engfbp,virfbp,rctter,engter,
      x    virter,engbnd,virbnd,engang,virang,engdih,virdih,enginv,
      x    virinv,engtet,virtet,engshl,shlke,virshl,engfld,virfld,
-     x    engcfg,fmax,temp,engord,virord,engrng,virrng,qmsbnd)
+     x    engcfg,fmax,temp,engord,virord,engrng,virrng,qmsbnd,keyens)
         
 c     frozen atoms option
         
@@ -325,6 +328,8 @@ c***********************************************************************
       
       real(8), allocatable :: sxx(:),syy(:),szz(:)
       
+      integer keyens
+
       save cfgmin,newjob
       
       data newjob/.true./
@@ -383,7 +388,7 @@ c     calculate atomic forces
      x    rcuttb,engtbp,virtbp,rcutfb,engfbp,virfbp,rctter,engter,
      x    virter,engbnd,virbnd,engang,virang,engdih,virdih,enginv,
      x    virinv,engtet,virtet,engshl,shlke,virshl,engfld,virfld,
-     x    engcfg,fmax,temp,engord,virord,engrng,virrng,qmsbnd)
+     x    engcfg,fmax,temp,engord,virord,engrng,virrng,qmsbnd,keyens)
         
 c     frozen atoms option
         
