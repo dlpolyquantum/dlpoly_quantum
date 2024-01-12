@@ -1,5 +1,4 @@
-# Master makefile for DL_POLY Classic
-# Author: W. Smith January Dec 2010
+# Master makefile for DL_POLY Quantum
 # 
 #=======================================================================
 # Define default settings
@@ -7,7 +6,7 @@
 
 BINROOT = ../execute
 CC  = gcc
-EX = DLPOLY1NM.X
+EX = DLPOLY.X
 EXE = $(BINROOT)/$(EX)
 FC=mpif90
 SHELL=/bin/sh
@@ -63,7 +62,7 @@ debug:
 
 #=================== Dlpoly ==========================================
 dlpoly:
-	$(MAKE) LD="mpif90 -o" LDFLAGS="-lblas -llapack" \
+	$(MAKE) LD="mpif90 -o" LDFLAGS="-lblas -llapack " \
 	FC=mpif90 FFLAGS?="-c -O2" \
 	EX=$(EX) BINROOT=$(BINROOT) $(TYPE)
 

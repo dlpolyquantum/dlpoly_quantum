@@ -364,6 +364,11 @@ c     zero scaled 1-4 electrostatic and short range potential accumulators
       vdw14_vir=0.d0
       cou14_vir=0.d0
       
+      engcpe=0.d0
+      vircpe=0.d0
+      engsrp=0.d0
+      virsrp=0.d0
+
 c     loop over all specified dihedrals
       
       ii=0
@@ -1111,13 +1116,14 @@ c     sum contributions to potentials
         endif
         
       endif
-      
+     
       engcpe=engcpe+engc14
       vircpe=vircpe+virc14
       engsrp=engsrp+engs14
       virsrp=virsrp+virs14
       vdw_vir=vdw_vir+vdw14_vir
       cou_vir=cou_vir+cou14_vir
+      
       
 c     check for undefined potentials
       

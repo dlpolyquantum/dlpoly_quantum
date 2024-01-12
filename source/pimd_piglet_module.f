@@ -5,12 +5,12 @@ c
 c     dl_poly_quantum module to implement PIGLET thermostat for path 
 c     integral molecular dynamics
 c     
-c     reference: M. Ceriotti, D.E. Manolopoulos,
-c                   Phys. Rev. Lett. 109, 100604 (2012)  
-c                F. Uhl, D. Marx, M. Ceriotti,  
-c                   J. Chem. Phys. 145, 054101 (2016)     
+c     reference: ceriotti, manolopoulos,
+c                phys. rev. lett. 109, 100604 (2012)  
+c                uhl, marx, ceriotti,  
+c                j. chem. phys. 145, 054101 (2016)     
 c     
-c     author   - F. Uhl
+c     author   - f. uhl
 c
 c     adapted/implemented in dl_poly_quantum by
 c
@@ -237,7 +237,6 @@ c           !convert to internal system units
 
 c           !convert to internal system units
             IF(read_err == 0)THEN
-c               c_mat=c_mat*boltz/nbeads
               CALL c_mat_to_sysunit(c_mat,read_unit)
             END IF
 
@@ -260,8 +259,6 @@ c
 c     dl_poly_quantum routine to initialize to run PIGLET thermostat 
 c     in normal mode for path integral molecular dynamics
 c     
-c     author   - F. Uhl
-c
 c     adapted/implemented in dl_poly_quantum by
 c
 c              - Dil Limbu and Nathan London 2023
@@ -284,7 +281,6 @@ c**********************************************************************
       iatm1=(((idnode+1)*natms)/mxnode)
 
       ndim=(iatm1-iatm0)
-c     /dble(nbeads)
 
       dt = 0.5d0*tstep
 
@@ -378,8 +374,6 @@ c       fill a vector with random numbers
 
           l=(k-1)*ndim+i
 
-c          l=(i-1)*nbeads+k
-
           do j=1,nsp1
 
             smallsx(j,l)=tempx1(j,i)
@@ -411,8 +405,6 @@ c
 c     dl_poly_quantum routine to apply PIGLET thermostat to momentum
 c     in normal mode for path integral molecular dynamics
 c     
-c     author   - F. Uhl
-c
 c     adapted/implemented in dl_poly_quantum by
 c
 c              - Dil Limbu and Nathan London 2023
@@ -421,7 +413,7 @@ c**********************************************************************
 
       implicit none
 
-      logical             :: noskip
+      logical             :: noskip,newjob
       integer, intent(in) :: idnode,mxnode,natms
       real(8), intent(in) :: temp,uuu(102)
       real(8)             :: tstep
@@ -429,12 +421,12 @@ c**********************************************************************
       integer             :: iatm0,iatm1,ndim
       integer             :: init
 
-      data init /0/
-      save init
+      save newjob
+      data newjob/.true./
 
-      if(init.eq.0)then
+      if(newjob)then
         call piglet_init(idnode,mxnode,natms,tstep,temp,uuu)
-        init=1
+        newjob=.false.
       endif
 
       iatm0=((idnode*natms)/mxnode)
@@ -598,6 +590,9 @@ c     dl_poly_quantum routine to convert C-MATRIX (unit of energy) into
 c     internal system unit (K) for PIGLET thermostat to 
 c     momentum in normal mode for path integral molecular dynamics
 c     
+c     C-MATRIX is scaled by nbeads to simulate at the physical
+c     temperature 
+c
 c     copyright - 
 c     authors   - Dil Limbu and Nathan London 2023
 c
@@ -657,9 +652,6 @@ c     k - The exponent of the power of two used to scale the matrix
 c     Returns:
 c     EM - The expoential of the given matrix
 c     
-c     copyright - 
-c     authors   - 
-c     
 c**********************************************************************
 
       implicit none
@@ -709,9 +701,6 @@ c     SST - The matrix to determine the Cholesky decomposition of
 c     n - The size of the matrix
 c     Returns:
 c     S - The computed Cholesky decomposition
-c     
-c     copyright - 
-c     authors   - 
 c     
 c**********************************************************************
 

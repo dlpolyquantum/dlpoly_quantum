@@ -1,0 +1,18 @@
+ DL_POLY Quantum additonal program for calculating velocity and dipole autocorrelation
+ functions and resulting diffusion coefficients and absorption spectra, respectively
+
+ Requires FFTW3 package for performing Fourier transform
+
+ Authors - Nathan London and Dil Limbu
+
+Compile using make, ensure FFTW3 package is linked in Makefile
+
+Running the program:
+-Required files:
+	- CONTROL file detailing calculation options (see example directory)
+	- CORDIP/CORVEL files for each trajectory in a seperate directory labeled as traj001,
+			traj002, etc (see example directory for directory generation bash script, 
+			setup.sh)
+
+Can be run in parallel using mpirun
+

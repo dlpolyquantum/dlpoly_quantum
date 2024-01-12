@@ -15,33 +15,39 @@ c***********************************************************************
       use site_module, only: chgsit,wgtsit,nummols,numsit
       use utility_module, only: sdot0,invert
       use error_module, only: error
-c      use merge_tools, only: merge
 
       implicit none
 
-      real(8), allocatable, save :: xvalinit(:),yvalinit(:),zvalinit(:)
-      real(8), allocatable, save :: corrt,xoper(:),yoper(:),zoper(:)
+      real(8), allocatable, save :: xoper(:),yoper(:),zoper(:)
 
       contains
 
       subroutine corr_init
      x  (idnode,mxnode,natms,ntpmls,itmols,keyens,keycorr,nummols,
      x  numsit)
+
+c***********************************************************************
+c     
+c     dl_poly_quantum subroutine for initializing correlation function
+c     calculation  
+c
+c     authors - Nathan London and Dil Limbu 2023
+c
+c***********************************************************************
+
       character*6 name
       integer, intent(in) :: idnode,mxnode,natms,ntpmls,itmols,keycorr
       integer, intent(in) :: keyens
       integer, intent(in) :: nummols(ntpmls),numsit(ntpmls)
       integer :: i
 
-c      if(keycorr.eq.1)then
-c        allocate(xvalinit(nummols(itmols)))
-c        allocate(yvalinit(nummols(itmols)))
-c        allocate(zvalinit(nummols(itmols)))
-c      else
-        allocate(xoper(nummols(itmols)))
-        allocate(yoper(nummols(itmols)))
-        allocate(zoper(nummols(itmols)))
-c      endif
+c     allocate operator value arrays
+
+      allocate(xoper(nummols(itmols)))
+      allocate(yoper(nummols(itmols)))
+      allocate(zoper(nummols(itmols)))
+
+c     open output file based on operator type
 
       if(idnode.eq.0)then
          
@@ -56,24 +62,24 @@ c      endif
         endif
       endif
 
-c      if(keyens.eq.45)then
-c        call  calc_val_cent
-c     x    (idnode,mxnode,natms,ntpmls,itmols,keycorr,0,nummols,numsit)
-c      else 
+c     calculate initial value of operator
+
+      if(keyens.eq.62)then
+        call  calc_val_cent
+     x    (idnode,mxnode,natms,ntpmls,itmols,keycorr,0,nummols,numsit)
+      else 
         call calc_val_bead
      x    (idnode,mxnode,natms,ntpmls,itmols,keycorr,0,nummols,numsit)
-c      endif
+      endif
+
+c     write initial value to file
 
       if(idnode.eq.0)then
         
-c        if(keycorr.eq.1)then   
-c          write(corr,'(2e14.6)') 0.d0,corrt
-c        else
-          write(corr,'(1e14.6)') 0.d0
-          do i=1,nummols(itmols)
-            write(corr,'(3e14.6)') xoper(i),yoper(i),zoper(i)
-          enddo
-c        endif
+        write(corr,'(1e14.6)') 0.d0
+        do i=1,nummols(itmols)
+          write(corr,'(3e14.6)') xoper(i),yoper(i),zoper(i)
+        enddo
          
       endif
       
@@ -82,32 +88,39 @@ c        endif
       subroutine correlation
      x  (idnode,mxnode,natms,ntpmls,itmols,keyens,keycorr,nstep,nummols,
      x  numsit,tstep)
+c***********************************************************************
+c     
+c     dl_poly_quantum subroutine for doing correlation function
+c     calculation during simulation
+c
+c     authors - Nathan London and Dil Limbu 2023
+c
+c***********************************************************************
       integer, intent(in) :: idnode,mxnode,natms,ntpmls,itmols,nstep
       integer, intent(in) :: keyens,keycorr
       integer, intent(in) :: nummols(ntpmls),numsit(ntpmls)
       real(8), intent(in) :: tstep
       integer :: i
 
-c      if(keyens.eq.45)then
-c        call  calc_val_cent
-c     x    (idnode,mxnode,natms,ntpmls,itmols,keycorr,nstep,nummols,
-c     x    numsit)
-c      else 
+c     calculate value of operator
+
+      if(keyens.eq.62)then
+        call  calc_val_cent
+     x    (idnode,mxnode,natms,ntpmls,itmols,keycorr,nstep,nummols,
+     x    numsit)
+      else 
         call calc_val_bead
      x    (idnode,mxnode,natms,ntpmls,itmols,keycorr,nstep,nummols,
      x    numsit)
-c      endif
+      endif
       
+c     write value of operator to file
       if(idnode.eq.0)then
          
-c        if(keycorr.eq.1)then
-c          write(corr,'(2e14.6)') nstep*tstep,corrt
-c        else
-          write(corr,'(1e14.6)') nstep*tstep
-          do i=1,nummols(itmols)
-            write(corr,'(3e14.6)') xoper(i),yoper(i),zoper(i)
-          enddo
-c        endif
+        write(corr,'(1e14.6)') nstep*tstep
+        do i=1,nummols(itmols)
+          write(corr,'(3e14.6)') xoper(i),yoper(i),zoper(i)
+        enddo
          
       endif
       
@@ -115,6 +128,14 @@ c        endif
 
       subroutine calc_val_cent
      x  (idnode,mxnode,natms,ntpmls,itmols,keycorr,nstep,nummols,numsit)
+c***********************************************************************
+c     
+c     dl_poly_quantum subroutine for calculating value of operator
+c     for PA-CMD simulations
+c
+c     authors - Nathan London and Dil Limbu 2023
+c
+c***********************************************************************
 
       integer, intent(in) :: idnode,mxnode,natms,ntpmls,itmols,nstep
       integer, intent(in) :: keycorr
@@ -132,37 +153,30 @@ c        endif
       
       jsite=0
       ksite=0
-c      write(6,*)"jsite",jsite
       
+c     get atom indices if specificied molecule is not first type
       if(itmols.gt.1)then
         do i=1,itmols-1
           jsite=jsite+nummols(i)*numsit(i)
           ksite=ksite+numsit(i)
-c        write(6,*)"jsite",jsite
         enddo
       endif
-c      write(6,*) "nummols",nummols(itmols)
-c      write(6,*) "numsit",numsit(itmols)
-c      imol0=imol0+jsite
-c      imol1=imol1+jsite
-c      write(6,*)"imol0",imol0
-c      write(6,*)"imol1",imol1
       
+c     calculate molecular mass      
       molmass=0.d0
       do i=1,numsit(itmols)
         mass(i)=wgtsit(ksite+i)
         molmass=molmass+mass(i)
       enddo
       
+c     get atom charges for dipole moment 
       if(keycorr.eq.2)then
         do i=1,numsit(itmols)
           charge(i)=chgsit(ksite+i)
         enddo
       endif
-c      write(6,*)"molmass",molmass
-c      write(6,*)"mass",mass(:)
 
-      corrt=0.d0
+c     get velocities or postions depending on operator      
       do i=imol0,imol1
         xval=0.d0
         yval=0.d0
@@ -180,18 +194,24 @@ c      write(6,*)"mass",mass(:)
             endif
           enddo
 
+c     bead average before operator
           call bead_average(datx,daty,datz,avgx,avgy,avgz)
           atmx(j)=avgx
           atmy(j)=avgy
           atmz(j)=avgz
         enddo
+
+c     get molecule position with minimum image convention
         if(keycorr.eq.2) call mol_gather(numsit(itmols),atmx,atmy,atmz)
+
+c     calculate center-of-mass
         do j=1,numsit(itmols)
           xval=xval+mass(j)*atmx(j)/molmass
           yval=yval+mass(j)*atmy(j)/molmass
           zval=zval+mass(j)*atmz(j)/molmass
         enddo
 
+c     calculate dipole moment based on distance from center-of-mass        
         if(keycorr.eq.2)then
           comx=xval
           comy=yval
@@ -209,41 +229,30 @@ c      write(6,*)"mass",mass(:)
         
         endif
 
-c        if(nstep.eq.0.and.keycorr.eq.1)then
-c          xvalinit(i)=xval
-c          yvalinit(i)=yval
-c          zvalinit(i)=zval
-c        endif
-        
-c        if(keycorr.eq.1)then
-c          corrt=corrt+xval*xvalinit(i)+yval*yvalinit(i)+zval*zvalinit(i)
-c        else
+c     store operater value for molecule        
           xoper(i)=xval
           yoper(i)=yval
           zoper(i)=zval
-c        endif
       enddo
+
+c     sum over nodes
       if(mxnode.gt.1)then
-c        if(keycorr.eq.1)then
-c          buffer(1)=corrt
-
-c          call gsync()
-c          call gdsum(buffer(1),1,buffer(2))
-
-c          corrt=buffer(1)
-c        elseif(keycorr.eq.2)then
           call merge
      x      (idnode,mxnode,nummols,mxbuff,xoper,yoper,zoper,buffer)
-c        endif
       endif
       
-      corrt=corrt/dble(nummols(itmols))
-c      write(6,*) "corrt",corrt
-
       end subroutine calc_val_cent
 
       subroutine calc_val_bead
      x  (idnode,mxnode,natms,ntpmls,itmols,keycorr,nstep,nummols,numsit)
+c***********************************************************************
+c     
+c     dl_poly_quantum subroutine for calculating value of operator
+c     for real-time dynamics simulations
+c
+c     authors - Nathan London and Dil Limbu 2023
+c
+c***********************************************************************
 
       integer, intent(in) :: idnode,mxnode,natms,ntpmls,itmols,nstep
       integer, intent(in) :: keycorr
@@ -261,41 +270,30 @@ c      write(6,*) "corrt",corrt
       
       jsite=0
       ksite=0
-c      write(6,*)"jsite",jsite
+c     get atom indices if specificied molecule is not first type
       if(itmols.gt.1)then
         do i=1,itmols-1
           jsite=jsite+nummols(i)*numsit(i)
           ksite=ksite+numsit(i)
         enddo
       endif
-c      write(6,*) "nummols",nummols(itmols)
-c      write(6,*) "numsit",numsit(itmols)
-c      imol0=imol0+shift
-c      imol1=imol1+shift
-c      write(6,*)"imol0",idnode,imol0
-c      write(6,*)"imol1",idnode,imol1
       
+c     calculate molecular mass      
       molmass=0.d0
       do i=1,numsit(itmols)
         mass(i)=wgtsit(ksite+i)
         molmass=molmass+mass(i)
       enddo
       
+c     get atom charges for dipole moment 
       if(keycorr.eq.2)then
         do i=1,numsit(itmols)
           charge(i)=chgsit(ksite+i)
         enddo
       endif
-c      write(6,*)"molmass",molmass
-c      write(6,*)"mass",mass(:)
-c      write(6,*)"charge",charge(:)
-
-      corrt=0.d0
-c      xoper=0.d0
-c      yoper=0.d0
-c      zoper=0.d0
+      
       do i=imol0,imol1
-      xval=0.d0
+        xval=0.d0
         yval=0.d0
         zval=0.d0
         do k=1,nbeads
@@ -311,21 +309,15 @@ c      zoper=0.d0
               atmx(j)=xxx((k-1)*natms+(i-1)*numsit(itmols)+jsite+j)
               atmy(j)=yyy((k-1)*natms+(i-1)*numsit(itmols)+jsite+j)
               atmz(j)=zzz((k-1)*natms+(i-1)*numsit(itmols)+jsite+j)
-c              atmx(j)=xxx((k-1)*natms+(i-1)*numsit(itmols)+j)
-c              atmy(j)=yyy((k-1)*natms+(i-1)*numsit(itmols)+j)
-c              atmz(j)=zzz((k-1)*natms+(i-1)*numsit(itmols)+j)
             endif
           enddo
-c          write(6,*) "datx",i,atmx(1)
-c          write(6,*) "daty",i,atmx(1)
-c          write(6,*) "datz",i,atmx(1)
 
-c         make sure full molecule is in same periodic image
+c     get molecule position with minimum image convention
           if(keycorr.eq.2)then
             call mol_gather(numsit(itmols),atmx,atmy,atmz)
           endif
           
-c         get center of mass value          
+c     get center-of-mass value          
           if(keycorr.eq.1)then
           do j=1,numsit(itmols)
             datx(k)=datx(k)+mass(j)*atmx(j)/molmass
@@ -334,6 +326,7 @@ c         get center of mass value
           enddo
           endif
 
+c     calculate dipole moment based on distance from center-of-mass        
           if(keycorr.eq.2)then
             comx=datx(k)
             comy=daty(k)
@@ -344,9 +337,6 @@ c         get center of mass value
             datz(k)=0.d0
 
             do j=1,numsit(itmols)
-c              datx(k)=datx(k)+charge(j)*(atmx(j))
-c              daty(k)=daty(k)+charge(j)*(atmy(j))
-c              datz(k)=datz(k)+charge(j)*(atmz(j))
               datx(k)=datx(k)+charge(j)*(atmx(j)-comx)
               daty(k)=daty(k)+charge(j)*(atmy(j)-comy)
               datz(k)=datz(k)+charge(j)*(atmz(j)-comz)
@@ -355,61 +345,38 @@ c              datz(k)=datz(k)+charge(j)*(atmz(j))
           endif
 
         enddo
-        
+
+c     calculate bead-averaged value of operator        
         call bead_average(datx,daty,datz,avgx,avgy,avgz)
         xval=avgx
         yval=avgy
         zval=avgz
-c          write(6,*) "avgx",i,j,avgx
-c          write(6,*) "avgy",i,j,avgy
-c          write(6,*) "avgz",i,j,avgz
-
-c        if(nstep.eq.0.and.keycorr.eq.1)then
-c          xvalinit(i)=xval
-c          yvalinit(i)=yval
-c          zvalinit(i)=zval
-c        endif
-c        call min_image
-c     x    (xval,yval,zval,xvalinit(i),yvalinit(i),zvalinit(i))
-c        write(6,*) "mol",i
-c        write(6,*) "xval",xval
-c        write(6,*) "yval",yval
-c        write(6,*) "zval",zval
-c        if(keycorr.eq.1)then
-c          corrt=corrt+xval*xvalinit(i)+yval*yvalinit(i)+zval*zvalinit(i)
-c        else
-          xoper(i)=xval
-          yoper(i)=yval
-          zoper(i)=zval
-c          write(6,*) "xoper",xoper(i)
-c          xoper=xoper+xval
-c          yoper=yoper+yval
-c          zoper=zoper+zval
-c        endif
+          
+c     store operater value for molecule        
+        xoper(i)=xval
+        yoper(i)=yval
+        zoper(i)=zval
       enddo
+
+c     sum over nodes      
       if(mxnode.gt.1)then
-c        if(keycorr.eq.1)then
-c          buffer(1)=corrt
-
-c          call gsync()
-c          call gdsum(buffer(1),1,buffer(2))
-
-c          corrt=buffer(1)
-c        elseif(keycorr.eq.2)then
           call merge
      x      (idnode,mxnode,nummols(itmols),mxbuff,xoper,yoper,zoper,
      x      buffer)
-c       endif
 
       endif
-     
-c      write(6,*) xoper(1) 
-      corrt=corrt/dble(nummols(itmols))
-c      write(6,*) "corrt",corrt
 
       end subroutine calc_val_bead
 
       subroutine bead_average(datx,daty,datz,avgx,avgy,avgz)
+c***********************************************************************
+c     
+c     dl_poly_quantum subroutine for calculating bead-average
+c     of a quantity
+c
+c     authors - Nathan London and Dil Limbu 2023
+c
+c***********************************************************************
 
       implicit none
       integer i
@@ -433,6 +400,15 @@ c      write(6,*) "corrt",corrt
       end subroutine bead_average
 
       subroutine mol_gather(numsit,atmx,atmy,atmz)
+c***********************************************************************
+c     
+c     dl_poly_quantum subroutine for returning unwrapped positions
+c     of a molecule to ensure molecule is whole for calculating 
+c     center-of-mass within minimum image convention   
+c
+c     authors - Nathan London and Dil Limbu 2023
+c
+c***********************************************************************
         
       integer, intent(in) :: numsit
       integer i
@@ -473,29 +449,5 @@ c      write(6,*) "corrt",corrt
        
       end subroutine mol_gather
       
-      subroutine min_image(xval,yval,zval,xvalinit,yvalinit,zvalinit)
-        
-      real(8) :: xval,yval,zval,xvalinit,yvalinit,zvalinit
-      real(8) :: dxx,dyy,dzz,sxx,syy,szz,det
-
-      call invert(cell,rcell,det)
-
-      dxx=xval-xvalinit
-      dyy=yval-yvalinit
-      dzz=zval-zvalinit
-      sxx=dxx*rcell(1)+dyy*rcell(4)+dzz*rcell(7)
-      syy=dxx*rcell(2)+dyy*rcell(5)+dzz*rcell(8)
-      szz=dxx*rcell(3)+dyy*rcell(6)+dzz*rcell(9)
-      sxx=sxx-anint(sxx)
-      syy=syy-anint(syy)
-      szz=szz-anint(szz)
-      dxx=sxx*cell(1)+syy*cell(4)+szz*cell(7)
-      dyy=sxx*cell(2)+syy*cell(5)+szz*cell(8)
-      dzz=sxx*cell(3)+syy*cell(6)+szz*cell(9)
-      xval=xvalinit+dxx
-      yval=yvalinit+dxx
-      zval=zvalinit+dxx
-       
-      end subroutine min_image
-      
       end module correlation_module
+

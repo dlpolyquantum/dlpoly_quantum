@@ -1,0 +1,15 @@
+DL_POLY Quantum additional program for generating multiple CONFIG files from a single
+HISTORY file. Used to generate intial configuration files for real-time dynamics 
+simulations after performing a sampling simulation
+
+Authors: Nathan London and Dil Limbu
+
+Compile using:
+	gfortran -o config config.f90
+
+Running the program:
+-Required files:
+	- CONTROL file detailing input and output configuration numbers (See example directory)
+	- HISTORY file
+
+

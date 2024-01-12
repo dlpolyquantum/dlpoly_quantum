@@ -18,6 +18,13 @@ c     authors   - M.R.Momeni and F.A.Shakib 2021
 c
 c     Method Development and Materials Simulation Laboratory
 c
+c     Modified to allow for PIMD in normal modes with additional 
+c     thermostats and real-time PI dynamics methods: RPMD, PA-CMD, and
+c     T-RPMD 
+c
+c     copyright - Dil Limbu and Nathan London
+c     authors - Dil Limbu and Nathan London 2023
+c
 c**********************************************************************
       
       use setup_module,  only : mspimd,nrite,boltz,hbar,mxbuff,ntherm,
@@ -44,7 +51,6 @@ c**********************************************************************
       real(8), allocatable, save :: etx(:,:),ety(:,:),etz(:,:)
       real(8), allocatable, save :: pcx(:,:),pcy(:,:),pcz(:,:)
       real(8), allocatable, save :: nmfreq(:),transform(:,:)
-      real(8), allocatable, save :: cvec1(:),cvec2(:)
 
 c     PILE C1/C2 parameters 
       real(8), allocatable, save :: pileC1(:),pileC2(:)
@@ -61,7 +67,7 @@ c     PIGLET parameters
       public read_rnd_cfg,save_rnd_cfg
       public normal_mode_mass
       public coord2norm,momenta2norm,force2norm
-      public norm2coord,norm2momenta,norm2force
+      public norm2coord,norm2momenta
       public ring,freerp,freerp_noc
       
       contains
@@ -89,9 +95,6 @@ c**********************************************************************
 c     allocate arrays
       
       fail(:)=0
-c      if(nbeads.gt.1)then
-c     PIMD nbead = 1 testing
-c     TESTED BY DIL LIMBU        
       if(nbeads.ge.1)then
         allocate (zmass(1:mspimd),       stat=fail(1))
         allocate (rzmass(1:mspimd),      stat=fail(2))
@@ -136,9 +139,6 @@ c**********************************************************************
       fail(:)=0
       safe=.true.
       
-c      if(nbeads.gt.1)then
-c     PIMD nbead = 1 testing
-c     TESTED BY DIL LIMBU        
       if(nbeads.ge.1)then
         deallocate(zmass,rzmass,etx,ety,etz,pcx,pcy,pcz,stat=fail(1))
         deallocate(uxx,uyy,uzz,pxx,pyy,pzz,wxx,wyy,wzz,stat=fail(2))
@@ -161,6 +161,12 @@ c     dl_poly_classic routine to initialise a pimd simulation
 c     
 c     copyright - daresbury laboratory
 c     author    - w.smith june 2016
+c
+c     Modified to include normal mode transformations and frequency
+c     generation
+c     
+c     copyright - Dil Limbu and Nathan London
+c     authors - Dil Limbu and Nathan London 2023 
 c     
 c**********************************************************************
       
@@ -180,11 +186,13 @@ c     get normal mode frequencies
       if(keyens.ge.43)then
         fail(:)=0
         allocate(nmfreq(nbeads),stat=fail(1))
-c        allocate(adiabvec(nbeads),stat=fail(2))
 
+        
         if(keyens.eq.45.or.keyens.ge.61)then
+c     Real-time PI and PIGLET normal mode frequencies          
           freq = dble(nbeads)*boltz*temp/hbar
         else
+c     PIMD normal mode frequencies
           freq = sqrt(dble(nbeads))*boltz*temp/hbar
         endif
 
@@ -205,12 +213,20 @@ c     initialise pimd masses
           call normal_mode_mass(idnode,mxnode,natms,keyens,temp)
         endif
 
+c     reset pacmd non-centroid frequencies
+     
+        if(keyens.eq.62) then
+          nmfreq(2:nbeads) = nbeads**(dble(nbeads)/dble(nbeads-1))*
+     x          boltz*temp/hbar
+        end if
+
 c     initialise staged coordinates
       
         if(keyens.le.42) then 
           call stage_coords(idnode,mxnode,natms)
 
         else
+c     initialise normal mode transformation matrix          
           allocate(transform(nbeads,nbeads))
           do j=1,nbeads
             transform(j,1) = 1.d0/sqrt(dble(nbeads))
@@ -227,14 +243,11 @@ c     initialise staged coordinates
      x        (-1.d0)**j
             endif
           enddo
+c     transform initial coordinates          
           call coord2norm(idnode,mxnode,natms)
         endif
      
-c      write(6,*) "coord2norm"
-c      write(6,*) uxx(:) 
       if(keyres.eq.0)then
-c      write(6,*) "other"
-c      write(6,*) uxx(:) 
         
 c     initialise pimd thermostats
       if(keyens.ne.44)then
@@ -252,26 +265,22 @@ c     initialise pimd thermostats
             
         enddo
       endif
-c      write(6,*) "other2"
-c      write(6,*) uxx(1:nchain+1) 
         
 c     set starting momenta
         
         call gauss(natms*nbeads,vxx,vyy,vzz)
-c      write(6,*) vxx(:)  
 c     initialise staged momenta
         
         if(keyens.le.42) then 
           call stage_momenta(idnode,mxnode,natms)
         else
+c     initialise normal mode momenta
           call momenta2norm(idnode,mxnode,natms)
         endif
-c      write(6,*) pxx(:) 
 c     reset centre of mass momentum and system temperature
-c        if(keyens.ne.44)then 
         call reset_pimd_momenta(idnode,mxnode,natms,sigma)
-c        endif
-c     restore unstaged velocities
+
+c     restore cartesian velocities
 
         if(keyens.le.42) then 
           call unstage_momenta(idnode,mxnode,natms)
@@ -290,7 +299,7 @@ c     restore staged momenta for restart
         endif
         
 c     read pimd thermostats
-        if(keyens.lt.44.or.keyens.eq.45) then
+        if(keyens.lt.44.or.keyens.eq.62) then
           call read_thermostats(idnode,mxnode,natms,tmpold)
           if(keyens.eq.41)then
              call read_rnd_cfg(idnode,mxnode,uuu)
@@ -303,16 +312,9 @@ c     rescale momenta and thermostats for keyres=2
       if(keyres.eq.2)then
 
         call reset_pimd_momenta(idnode,mxnode,natms,sigma)
-c        tmpscl=sqrt(temp/tmpold)
-c        write(6,*) "tmpold"
-c        write(6,*) tmpold
-c        do i=1,iatm1-iatm0
+      
+      endif
 
-c         pxx(i)=pxx(i)*tmpscl
-c          pyy(i)=pyy(i)*tmpscl
-c          pzz(i)=pzz(i)*tmpscl
-
-c       enddo
       if(keyens.ne.44)then
         do i=1,mspimd
           
@@ -338,8 +340,6 @@ c     restore unstaged velocities
           call norm2momenta(idnode,mxnode,natms)
         endif
         
-      endif
-        
 c     calculate kinetic tensor and energy
       
       strkin(:)=0.d0
@@ -361,32 +361,6 @@ c     calculate kinetic tensor and energy
       if(mxnode.gt.1)call gdsum(strkin,9,buffer)
       engke=0.5d0*(strkin(1)+strkin(5)+strkin(9))
      
-     
-      if(keyens.eq.63)then 
-        rand=puni(1,uuu)
-
-        fail(:)=0
-        if(idnode.eq.0)write(6,*)"allocate"
-        allocate(cvec1(nbeads),stat=fail(1))
-        allocate(cvec2(nbeads),stat=fail(2))
-
-c     for scaled mass with piglet thermostat
-c        if(keyens.eq.45)freq = (dble(nbeads))*boltz*temp/hbar
-
-        nmfreq(1) = 0.d0
-
-        cvec1(1)=1.d0
-        cvec2(1)=0.d0
-        do i=2,nbeads
-          cvec1(i)=dexp(-tstep*nmfreq(i))
-          cvec2(i)=sqrt(1.d0-cvec1(i)**2)
-        enddo
-        if(idnode.eq.0)then
-          write(6,*)"cvec1",cvec1(:)
-          write(6,*)"cvec2",cvec2(:)
-        endif
-      endif
-
       return      
       end subroutine pimd_init
       
@@ -486,7 +460,6 @@ c     initialise virial energy estimator and mean-square radius of gyration
 c     inverse of cell matrix
       
       call invert(cell,rcell,det)
-c      call ring_gather_nm(idnode,mxnode,natms)
 
 c     calculate ring virial and ring centroid
       
@@ -1337,11 +1310,11 @@ c     Method Development and Materials Simulation Laboratory
 
 c     update the position of M-site if water model qtip4p/f requested
 
-        if(lmsite)then
+c        if(lmsite)then
 
-          call qtip4pf(idnode,mxnode,imcon,nbeads,ntpmls,g_qt4f)
+c          call qtip4pf(idnode,mxnode,imcon,nbeads,ntpmls,g_qt4f)
 
-        endif
+c        endif
 
 c *******************************************************************      
 
@@ -1351,6 +1324,14 @@ c     restore coordinate array replication
       
       call pmerge(idnode,mxnode,natms,xxx,yyy,zzz)
       
+c     update the position of M-site if water model qtip4p/f requested
+
+        if(lmsite)then
+
+          call qtip4pf(idnode,mxnode,imcon,nbeads,ntpmls,g_qt4f)
+
+        endif
+
       end subroutine unstage_coords
       
       subroutine unstage_momenta(idnode,mxnode,natms)
@@ -1766,12 +1747,13 @@ c     assigning reverse mass of zero to M-sites
             rzmass((i-iatm0)*nbeads+k)=0.d0
             
           else
-            if(keyens.eq.61.or.keyens.eq.63)then
-c            if(keyens.ge.44)then
+            if(keyens.eq.45.or.keyens.eq.61.or.keyens.eq.63)then
+c     assigning scaled mass for piglet thermostat,rpmd, or trpmd 
             zmass((i-iatm0)*nbeads+k)=weight((k-1)*natms+i)/dble(nbeads)
             rzmass((i-iatm0)*nbeads+k)=
      x        dble(nbeads)/weight((k-1)*natms+i)
             elseif(keyens.eq.62)then
+c         pa-cmd scaled mass
               omega=nbeads**(dble(nbeads)/dble(nbeads-1))*
      x          boltz*temp/hbar
                 if(k.eq.1)then
@@ -1780,10 +1762,8 @@ c            if(keyens.ge.44)then
                   rzmass((i-iatm0)*nbeads+k)=
      x              dble(nbeads)/weight((k-1)*natms+i)
                 else
-                  zmass((i-iatm0)*nbeads+k)=weight((k-1)*natms+i)
-     x              /dble(nbeads)
-c                  zmass((i-iatm0)*nbeads+k)=weight((k-1)*natms+i)*
-c     x              nmfreq(k)**2/(omega**2*dble(nbeads))
+                  zmass((i-iatm0)*nbeads+k)=weight((k-1)*natms+i)*
+     x              nmfreq(k)**2/(omega**2*dble(nbeads))
                   rzmass((i-iatm0)*nbeads+k)=dble(nbeads)*omega**2/
      x              (nmfreq(k)**2*weight((k-1)*natms+i))
                 endif
@@ -1791,24 +1771,11 @@ c     x              nmfreq(k)**2/(omega**2*dble(nbeads))
               zmass((i-iatm0)*nbeads+k)=weight((k-1)*natms+i)
               rzmass((i-iatm0)*nbeads+k)=1.d0/(weight((k-1)*natms+i))
             endif
-c     assigneing scaled mass for piglet thermostat 
-            if(keyens.eq.45)then
-              zmass((i-iatm0)*nbeads+k)=weight((k-1)*natms+i)/nbeads
-              rzmass((i-iatm0)*nbeads+k)=1.d0/(weight((k-1)*natms+i)/
-     x                                             nbeads)
-            endif
 
           endif
 
         enddo
       
-c      if(keyens.eq.45)then
-c        omega=nbeads**(dble(nbeads)/dble(nbeads-1))*boltz*temp/hbar
-c        adiabvec(k)=nmfreq(k)**2/(omega**2)
-c      else
-c        adiabvec(k)=1.d0
-c      endif
-
       enddo
 
       end subroutine normal_mode_mass
@@ -1820,7 +1787,7 @@ c
 c     dl_poly quantum routine for transforming of coordinates in normal
 c     mode for path integral molecular dynamics
 c     
-c     copyright - 
+c     copyright - Dil Limbu and Nathan London 
 c     authors   - Dil Limbu and Nathan London 2023
 c     
 c**********************************************************************
@@ -1834,7 +1801,8 @@ c**********************************************************************
 
       iatm0=(idnode*natms)/mxnode+1
       iatm1=((idnode+1)*natms)/mxnode
-    
+   
+c     ensure all beads positions are unwrapped      
       call ring_gather(idnode,mxnode,natms)
       
       do i=iatm0,iatm1
@@ -1845,7 +1813,9 @@ c**********************************************************************
           ytmp(k)=yyy((k-1)*natms+i)
           ztmp(k)=zzz((k-1)*natms+i)
         
-        enddo
+      enddo
+
+c     perform transformation      
         call realfft(xtmp,nbeads,1)
         call realfft(ytmp,nbeads,1)
         call realfft(ztmp,nbeads,1)
@@ -1867,7 +1837,7 @@ c
 c     dl_poly quantum routine for transforming of momenta in normal
 c     mode for path integral molecular dynamics
 c     
-c     copyright - 
+c     copyright - Dil Limbu and Nathan London
 c     authors   - Dil Limbu and Nathan London 2023
 c     
 c**********************************************************************
@@ -1906,6 +1876,7 @@ c**********************************************************************
 
       enddo
       
+c     go from velocities to momenta      
       do i=1,nbeads*(iatm1-iatm0+1)
         
         if(zmass(i).lt.1d-6)then
@@ -1930,7 +1901,7 @@ c
 c     dl_poly quantum routine for transforming of force in normal
 c     mode for path integral molecular dynamics
 c     
-c     copyright - 
+c     copyright - Dil Limbu and Nathan London
 c     authors   - Dil Limbu and Nathan London 2023
 c     
 c**********************************************************************
@@ -1995,7 +1966,7 @@ c
 c     dl_poly quantum routine for transforming coordinates from normal
 c     mode for path integral molecular dynamics
 c     
-c     copyright - 
+c     copyright - Dil Limbu and Nathan London
 c     authors   - Dil Limbu and Nathan London 2023
 c     
 c**********************************************************************
@@ -2037,9 +2008,11 @@ c**********************************************************************
 
       enddo
 
-c *******************************************************************
-c     M.R.Momeni & F.A.Shakib
-c     Method Development and Materials Simulation Laboratory
+c     restore coordinate array replication
+
+      call ring_gather(idnode,mxnode,natms)
+
+      call pmerge(idnode,mxnode,natms,xxx,yyy,zzz)
 
 c     update the position of M-site if water model qtip4p/f requested
 
@@ -2048,14 +2021,6 @@ c     update the position of M-site if water model qtip4p/f requested
           call qtip4pf(idnode,mxnode,imcon,nbeads,ntpmls,g_qt4f)
 
         endif
-
-c *******************************************************************
-
-c     restore coordinate array replication
-
-      call ring_gather(idnode,mxnode,natms)
-
-      call pmerge(idnode,mxnode,natms,xxx,yyy,zzz)
 
       end subroutine norm2coord
       
@@ -2066,7 +2031,7 @@ c
 c     dl_poly quantum routine for transforming of momenta from normal
 c     mode for path integral molecular dynamics
 c     
-c     copyright - 
+c     copyright - Dil Limbu and Nathan London
 c     authors   - Dil Limbu and Nathan London 2023
 c     
 c**********************************************************************
@@ -2081,6 +2046,7 @@ c**********************************************************************
       iatm0=(idnode*natms)/mxnode+1
       iatm1=((idnode+1)*natms)/mxnode
       
+c     convert from momenta to velocities      
       do i=1,nbeads*(iatm1-iatm0+1)
        
           pxx(i)=pxx(i)*rzmass(i)
@@ -2131,72 +2097,17 @@ c     restore velocity array replication
       call pmerge(idnode,mxnode,natms,vxx,vyy,vzz)
 
       end subroutine norm2momenta
-
-      subroutine norm2force(idnode,mxnode,natms)
-      
-c**********************************************************************
-c     
-c     dl_poly quantum routine for transforming of force from normal
-c     mode for path integral molecular dynamics
-c     
-c     copyright - 
-c     authors   - Dil Limbu and Nathan London 2023
-c     
-c**********************************************************************
-      
-      implicit none
-
-      integer, intent(in) :: idnode,mxnode,natms
-      integer             :: i,k,iatm0,iatm1
-
-      real(8) :: xtmp(nbeads),ytmp(nbeads),ztmp(nbeads)
-
-      iatm0=(idnode*natms)/mxnode+1
-      iatm1=((idnode+1)*natms)/mxnode
-      
-      do i=iatm0,iatm1
-        
-        do k=1,nbeads
-        
-          xtmp(k)=wxx((i-iatm0)*nbeads+k)
-          ytmp(k)=wyy((i-iatm0)*nbeads+k)
-          ztmp(k)=wzz((i-iatm0)*nbeads+k)
-        
-        enddo
-
-        call realfft(xtmp,nbeads,-1)
-        call realfft(ytmp,nbeads,-1)
-        call realfft(ztmp,nbeads,-1)
-
-        do k=1,nbeads
-        
-          fxx((k-1)*natms+i)=xtmp(k)
-          fyy((k-1)*natms+i)=ytmp(k)
-          fzz((k-1)*natms+i)=ztmp(k)
-
-        enddo
-
-      enddo
-
-c     restore force array replication
-      
-      call pmerge(idnode,mxnode,natms,fxx,fyy,fzz)
-
-      end subroutine norm2force
         
       subroutine realfft(datax,n,mode)
         
 c**********************************************************************
 c     
-c     compute the real fast Fourier transform of the given array of data
+c     compute the normal mode transformation of the given array of data
 c     Parameters:
 c     datax - The array of data to transform
 c     n - The length of the array of data (nbeads)
 c     Returns:
 c     datax - The transformed array of data
-c     
-c     FFT of m real arrays (if mode = 1) or complex Hermitian
-c     arrays in real storage (if mode = -1), using -lfftw3.
 c     
 c**********************************************************************
       implicit none
@@ -2205,34 +2116,22 @@ c**********************************************************************
       real(8), intent(inout) :: datax(n)
 
       integer,parameter :: nmax=1024
-      integer           :: plana,planb,np,i
       real(8)           :: copy(nmax), factx
 c       
       integer :: j,k
 c
-      data np /0/
-      save copy,factx,plana,planb,np
+      save copy
 
-c      if (n .ne. np) then
-c         if (n .gt. nmax) stop 'realft 1'
-c         factx = dsqrt(1.d0/n)
-c         call dfftw_plan_r2r_1d(plana,n,copy,copy,0,64)
-c         call dfftw_plan_r2r_1d(planb,n,copy,copy,1,64)
-c         np = n
-c      endif
-
-c      copy(1:n) = datax
 
       copy(1:n)=0.d0
- 
+
+c     forward transformation      
       if (mode .eq. 1) then
-c         call dfftw_execute(plana)
         do k=1,n
           copy(k)=dot_product(transform(1:n,k),datax(1:n))    
         enddo
-
+c     backwards transformation
       else if (mode .eq. -1) then
-c         call dfftw_execute(planb)
         do j=1,n
           copy(j)=dot_product(transform(j,1:n),datax(1:n))    
         enddo
@@ -2241,7 +2140,6 @@ c         call dfftw_execute(planb)
          stop 'realft 2'
       endif
 
-c      datax = factx*copy(1:n)
       datax = copy(1:n)
 
       return
@@ -2259,7 +2157,7 @@ c     -----------------------------------------------------------------
 c     
 c     in normal mode for path integral molecular dynamics
 c     
-c     copyright - 
+c     copyright - Dil Limbu and Nathan London
 c     authors   - Dil Limbu and Nathan London 2023
 c     
 c**********************************************************************
@@ -2275,27 +2173,18 @@ c**********************************************************************
       poly(2,1) = 0.d0
       poly(3,1) = tstep
       poly(4,1) = 1.d0
-c      poly(3,1) = dt/mp
 
       if (nbeads .gt. 1) then
-c         betan = 1.d0/(sqrt(dble(nbeads))*boltz*temp)
-c         betan = 1.d0/(freq*hbar)
-c         twown = 2.d0/(betan*hbar)
-c         pibyn = pi/nbeads
 
          do k = 1,nbeads/2
-c            wk = twown*dsin(k*pibyn)
             wk = nmfreq(k+1)
             wt = wk*tstep
-c            wm = wk*mp
             cwt = cos(wt)
             swt = sin(wt)
             poly(1,k+1) = cwt
             poly(2,k+1) = -wk*swt
             poly(3,k+1) = swt/wk
             poly(4,k+1) = cwt
-c            poly(2,k+1) = -wm*swt
-c            poly(3,k+1) = swt/wm
          enddo
 
          do k = 1,(nbeads-1)/2
@@ -2324,7 +2213,7 @@ c     Returns:
 c       p - the updated momentum of nbeads of an atom in normal mode
 c       q - the updated position of nbeads of an atom in normal mode
 c
-c     copyright - 
+c     copyright - Dil Limbu and Nathan London
 c     authors   - Dil Limbu and Nathan London 2023
 c     
 c**********************************************************************
@@ -2354,8 +2243,6 @@ c**********************************************************************
 
       else
 
-c       tranform to normal mode if p/q are not in normal mode
-
         do k=1,nbeads
 
           pjknew = p(k)*poly(1,k)+q(k)*poly(2,k)*mass(k)
@@ -2363,8 +2250,6 @@ c       tranform to normal mode if p/q are not in normal mode
           p(k) = pjknew
 
         enddo
-
-c       tranform back to cartesian if p/q are in normal mode
 
       endif
       end subroutine freerp
@@ -2387,7 +2272,7 @@ c     Returns:
 c       p - the updated momentum of nbeads of an atom in normal mode
 c       q - the updated position of nbeads of an atom in normal mode
 c
-c     copyright - 
+c     copyright - Dil Limbu and Nathan London
 c     authors   - Dil Limbu and Nathan London 2023
 c     
 c**********************************************************************
@@ -2417,8 +2302,6 @@ c**********************************************************************
 
       else
 
-c       tranform to normal mode if p/q are not in normal mode
-
         do k=2,nbeads
 
           pjknew = p(k)*poly(1,k)+q(k)*poly(2,k)*mass(k)
@@ -2426,8 +2309,6 @@ c       tranform to normal mode if p/q are not in normal mode
           p(k) = pjknew
 
         enddo
-
-c       tranform back to cartesian if p/q are in normal mode
 
       endif
 
@@ -2439,12 +2320,13 @@ c       tranform back to cartesian if p/q are in normal mode
       
 c**********************************************************************
 c     
-c     dl_poly_classic routine for calculating polymer ring forces and 
-c     primitive energy estimator in path integral molecular dynamics
-c     
-c     copyright - daresbury laboratory
-c     author    - w.smith july 2016
-c     
+c   dl_poly quantum subroutine for calculating the ring polymer energy
+c   and virial when using normal modes, modified from ring_forces
+c   subroutine
+c      
+c   copyright - Dil Limbu and Nathan London
+c   authors - Dil Limbu and Nathan London 2023
+c      
 c**********************************************************************
       
       implicit none
@@ -2468,12 +2350,10 @@ c     initialise rinq potential energy and rms bondlength
 c     fixed contributions to spring constant
       
       sprcon=0.5d0*dble(nbeads)*(boltz*temp/hbar)**2
-c      sprcon=0.5d0*(dble(nbeads)*boltz*temp/hbar)**2
       
 c     inverse of cell matrix
       
       call invert(cell,rcell,det)
-c      call ring_gather_nm(idnode,mxnode,natms)
 
 c     calculate ring polymer energy and forces
       
@@ -2518,16 +2398,7 @@ c     calculate ring polymer energy and forces
         n=(k-1)*natms
         
       enddo
-      do k=1,nbeads
-        do i=1,(iatm1-iatm0)+1
-c          write(6,*) "atm",(i-1)*nbeads+k
-c          engrng=engrng+0.5d0*zmass((i-1)*nbeads+k)*nmfreq(k)**2*
-c     x      (uxx((i-1)*nbeads+k)**2+uyy((i-1)*nbeads+k)**2+
-c     x      uzz((i-1)*nbeads+k)**2)
-c        write(6,*) "engrng",engrng
-        enddo
-      enddo
-c      write(6,*) "engrng after loop",engrng
+      
       rstrss(4)=rstrss(2)
       rstrss(7)=rstrss(3)
       rstrss(8)=rstrss(6)
@@ -2552,7 +2423,6 @@ c     global sum of ring energy and mean-squared bondlength
 c     ring virial is 2x ring energy
       
       virrng=2.d0*engrng
-c      write(6,*) "ring energy",engrng 
       
       end subroutine ring_energy
 
@@ -2563,11 +2433,12 @@ c      write(6,*) "ring energy",engrng
       
 c**********************************************************************
 c     
-c     dl_poly_classic routine for calculating the quantum energy using
-c     the virial energy estimator
+c   dl_poly quantum subroutine for calculating the quantum energy using
+c     the virial energy estimator in normal modes. Modified from the
+c     quantum_energy subroutine      
 c     
-c     copyright - daresbury laboratory
-c     author    - w.smith july 2016
+c     copyright - Dil Limbu and Nathan London
+c     author    - Dil Limbu and Nathan London 2023
 c     
 c**********************************************************************
       
@@ -2587,11 +2458,6 @@ c**********************************************************************
       iatm0=(idnode*natms)/mxnode+1
       iatm1=((idnode+1)*natms)/mxnode
       
-c     fixed contributions to spring constant
-      
-      sprcon=0.5d0*dble(nbeads)*(boltz*temp/hbar)**2
-c      sprcon=0.5d0*(dble(nbeads)*boltz*temp/hbar)**2
-      
 c     initialise virial energy estimator and mean-square radius of gyration
       
       engqvr=0.d0
@@ -2600,7 +2466,6 @@ c     initialise virial energy estimator and mean-square radius of gyration
 c     inverse of cell matrix
       
       call invert(cell,rcell,det)
-c      call ring_gather_nm(idnode,mxnode,natms)
       
 c     calculate ring virial and ring centroid
       
@@ -2623,7 +2488,6 @@ c     determine centroid of ring
         cxx=cxx/dble(nbeads)
         cyy=cyy/dble(nbeads)
         czz=czz/dble(nbeads)
-c        write(6,*) "cxx", cxx 
 c     virial energy estimator calculation
         
         nnn=0
@@ -2633,8 +2497,7 @@ c     virial energy estimator calculation
           dxx=xxx((k-1)*natms+i)-cxx
           dyy=yyy((k-1)*natms+i)-cyy
           dzz=zzz((k-1)*natms+i)-czz
-c          write(6,*) "xxx",xxx((k-1)*natms+i)
-c          write(6,*) "dxx",dxx
+
 c     calculate mean-square radius of gyration
           
           qmsrgr=qmsrgr+(dxx**2+dyy**2+dzz**2)
@@ -2677,247 +2540,5 @@ c     calculate final estimates of quantum energy (standard and virial estimate)
       deallocate (rxx,ryy,rzz,stat=fail)
 
       end subroutine quantum_energy_nm
-
-
-c**********************************************************************
-c      subroutine ring_energy
-c     x  (idnode,mxnode,natms,temp,engrng,virrng,qmsbnd,stress)
-c      
-cc**********************************************************************
-cc     
-cc     dl_poly_classic routine for calculating polymer ring forces and 
-cc     primitive energy estimator in path integral molecular dynamics
-cc     
-cc     copyright - daresbury laboratory
-cc     author    - w.smith july 2016
-cc     
-cc**********************************************************************
-c      
-c      implicit none
-c      
-c      integer, intent(in)  :: idnode,mxnode,natms
-c      real(8), intent(in)  :: temp
-c      real(8), intent(out) :: engrng,virrng,qmsbnd
-c      real(8), dimension(1:9), intent(inout) :: stress
-c      integer i,k,m,n,iatm0,iatm1
-c      real(8) sprcon,dxx,dyy,dzz,sxx,syy,szz,fx,fy,fz,det,rstrss(1:9)
-c      
-c      iatm0=(idnode*natms)/mxnode+1
-c      iatm1=((idnode+1)*natms)/mxnode
-c      
-cc     initialise rinq potential energy and rms bondlength
-c      
-c      engrng=0.d0
-c      qmsbnd=0.d0
-c      rstrss(:)=0.d0
-c      
-cc     fixed contributions to spring constant
-c      
-c      sprcon=0.5d0*dble(nbeads)*(boltz*temp/hbar)**2
-c      
-cc     inverse of cell matrix
-c      
-c      call invert(cell,rcell,det)
-cc      call ring_gather_nm(idnode,mxnode,natms)
-c
-cc     calculate ring polymer energy and forces
-c      
-c      n=(nbeads-1)*natms
-c      
-c      do k=1,nbeads
-c        
-c        m=(k-1)*natms
-c        
-c        do i=iatm0,iatm1
-c          
-c          dxx=xxx(m+i)-xxx(n+i)
-c          dyy=yyy(m+i)-yyy(n+i)
-c          dzz=zzz(m+i)-zzz(n+i)
-c          
-c          sxx=dxx*rcell(1)+dyy*rcell(4)+dzz*rcell(7)
-c          syy=dxx*rcell(2)+dyy*rcell(5)+dzz*rcell(8)
-c          szz=dxx*rcell(3)+dyy*rcell(6)+dzz*rcell(9)
-c          sxx=sxx-anint(sxx)
-c          syy=syy-anint(syy)
-c          szz=szz-anint(szz)
-c          dxx=sxx*cell(1)+syy*cell(4)+szz*cell(7)
-c          dyy=sxx*cell(2)+syy*cell(5)+szz*cell(8)
-c          dzz=sxx*cell(3)+syy*cell(6)+szz*cell(9)
-c          
-c          qmsbnd=qmsbnd+(dxx**2+dyy**2+dzz**2)
-c          engrng=engrng+sprcon*weight(i)*(dxx**2+dyy**2+dzz**2)
-c         
-c          fx=2.d0*sprcon*weight(i)*dxx
-c          fy=2.d0*sprcon*weight(i)*dyy
-c          fz=2.d0*sprcon*weight(i)*dzz
-c          
-c          
-c          rstrss(1)=rstrss(1)-dxx*fx
-c          rstrss(2)=rstrss(2)-dxx*fy
-c          rstrss(3)=rstrss(3)-dxx*fz
-c          rstrss(5)=rstrss(5)-dyy*fy
-c          rstrss(6)=rstrss(6)-dyy*fz
-c          rstrss(9)=rstrss(9)-dzz*fz
-c          
-c        enddo
-c        
-c        n=(k-1)*natms
-c        
-c      enddo
-c      do k=1,nbeads
-c        do i=1,(iatm1-iatm0)+1
-cc          write(6,*) "atm",(i-1)*nbeads+k
-cc          engrng=engrng+0.5d0*zmass((i-1)*nbeads+k)*nmfreq(k)**2*
-cc     x      (uxx((i-1)*nbeads+k)**2+uyy((i-1)*nbeads+k)**2+
-cc     x      uzz((i-1)*nbeads+k)**2)
-cc        write(6,*) "engrng",engrng
-c        enddo
-c      enddo
-cc      write(6,*) "engrng after loop",engrng
-c      rstrss(4)=rstrss(2)
-c      rstrss(7)=rstrss(3)
-c      rstrss(8)=rstrss(6)
-c      stress(:)=stress(:)+rstrss(:)
-c      
-cc     global sum of ring energy and mean-squared bondlength
-c      
-c      if(mxnode.gt.1) then
-c        
-c        buffer(1)=engrng
-c        buffer(2)=qmsbnd
-c        
-c        call gdsum(buffer(1),2,buffer(3))
-c        
-c        engrng=buffer(1)
-c        qmsbnd=buffer(2)
-c        
-c      endif
-c      
-c      qmsbnd=qmsbnd/(dble(natms)*dble(nbeads))
-c      
-cc     ring virial is 2x ring energy
-c      
-c      virrng=2.d0*engrng
-cc      write(6,*) "ring energy",engrng 
-c      end subroutine ring_energy
-c      subroutine quantum_energy_nm
-c     x  (idnode,mxnode,natms,temp,engke,engcfg,engrng,engqpi,
-c     x  engqvr,qmsrgr)
-c      
-cc**********************************************************************
-cc     
-cc     dl_poly_classic routine for calculating the quantum energy using
-cc     the virial energy estimator
-cc     
-cc     copyright - daresbury laboratory
-cc     author    - w.smith july 2016
-cc     
-cc**********************************************************************
-c      
-c      implicit none
-c      
-c      integer, intent(in)  :: idnode,mxnode,natms
-c      real(8), intent(in)  :: temp,engke,engcfg,engrng
-c      real(8), intent(out) :: engqpi,engqvr,qmsrgr
-c      
-c      integer i,j,k,m,n,fail,iatm0,iatm1,nnn
-c      real(8) dxx,dyy,dzz,cxx,cyy,czz,sxx,syy,szz,sprcon,det
-c      real(8), allocatable :: rxx(:),ryy(:),rzz(:)
-c      
-c      fail=0
-c      allocate (rxx(nbeads),ryy(nbeads),rzz(nbeads),stat=fail)
-c      
-c      iatm0=(idnode*natms)/mxnode+1
-c      iatm1=((idnode+1)*natms)/mxnode
-c      
-cc     fixed contributions to spring constant
-c      
-c      sprcon=0.5d0*dble(nbeads)*(boltz*temp/hbar)**2
-c      
-cc     initialise virial energy estimator and mean-square radius of gyration
-c      
-c      engqvr=0.d0
-c      qmsrgr=0.d0
-c      
-cc     inverse of cell matrix
-c      
-c      call invert(cell,rcell,det)
-cc      call ring_gather_nm(idnode,mxnode,natms)
-c      
-cc     calculate ring virial and ring centroid
-c      
-c      do i=iatm0,iatm1
-c        
-cc     determine centroid of ring
-c       
-c          cxx=0.d0
-c          cyy=0.d0
-c          czz=0.d0
-c
-c        do k=1,nbeads
-c
-c          cxx=cxx+xxx((k-1)*natms+i) 
-c          cyy=cyy+yyy((k-1)*natms+i) 
-c          czz=czz+zzz((k-1)*natms+i) 
-c        
-c        enddo
-c
-c        cxx=cxx/dble(nbeads)
-c        cyy=cyy/dble(nbeads)
-c        czz=czz/dble(nbeads)
-cc        write(6,*) "cxx", cxx 
-cc     virial energy estimator calculation
-c        
-c        nnn=0
-c        
-c        do k=1,nbeads
-c          
-c          dxx=xxx((k-1)*natms+i)-cxx
-c          dyy=yyy((k-1)*natms+i)-cyy
-c          dzz=zzz((k-1)*natms+i)-czz
-cc          write(6,*) "xxx",xxx((k-1)*natms+i)
-cc          write(6,*) "dxx",dxx
-cc     calculate mean-square radius of gyration
-c          
-c          qmsrgr=qmsrgr+(dxx**2+dyy**2+dzz**2)
-c          
-cc     calculate virial energy estimator
-c          
-c          engqvr=engqvr+
-c     x      dxx*(fxx((k-1)*natms+i))+
-c     x      dyy*(fyy((k-1)*natms+i))+
-c     x      dzz*(fzz((k-1)*natms+i))
-c          
-c          nnn=nnn+natms
-c          
-c        enddo
-c        
-c      enddo
-c      
-c      engqvr=-0.5d0*engqvr
-c      
-cc     global sum of ring virial and mean-square radius of gyration
-c      
-c      if(mxnode.gt.1) then
-c        
-c        buffer(1)=engqvr
-c        buffer(2)=qmsrgr
-c        
-c        call gdsum(buffer(1),2,buffer(3))
-c        
-c        engqvr=buffer(1)
-c        qmsrgr=buffer(2)
-c        
-c      endif
-c      
-c      qmsrgr=qmsrgr/(dble(nbeads)*dble(natms))
-c      
-cc     calculate final estimates of quantum energy (standard and virial estimate)
-c      
-c      engqpi=engke+engcfg-engrng
-c      engqvr=engqvr+engke/dble(nbeads)+engcfg
-c      deallocate (rxx,ryy,rzz,stat=fail)
-c
-c      end subroutine quantum_energy_nm
 
       end module pimd_module

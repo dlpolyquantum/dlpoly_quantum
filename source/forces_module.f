@@ -391,7 +391,6 @@ c     neutral groups
         endif
         
 c     calculate intramolecular forces
-        
         call intra_forces
      x    (llsolva,lfree,lghost,idnode,mxnode,imcon,natms,nbeads,nstep,
      x    keyfce,keyshl,ntbond,ntangl,ntdihd,ntinv,ntteth,ntshl,epsq,
@@ -1135,7 +1134,7 @@ c     sum up contributions to short range and coulombic potential
         cou_vir=buffer(10)
         
       endif
-      
+
       return
       end subroutine forces
       

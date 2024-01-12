@@ -46,7 +46,23 @@ c     copyright M.R.Momeni and F.A.Shakib 2021
 c     
 c     Method Development and Materials Simulation Laboratory
 c
-c                         DL_POLY QUANTUM VERSION 1.0
+c     Dil Limbu and Nathan London have added the following modules
+c     and subroutines to the DL_POLY QUANTUM VERSION 1.0 to introduce
+c     additional PI simulation methods and correlation function 
+c     calculations
+c
+c     correlation_module.f
+c     pimd_piglet_module.f
+c     Additional subroutines in pimd_module.f
+c     Additional subroutines in vv_pimd_modeule.f
+c     Additional changes in define_system_module.f and setup_module.f
+c       for CONTROL file reading
+c
+c     copyright - Dil Limbu and Nathan London
+c     authors - Dil Limbu and Nathan London 2023
+c
+c      
+c                         DL_POLY QUANTUM VERSION 2.0
 c
 c***********************************************************************
       
@@ -116,7 +132,7 @@ c     declare required modules
       integer ntpter,keyshl,isw,keyver,keystr,keytol,numgau,khit
       integer nhit,keybpd,ntrack,nblock,blkout,numneb,nturn,mode
       integer natms2,ntghost,nsolva,isolva,nofic,iadd
-      integer nrespa,iqt4,keycorr,molcorr
+      integer nrespa,iqt4,keycorr,molcorr,wrtcorr
 
       real(8) alpha,delr,epsq,fmax,press,quattol,rcut,rprim,rvdw,taup
       real(8) taut,temp,timcls,timjob,tolnce,tstep,tzero,dlrpot,drewd
@@ -208,7 +224,8 @@ c     input the control parameters defining the simulation
      x  lzeql,lzden,nolink,newgau,lhit,lbpd,ltad,lneb,prechk,tadall,
      x  lsolva,lfree,lfrmas,lexcite,lswitch,lghost,lnfic,nebgo,lpsoc,
      x  lpimd,inhc,lmsite,lcorr,idnode,minstp,intsta,istraj,keybpd,
-     x  keyens,keyfce,keyres,keyver,keytrj,keycorr,molcorr,kmax1,kmax2,
+     x  keyens,keyfce,keyres,keyver,keytrj,keycorr,molcorr,wrtcorr,
+     x  kmax1,kmax2,
      x  kmax3,multt,nstack,nstbgr,nsbzdn,nstbpo,nhko,nlatt,nstbts,
      x  nsteql,nstraj,nstrun,nospl,keytol,numgau,khit,nhit,nblock,
      x  ntrack,blkout,numneb,mode,nsolva,isolva,nofic,nbeads,nchain,
@@ -255,7 +272,6 @@ c     if water model qtip4p/f is requested
       if(lmsite)then
              
          call water_index(idnode,mxnode,nbeads,ntpmls,iqt4)
-
       endif   
 
 c *******************************************************************      
@@ -422,7 +438,7 @@ c     calculate initial conditions for velocity verlet
      x    virdih,virfbp,virfld,virinv,virlrc,virmet,virshl,virsrp,
      x    virtbp,virter,virtet,volm,engmet,virtot,engord,virord,
      x    engrng,virrng,qmsbnd,keyens)
-        
+       
 c     bias potential dynamics option - reset forces
         
         if(lbpd)call bpd_forces(natms,keybpd,vmin,ebias,temp,engcfg)
@@ -431,11 +447,25 @@ c     bias potential dynamics option - reset forces
       
 c     stage initial forces for pimd
       
-      if(lpimd.and.(keyens.le.42))call stage_forces(lmsite,idnode,
+      if(lpimd)then
+
+        if(keyens.le.42)then
+
+          call stage_forces(lmsite,idnode,
      x               mxnode,natms,nbeads, ntpmls,g_qt4f)
-      if(lpimd.and.(keyens.ge.43))call force2norm(lmsite,idnode,
+
+        elseif(keyens.ge.43)then
+
+          call force2norm(lmsite,idnode,
      x               mxnode,natms,nbeads,ntpmls,g_qt4f)
-      
+        endif
+
+      elseif(lmsite)then
+
+        call qt4_force_redist(idnode,mxnode,nbeads,ntpmls,g_qt4f) 
+
+      endif
+
       if(ltad.or.(lbpd.and.keybpd.eq.2))then
         
 c     construct the first reference state
@@ -495,7 +525,6 @@ c     bypass the MD cycle for this option
         call corr_init(idnode,mxnode,natms,ntpmls,molcorr,keyens,
      x    keycorr,nummols,numsit)
       endif
-c      write(6,*) "inital correlation" 
 c***********************************************************************
 c     start of molecular dynamics calculations
 c***********************************************************************
@@ -886,15 +915,17 @@ c     calculate quantum energy
             call quantum_energy
      x        (idnode,mxnode,natms,temp,engke,engcfg,engrng,engqpi,
      x        engqvr,qmsrgr)
+
+            call ring_energy
+     x        (idnode,mxnode,natms,temp,engrng,virrng,qmsbnd,stress)
+
           endif
 
           engcfg=engcfg+engrng
-c          write(6,*) "engcfg",engcfg
-c          write(6,*) "engrng",engrng
         endif
 
 c     calculate correlation function        
-        if(lcorr.and.(mod(nstep,intsta).eq.0))then
+        if(lcorr.and.(mod(nstep,wrtcorr).eq.0))then
           call correlation
      x      (idnode,mxnode,natms,ntpmls,molcorr,keyens,keycorr,nstep,
      x      nummols,numsit,tstep) 
@@ -1068,7 +1099,6 @@ c     cycle time check
       
       call timchk(0,timelp)
       recycle=(recycle.and.timjob-timelp.gt.timcls)
-      
       enddo
       
 c***********************************************************************
