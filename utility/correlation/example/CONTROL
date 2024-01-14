@@ -1,0 +1,9 @@
+10000		!nstep: number of time points used in calculation (doesn't include time=0 point, that is automatically added)
+216			!number of molecules
+2				!number of trajectories
+0.001		!time (in ps) between point in CORDIP/CORVEL files 
+dipole	!type of calculation: dipole or velocity
+.true.	!ignore initial values (.true. or .false). If .true., first
+				!nstep/10 points will be ignored. CORDIP/CORVEL files must
+				!contain (1.1*nstep)+1 points in them 
+
