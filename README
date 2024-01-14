@@ -7,6 +7,12 @@ contains a few macros for copying and storing data files from and to
 the data sub-directory and for submitting programs for execution.
 These are described below.
 
+Compiling the Program
+
+DL_POLY is compiled using the command "make dlpoly" within the source
+directory. The executable DLPOLY.X will be created and moved into the
+execute directory.
+
 Executing the Program
 
 To run DL_POLY, it is necessary first to ensure that the program is
