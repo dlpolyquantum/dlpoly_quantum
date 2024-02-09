@@ -166,7 +166,7 @@ c     Modified to include normal mode transformations and frequency
 c     generation
 c     
 c     copyright - Dil Limbu and Nathan London
-c     authors - Dil Limbu and Nathan London 2023 
+c     authors   - Dil Limbu and Nathan London 2023 
 c     
 c**********************************************************************
       

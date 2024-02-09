@@ -6,6 +6,13 @@ c     dl_poly module for path integral velocity verlet integration
 c     copyright - daresbury laboratory
 c     author    - w. smith    jun 2016
 c     
+c     Added additional subroutines to allow for PIMD in normal modes with 
+c     additional thermostats and real-time PI dynamics methods: 
+c     RPMD, PA-CMD, and T-RPMD 
+c
+c     copyright - Dil Limbu and Nathan London
+c     authors   - Dil Limbu and Nathan London 2023
+c     
 c***********************************************************************
       
       use setup_module,   only : pi,boltz,hbar,mspimd,nrite
@@ -809,7 +816,7 @@ c
 c     Modified with fixed thermostat subroutine
 c      
 c     copyright - Dil Limbu and Nathan London
-c     authors - Dil Limbu and Nathan London 2023 
+c     authors   - Dil Limbu and Nathan London 2023 
 c      
 c**********************************************************************
       
@@ -1365,7 +1372,7 @@ c     reference: Rossi, Ceriotti, Manolopolous
 c     j. chem. phys. vol. 140 p. 234116 (2014)
 c     
 c     copyright - Dil Limbu and Nathan London
-c     authors - Dil Limbu and Nathan London 2023
+c     authors   - Dil Limbu and Nathan London 2023
 c     
 c**********************************************************************
       
@@ -3259,5 +3266,6 @@ c     integrate thermostat momenta
       
       end subroutine thermo_chain_nm_mnhc
 
+c***********************************************************************
       end module vv_pimd_module
       
