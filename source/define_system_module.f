@@ -536,6 +536,9 @@ c barostat options
               nchain=intstr(directive,lenrec,idum)
               taut=dblstr(directive,lenrec,idum)
               taup=dblstr(directive,lenrec,idum)
+              if((nbeads.eq.0).or.(nrespa.eq.0).or.(nchain.eq.0).or.
+     x          (taut.eq.0).or.(taup.eq.0).or.(nchain.eq.1))
+     x          call error(idnode,4011)
               nrespa=max(nrespa,1)
               nchain=max(nchain,1)
               inhc=.true.         
@@ -544,22 +547,31 @@ c barostat options
               nbeads=intstr(directive,lenrec,idum)
               taut=dblstr(directive,lenrec,idum)
               taup=dblstr(directive,lenrec,idum)
+              if((nbeads.eq.0).or.(taut.eq.0).or.(taup.eq.0))
+     x          call error(idnode,4012)
             endif
           elseif(findstring('nvt',directive,idum))then
             keyens=40
             nbeads=intstr(directive,lenrec,idum)
             taut=dblstr(directive,lenrec,idum)
+            if((nbeads.eq.0).or.(taut.eq.0))
+     x        call error(idnode,4013)
           elseif(findstring('gth',directive,idum))then
             keyens=41
             nbeads=intstr(directive,lenrec,idum)
             taut=dblstr(directive,lenrec,idum)
             chi=dblstr(directive,lenrec,idum)
+            if((nbeads.eq.0).or.(taut.eq.0).or.(chi.eq.0))
+     x        call error(idnode,4014)
           elseif(findstring('nhc',directive,idum))then
             keyens=42
             nbeads=intstr(directive,lenrec,idum)
             nrespa=intstr(directive,lenrec,idum)
             nchain=intstr(directive,lenrec,idum)
             taut=dblstr(directive,lenrec,idum)
+            if((nbeads.eq.0).or.(nrespa.eq.0).or.(nchain.eq.0).or.
+     x        (taut.eq.0).or.(nchain.eq.1))
+     x        call error(idnode,4015)
             nrespa=max(nrespa,1)
             nchain=max(nchain,1)
           elseif(findstring('nm',directive,idum))then
@@ -568,36 +580,52 @@ c barostat options
             nrespa=intstr(directive,lenrec,idum)
             nchain=intstr(directive,lenrec,idum)
             taut=dblstr(directive,lenrec,idum)
+            if((nbeads.eq.0).or.(nrespa.eq.0).or.(nchain.eq.0).or.
+     x        (taut.eq.0).or.(nchain.eq.1))
+     x        call error(idnode,4016)
             nrespa=max(nrespa,1)
             nchain=max(nchain,1)
           elseif(findstring('pile',directive,idum))then
             keyens=44
             nbeads=intstr(directive,lenrec,idum)
             taut=dblstr(directive,lenrec,idum)
+            if((nbeads.eq.0).or.(taut.eq.0))
+     x        call error(idnode,4017)
           elseif(findstring('piglet',directive,idum))then
             keyens=45
             nbeads=intstr(directive,lenrec,idum)
             nsp1=intstr(directive,lenrec,idum)
+            if((nbeads.eq.0).or.(nsp1.eq.0))
+     x        call error(idnode,4018)
             nsp1=nsp1+1
           elseif(findstring('nve',directive,idum))then
             keyens=61
             nbeads=intstr(directive,lenrec,idum)
+            if(nbeads.eq.0)
+     x        call error(idnode,4019)
           elseif(findstring('pacmd',directive,idum))then
             keyens=62
             nbeads=intstr(directive,lenrec,idum)
             nrespa=intstr(directive,lenrec,idum)
             nchain=intstr(directive,lenrec,idum)
             taut=dblstr(directive,lenrec,idum)
+            if((nbeads.eq.0).or.(nrespa.eq.0).or.(nchain.eq.0).or.
+     x        (taut.eq.0).or.(nchain.eq.1))
+     x        call error(idnode,4020)
             nrespa=max(nrespa,1)
             nchain=max(nchain,1)
           elseif(findstring('trpmd',directive,idum))then
             keyens=63
             nbeads=intstr(directive,lenrec,idum)
+            if(nbeads.eq.1)
+     x        call error(idnode,4021)
           else
 c     default is nvt
             keyens=40
             nbeads=intstr(directive,lenrec,idum)
             taut=dblstr(directive,lenrec,idum)
+            if((nbeads.eq.0).or.(taut.eq.0))
+     x        call error(idnode,4022)
           endif
           if(nbeads.eq.0)nbeads=num_beads_default
           if(taut.le.1.d-6)taut=1.d0
@@ -628,7 +656,7 @@ c     default is nvt
             elseif(keyens.eq.43)then
               write(nrite,
      x          "(1x,'Canonical Ensemble in normal modes with mNHC')")
-              write(nrite,"(1x,'Number of  RESPA steps :',i5)")
+              write(nrite,"(1x,'Number of  RESPA steps       :',i5)")
      x          nrespa
               write(nrite,"(1x,'Number of Nose-Hoover chains :',i5)")
      x          nchain
@@ -648,15 +676,15 @@ c     default is nvt
               write(nrite,
      x        "(/,1x,'NPT Simulation in normal mode with mNHC',
      x          /,1x,'thermostat relaxation time',1p,e12.4,
-     x          /,1x,'barostat relaxation time',1p,e12.4,
-     x          /,1x,'number of RESPA steps             ',1p,i6,
-     x          /,1x,'number of chains     ',1p,i6)")
+     x          /,1x,'barostat relaxation time  ',1p,e12.4,
+     x          /,1x,'number of RESPA steps  ',1p,i6,
+     x          /,1x,'number of chains       ',1p,i6)")
      x                taut,taup,nrespa,nchain
             elseif(keyens.eq.52)then
               write(nrite,
      x        "(/,1x,'NPT Simulation in normal mode with PILE',
      x          /,1x,'thermostat relaxation time',1p,e12.4,
-     x          /,1x,'barostat relaxation time',1p,e12.4)")
+     x          /,1x,'barostat relaxation time  ',1p,e12.4)")
      x                taut,taup
             elseif(keyens.eq.61)then
               write(nrite,
@@ -664,7 +692,7 @@ c     default is nvt
             elseif(keyens.eq.62)then
               write(nrite,
      x          "(1x,'Partialy Adiabatic CMD')")
-              write(nrite,"(1x,'Number of  RESPA steps :',i5)")
+              write(nrite,"(1x,'Number of  RESPA steps       :',i5)")
      x          nrespa
               write(nrite,"(1x,'Number of Nose-Hoover chains :',i5)")
      x          nchain
@@ -5246,13 +5274,15 @@ c     Method Development and Materials Simulation Laboratory
             taut=dblstr(directive,lenrec,idum)
             nrespa=intstr(directive,lenrec,idum)
             nchain=intstr(directive,lenrec,idum)
+            if((taut.eq.0).or.(nrespa.eq.0).or.(nchain.eq.0))
+     x        call error(idnode,4031)
             nrespa=max(nrespa,1)
             nchain=max(nchain,1)
           if(idnode.eq.0)write(nrite,
      x      "(/,1x,'Nose-Hoover Chain',
      x      /,1x,'thermostat relaxation time',1p,e12.4,
-     x      /,1x,'number of RESPA steps             ',1p,i6,
-     x      /,1x,'number of chains     ',1p,i6)")
+     x      /,1x,'number of RESPA steps  ',1p,i6,
+     x      /,1x,'number of chains       ',1p,i6)")
      x      taut,nrespa,nchain
           if(lens)then
             call error(idnode,-414)
@@ -5317,14 +5347,16 @@ c     Method Development and Materials Simulation Laboratory
             taup=dblstr(directive,lenrec,idum)
             nrespa=intstr(directive,lenrec,idum)
             nchain=intstr(directive,lenrec,idum)
+            if((taut.eq.0).or.(taup.eq.0).or.(nrespa.eq.0).or.
+     x         (nchain.eq.0))call error(idnode,4032)
             nrespa=max(nrespa,1)
             nchain=max(nchain,1)
           if(idnode.eq.0)write(nrite,
      x      "(/,1x,'Nose-Hoover Chain',
      x      /,1x,'thermostat relaxation time',1p,e12.4,
-     x      /,1x,'barostat relaxation time',1p,e12.4,
-     x      /,1x,'number of RESPA steps             ',1p,i6,
-     x      /,1x,'number of chains     ',1p,i6)")
+     x      /,1x,'barostat relaxation time  ',1p,e12.4,
+     x      /,1x,'number of RESPA steps ',1p,i6,
+     x      /,1x,'number of chains      ',1p,i6)")
      x      taut,taup,nrespa,nchain
           if(lens)then
             call error(idnode,-414)

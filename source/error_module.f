@@ -1453,6 +1453,68 @@ c        elseif(kode.gt.4000)then
             write(nrite,'(/,/,1x,a,/,a)')
      x       'error - simulated temperature and GLE MATRIX temperature',
      x       '         mismatched, check temperature!!!'
+          elseif(kode.eq.4005)then
+            write(nrite,'(/,/,1x,a)')
+     x        'error - piglet_init_temp_array allocation failure'
+c    ****************************************************
+c    syntax error messages for pimd 
+          elseif(kode.eq.4011)then
+            write(nrite,'(/,/,1x,a,/,a)')
+     x      'error - keyword syntax error for PIMD-NPT-mNHC simulation',
+     x      'syntax - pimd npt nhc nbeads nrespa nchain taut taup'
+          elseif(kode.eq.4012)then
+            write(nrite,'(/,/,1x,a,/,a)')
+     x      'error - keyword syntax error for PIMD-NPT-PILE simulation',
+     x      'syntax - pimd  npt  pile  nbeads  taut  taup'
+          elseif(kode.eq.4013)then
+            write(nrite,'(/,/,1x,a,/,a)')
+     x       'error - keyword syntax error for PIMD-NH simulation',
+     x       'syntax - pimd  nvt  nbeads  taut'
+          elseif(kode.eq.4014)then
+            write(nrite,'(/,/,1x,a,/,a)')
+     x       'error - keyword syntax error for PIMD-GENTLE simulation',
+     x       'syntax - pimd  gth  nbeads  taut  chi'
+          elseif(kode.eq.4015)then
+            write(nrite,'(/,/,1x,a,/,a)')
+     x       'error - keyword syntax error for PIMD-mNHC simulation',
+     x       'syntax - pimd  nhc  nbeads  nrespa  nchain  taut'
+          elseif(kode.eq.4016)then
+            write(nrite,'(/,/,1x,a,/,a)')
+     x       'error - keyword syntax error for PIMD-mNHC simulation',
+     x       'syntax - pimd  nm  nbeads  nrespa  nchain  taut'
+          elseif(kode.eq.4017)then
+            write(nrite,'(/,/,1x,a,/,a)')
+     x       'error - keyword syntax error for PIMD-PILE simulation',
+     x       'syntax - pimd  pile  nbeads  taut'
+          elseif(kode.eq.4018)then
+            write(nrite,'(/,/,1x,a,/,a)')
+     x       'error - keyword syntax error for PIMD-PIGLET simulation',
+     x       'syntax - pimd  piglet  nbeads  ns'
+          elseif(kode.eq.4019)then
+            write(nrite,'(/,/,1x,a,/,a)')
+     x       'error - keyword syntax error for RPMD simulation',
+     x       'syntax - pimd  nve  nbeads'
+          elseif(kode.eq.4020)then
+            write(nrite,'(/,/,1x,a,/,a)')
+     x       'error - keyword syntax error for PA-CMD  simulation',
+     x       'syntax - pimd  pacmd  nbeads  nrespa  nchain  taut'
+          elseif(kode.eq.4021)then
+            write(nrite,'(/,/,1x,a,/,a)')
+     x       'error - keyword syntax error for TRPMD simulation',
+     x       'syntax - pimd  trpmd  nbeads'
+          elseif(kode.eq.4022)then
+            write(nrite,'(/,/,1x,a,/,a)')
+     x       'error - keyword syntax error for default PIMD simulation',
+     x       'syntax - pimd  nbeads  taut'
+c    syntax error messages for md-nhc 
+          elseif(kode.eq.4031)then
+            write(nrite,'(/,/,1x,a,/,a)')
+     x       'error - keyword syntax error for MD-NHC  simulation',
+     x       'syntax - ensemble  nvt  nhc  taut  nrespa  nchain'
+          elseif(kode.eq.4032)then
+            write(nrite,'(/,/,1x,a,/,a)')
+     x       'error - keyword syntax error for MD-NHC  simulation',
+     x       'syntax - ensemble  npt  nhc  taut  taup  nrespa  nchain'
           endif
 
 c     *****************important note********************
