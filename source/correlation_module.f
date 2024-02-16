@@ -47,6 +47,10 @@ c     allocate operator value arrays
       allocate(yoper(nummols(itmols)))
       allocate(zoper(nummols(itmols)))
 
+      xoper=0.d0
+      yoper=0.d0
+      zoper=0.d0
+
 c     open output file based on operator type
 
       if(idnode.eq.0)then
@@ -150,7 +154,7 @@ c***********************************************************************
 
       imol0=(idnode*nummols(itmols))/mxnode+1
       imol1=((idnode+1)*nummols(itmols))/mxnode
-      
+    
       jsite=0
       ksite=0
       
@@ -161,7 +165,7 @@ c     get atom indices if specificied molecule is not first type
           ksite=ksite+numsit(i)
         enddo
       endif
-      
+     
 c     calculate molecular mass      
       molmass=0.d0
       do i=1,numsit(itmols)
@@ -237,8 +241,8 @@ c     store operater value for molecule
 
 c     sum over nodes
       if(mxnode.gt.1)then
-          call merge
-     x      (idnode,mxnode,nummols,mxbuff,xoper,yoper,zoper,buffer)
+         call merge
+     x   (idnode,mxnode,nummols(itmols),mxbuff,xoper,yoper,zoper,buffer)
       endif
       
       end subroutine calc_val_cent
@@ -360,9 +364,8 @@ c     store operater value for molecule
 
 c     sum over nodes      
       if(mxnode.gt.1)then
-          call merge
-     x      (idnode,mxnode,nummols(itmols),mxbuff,xoper,yoper,zoper,
-     x      buffer)
+         call merge
+     x   (idnode,mxnode,nummols(itmols),mxbuff,xoper,yoper,zoper,buffer)
 
       endif
 
