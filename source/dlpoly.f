@@ -179,8 +179,8 @@ c     open main printing file
       
       if(.not.redirect.and.idnode.eq.0)open(nrite,file='OUTPUT')
       if(idnode.eq.0) write (nrite,
-     x  "(/,20x,'DL_POLY Quantum 1.0',
-     x   /,/,30x,'Running on ',i4,' nodes',/,/)") mxnode
+     x  "(/,20x,'DL_POLY Quantum 2.0',
+     x   /,/,20x,'Running on ',i4,' nodes',/,/)") mxnode
 
 c     allocate arrays for each function
       
