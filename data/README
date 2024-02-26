@@ -52,10 +52,8 @@ TEST39 - Metadynamics of calcite nanoparticle in water. 2984 atoms.
 TEST40 - PIMD Test Case: Neon
 TEST41 - PIMD TEST CASE: 102 water molecules
 TEST42 - NVT Nose-Hoover chain (NHC) classical simulation of Bulk water using flexible q-TIP4P/F potential
-TEST43 - NPT NHC simulation of Cu3(HHTP)2 2-dimensional metal-organic framework
-TEST44 - NPT NHC simulation of zeolitic-imidazolate framework ZIF-8
-TEST45 - NVT mNHC simulation of Bulk water using flexible q-TIP4P/F potential in Feynman's Path Integral formalism (PIMD simulations)
-TEST46 - NPT PILE simulation of HKUST-1 in Feynman's Path Integral formalism (PIMD simulations)
+TEST43 - NVT mNHC simulation of Bulk water using flexible q-TIP4P/F potential in Feynman's Path Integral formalism (PIMD simulations)
+TEST44 - NPT PILE simulation of HKUST-1 in Feynman's Path Integral formalism (PIMD simulations)
 
 If you wish to run them with your compiled version of DL_POLY
 you should copy the required input files CONTROL, FIELD, 
