@@ -1386,11 +1386,11 @@ c**********************************************************************
       real(8), intent(out) :: engke
       
       integer :: i,j,k,iatm0,iatm1
-      real(8) :: hstep,strkin(9),uuu(102),beta
+      real(8) :: pC2,hstep,strkin(9),uuu(102)
       real(8) :: mass(nbeads),rmass(nbeads),gama(nbeads)
 
       data newjob/.true./
-      save newjob, iatm0,iatm1,hstep
+      save newjob,iatm0,iatm1,hstep
 
 c     initialize pile parameters C1 and C2 vector for nbeads
 
@@ -1422,29 +1422,27 @@ c     ensure no thermostat on centroid mode
       
 c     thermostat parameters
       
-      beta=1.d0/(temp*boltz)
       noskip=.true.
-      
-c     verlet first part
       
       if(isw.eq.1)then
        
 c     thermostat momentum - 1/2 step
 
-        do i=1,(iatm1-iatm0)/nbeads
-          do j=1,nbeads
-            pxx((i-1)*nbeads+j)=pxx((i-1)*nbeads+j)*pileC1(j)+
-     x        sqrt(zmass((i-1)*nbeads+j)/beta)*pileC2(j)*
-     x        gssrnd(noskip,uuu)
-            pyy((i-1)*nbeads+j)=pyy((i-1)*nbeads+j)*pileC1(j)+
-     x        sqrt(zmass((i-1)*nbeads+j)/beta)*pileC2(j)*
-     x        gssrnd(noskip,uuu)
-             pzz((i-1)*nbeads+j)=pzz((i-1)*nbeads+j)*pileC1(j)+
-     x        sqrt(zmass((i-1)*nbeads+j)/beta)*pileC2(j)*
-     x        gssrnd(noskip,uuu)
-          enddo
-        enddo
+        do i=1,iatm1-iatm0,nbeads
 
+          do k=1,nbeads
+
+            j=(i-1)+k
+            pC2=sqrt(zmass(j)*boltz*temp)*pileC2(k)
+
+            pxx(j)=pileC1(k)*pxx(j)+pC2*gssrnd(noskip,uuu)
+            pyy(j)=pileC1(k)*pyy(j)+pC2*gssrnd(noskip,uuu)
+            pzz(j)=pileC1(k)*pzz(j)+pC2*gssrnd(noskip,uuu)
+
+          enddo
+
+        enddo
+        
 c     integrate bead momenta - 1/2 step
         
         do i=1,iatm1-iatm0
@@ -1491,20 +1489,21 @@ c     integrate bead momenta - 1/2 step
         
 c     thermostat momentum - 1/2 step
 
-        do i=1,(iatm1-iatm0)/nbeads
-          do j=1,nbeads
-            pxx((i-1)*nbeads+j)=pxx((i-1)*nbeads+j)*pileC1(j)+
-     x        sqrt(zmass((i-1)*nbeads+j)/beta)*pileC2(j)*
-     x        gssrnd(noskip,uuu)
-            pyy((i-1)*nbeads+j)=pyy((i-1)*nbeads+j)*pileC1(j)+
-     x        sqrt(zmass((i-1)*nbeads+j)/beta)*pileC2(j)*
-     x        gssrnd(noskip,uuu)
-            pzz((i-1)*nbeads+j)=pzz((i-1)*nbeads+j)*pileC1(j)+
-     x        sqrt(zmass((i-1)*nbeads+j)/beta)*pileC2(j)*
-     x        gssrnd(noskip,uuu)
-          enddo
-        enddo
+        do i=1,iatm1-iatm0,nbeads
 
+          do k=1,nbeads
+
+            j=(i-1)+k
+            pC2=sqrt(zmass(j)*boltz*temp)*pileC2(k)
+
+            pxx(j)=pileC1(k)*pxx(j)+pC2*gssrnd(noskip,uuu)
+            pyy(j)=pileC1(k)*pyy(j)+pC2*gssrnd(noskip,uuu)
+            pzz(j)=pileC1(k)*pzz(j)+pC2*gssrnd(noskip,uuu)
+
+          enddo
+
+        enddo
+        
 c     unstage momenta (needed for REVCON file)
         
         call norm2momenta(idnode,mxnode,natms)

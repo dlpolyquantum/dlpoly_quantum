@@ -2327,12 +2327,11 @@ c     spread beads to fraction of de broglie wavelength
           
         enddo
         
-c     initialise parallel random number sequence
-         
-         dum=puni(1,uuu)
-        
       endif
-c      write(6,*) "xxx", xxx(:) 
+
+c     initialise parallel random number sequence
+
+      dum=puni(1,uuu)
       
 c     check integrity of cell vectors : for cubic, TO and RD cases
 c     ie. cell(1)=cell(5)=cell(9) (or cell(9)/sqrt(2) for RD)
